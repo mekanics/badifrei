@@ -1,4 +1,4 @@
-.PHONY: test test-all test-integration lint format run-collector run-api
+.PHONY: test test-all test-integration lint format run-collector run-api train
 
 PYTHON := .venv/bin/python
 PYTEST  := .venv/bin/pytest
@@ -25,3 +25,6 @@ run-collector:
 
 run-api:
 	$(PYTHON) -m uvicorn api.main:app --reload
+
+train:
+	$(PYTHON) scripts/train.py

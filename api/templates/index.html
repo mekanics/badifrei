@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Pool Overview — Badi Predictor{% endblock %}
+{% block content %}
+<h1 class="page-title">Zürich Pools</h1>
+<p class="subtitle">Live occupancy updates every 60 seconds</p>
+<div class="pool-grid" id="pool-grid">
+  {% for pool in pools %}
+  <a href="/dashboard/pools/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}">
+    <div class="pool-header">
+      <span class="pool-name">{{ pool.name }}</span>
+      <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>
+    </div>
+    <div class="pool-body">
+      <div class="occupancy-bar-wrap">
+        <div class="occupancy-bar" id="bar-{{ pool.uid }}" style="width:0%"></div>
+      </div>
+      <div class="occupancy-label" id="occ-{{ pool.uid }}">—</div>
+    </div>
+    {% if pool.max_capacity > 0 %}
+    <div class="pool-footer">Capacity: {{ pool.max_capacity }}</div>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+<script>
+  async function fetchOccupancy() {
+    try {
+      const res = await fetch('/api/current');
+      if (!res.ok) return;
+      const data = await res.json();
+      const map = {};
+      for (const item of data) { map[item.pool_uid] = item; }
+      document.querySelectorAll('.pool-card').forEach(card => {
+        const uid = card.dataset.uid;
+        const label = document.getElementById('occ-' + uid);
+        const bar = document.getElementById('bar-' + uid);
+        const item = map[uid];
+        if (item && item.occupancy_pct !== null) {
+          const pct = item.occupancy_pct;
+          label.textContent = pct + '%';
+          bar.style.width = Math.min(pct, 100) + '%';
+          bar.className = 'occupancy-bar ' + (pct <= 50 ? 'green' : pct <= 80 ? 'yellow' : 'red');
+        } else {
+          label.textContent = 'No data';
+          bar.style.width = '0%';
+          bar.className = 'occupancy-bar grey';
+        }
+      });
+    } catch (e) {
+      console.warn('Occupancy fetch failed', e);
+    }
+  }
+  fetchOccupancy();
+  setInterval(fetchOccupancy, 60000);
+</script>
+{% endblock %}

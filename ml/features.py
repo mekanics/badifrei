@@ -102,12 +102,51 @@ def add_rolling_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def build_features(df: pd.DataFrame, metadata: dict[str, dict] | None = None) -> pd.DataFrame:
+def add_weather_features(df: pd.DataFrame, weather_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Merge weather data into the feature DataFrame.
+
+    Expects df to have an 'hour_of_day' column (from add_time_features).
+    Adds: temperature_c, precipitation_mm, is_rainy, temp_x_outdoor.
+    """
+    df = df.copy()
+    weather_cols = weather_df[["hour", "temperature_c", "precipitation_mm", "weathercode"]].copy()
+    weather_cols = weather_cols.rename(columns={"hour": "hour_of_day"})
+
+    df = df.merge(weather_cols, on="hour_of_day", how="left")
+
+    # Fill NaN weather with sensible defaults
+    df["temperature_c"] = df["temperature_c"].fillna(15.0)
+    df["precipitation_mm"] = df["precipitation_mm"].fillna(0.0)
+    df["weathercode"] = df["weathercode"].fillna(0.0)
+
+    # is_rainy: weathercode >= 51 (drizzle / rain threshold in WMO codes)
+    df["is_rainy"] = (df["weathercode"] >= 51).astype(int)
+
+    # temp_x_outdoor: temperature * outdoor flag (pool_type encoded 1 = freibad)
+    is_outdoor = (df["pool_type"] == POOL_TYPE_ENCODING["freibad"]).astype(float)
+    df["temp_x_outdoor"] = df["temperature_c"] * is_outdoor
+
+    df = df.drop(columns=["weathercode"])
+    return df
+
+
+def build_features(
+    df: pd.DataFrame,
+    metadata: dict[str, dict] | None = None,
+    weather_df: "pd.DataFrame | None" = None,
+) -> pd.DataFrame:
     """
     Full feature pipeline. Input df must have columns:
     - time (datetime or string)
     - pool_uid (string)
     - occupancy_pct (float)
+
+    Optional:
+    - weather_df: hourly weather DataFrame (columns: hour, temperature_c,
+      precipitation_mm, weathercode). When provided, weather features are
+      merged in and four new columns are added: temperature_c,
+      precipitation_mm, is_rainy, temp_x_outdoor.
 
     Returns df with all features added.
     """
@@ -117,8 +156,17 @@ def build_features(df: pd.DataFrame, metadata: dict[str, dict] | None = None) ->
     df = add_pool_features(df, metadata)
     df = add_lag_features(df)
     df = add_rolling_features(df)
+    if weather_df is not None:
+        df = add_weather_features(df, weather_df)
     return df
 
+
+WEATHER_FEATURE_COLUMNS = [
+    "temperature_c",
+    "precipitation_mm",
+    "is_rainy",
+    "temp_x_outdoor",
+]
 
 FEATURE_COLUMNS = [
     "hour_of_day",

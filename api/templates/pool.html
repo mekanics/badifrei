@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ pool.name }} — Badi Predictor{% endblock %}
+{% block content %}
+<a href="/" class="back-link">← All Pools</a>
+<div class="pool-detail-header">
+  <h1>{{ pool.name }}</h1>
+  <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>
+  {% if pool.max_capacity > 0 %}
+  <span class="capacity-label">Capacity: {{ pool.max_capacity }}</span>
+  {% endif %}
+</div>
+
+<div class="date-row">
+  <label for="date-picker">Date:</label>
+  <input type="date" id="date-picker">
+</div>
+
+<div id="no-model-msg" class="no-model" style="display:none">No prediction model available for this pool yet.</div>
+<div class="chart-wrap">
+  <canvas id="occupancy-chart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const POOL_UID = {{ pool.uid | tojson }};
+
+  function todayZurich() {
+    return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Zurich' });
+  }
+
+  const picker = document.getElementById('date-picker');
+  picker.value = todayZurich();
+
+  const ctx = document.getElementById('occupancy-chart').getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: Array.from({length: 24}, (_, i) => String(i).padStart(2,'0') + ':00'),
+      datasets: [{
+        label: 'Predicted Occupancy %',
+        data: Array(24).fill(null),
+        borderColor: '#4f8ef7',
+        backgroundColor: 'rgba(79,142,247,0.1)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3,
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { min: 0, max: 100, title: { display: true, text: 'Occupancy %' } },
+        x: { title: { display: true, text: 'Hour' } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  async function loadChart(date) {
+    try {
+      const res = await fetch(`/predict/range?pool_uid=${encodeURIComponent(POOL_UID)}&date=${date}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const values = data.predictions.map(p => p.predicted_occupancy_pct);
+      const allZero = values.every(v => v === 0.0);
+      document.getElementById('no-model-msg').style.display = allZero ? 'block' : 'none';
+      chart.data.datasets[0].data = values;
+      chart.update();
+    } catch (e) {
+      console.warn('Predict fetch failed', e);
+    }
+  }
+
+  loadChart(picker.value);
+  picker.addEventListener('change', () => loadChart(picker.value));
+</script>
+{% endblock %}

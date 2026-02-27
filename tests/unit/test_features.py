@@ -163,3 +163,95 @@ class TestBuildFeatures:
         original_cols = list(df.columns)
         build_features(df)
         assert list(df.columns) == original_cols
+
+
+def make_weather_df(temperature_c: float = 22.0, precipitation_mm: float = 0.0, weathercode: int = 0) -> pd.DataFrame:
+    """Create a minimal 24-row weather DataFrame."""
+    return pd.DataFrame({
+        "hour": list(range(24)),
+        "temperature_c": [temperature_c] * 24,
+        "precipitation_mm": [precipitation_mm] * 24,
+        "weathercode": [weathercode] * 24,
+    })
+
+
+class TestWeatherFeatures:
+    def test_no_weather_df_does_not_add_weather_columns(self):
+        from ml.features import build_features
+        df = make_df(n=48)
+        result = build_features(df)
+        assert "temperature_c" not in result.columns
+        assert "is_rainy" not in result.columns
+
+    def test_weather_df_adds_temperature_column(self):
+        from ml.features import build_features
+        df = make_df(n=48)
+        weather = make_weather_df(temperature_c=25.0)
+        result = build_features(df, weather_df=weather)
+        assert "temperature_c" in result.columns
+        assert (result["temperature_c"] == 25.0).all()
+
+    def test_weather_df_adds_precipitation_column(self):
+        from ml.features import build_features
+        df = make_df(n=48)
+        weather = make_weather_df(precipitation_mm=3.5)
+        result = build_features(df, weather_df=weather)
+        assert "precipitation_mm" in result.columns
+        assert (result["precipitation_mm"] == 3.5).all()
+
+    def test_is_rainy_true_when_weathercode_ge_51(self):
+        from ml.features import build_features
+        df = make_df(n=48)
+        weather = make_weather_df(weathercode=61)  # moderate rain
+        result = build_features(df, weather_df=weather)
+        assert "is_rainy" in result.columns
+        assert (result["is_rainy"] == 1).all()
+
+    def test_is_rainy_false_when_weathercode_lt_51(self):
+        from ml.features import build_features
+        df = make_df(n=48)
+        weather = make_weather_df(weathercode=2)  # clear sky
+        result = build_features(df, weather_df=weather)
+        assert (result["is_rainy"] == 0).all()
+
+    def test_nan_weather_filled_with_defaults(self):
+        import numpy as np
+        from ml.features import build_features
+        df = make_df(n=48)
+        # Only provide 12 hours of weather — the rest should be NaN-filled
+        weather = pd.DataFrame({
+            "hour": list(range(12)),
+            "temperature_c": [np.nan] * 12,
+            "precipitation_mm": [np.nan] * 12,
+            "weathercode": [np.nan] * 12,
+        })
+        result = build_features(df, weather_df=weather)
+        assert not result["temperature_c"].isna().any(), "NaN temperature not filled"
+        assert not result["precipitation_mm"].isna().any(), "NaN precipitation not filled"
+        assert (result.loc[result["hour_of_day"] < 12, "temperature_c"] == 15.0).all()
+
+    def test_temp_x_outdoor_zero_for_hallenbad(self):
+        from ml.features import build_features
+        # SSD-5 is a hallenbad → outdoor flag = 0 → temp_x_outdoor = 0
+        df = make_df(n=48, pool_uid="SSD-5")
+        weather = make_weather_df(temperature_c=30.0)
+        result = build_features(df, weather_df=weather)
+        assert "temp_x_outdoor" in result.columns
+        assert (result["temp_x_outdoor"] == 0.0).all()
+
+    def test_temp_x_outdoor_nonzero_for_freibad(self):
+        from ml.features import build_features, POOL_TYPE_ENCODING
+        # Use a freibad pool via custom metadata
+        metadata = {"FREI-1": {"type": "freibad", "seasonal": True}}
+        df = make_df(n=48, pool_uid="FREI-1")
+        weather = make_weather_df(temperature_c=30.0)
+        result = build_features(df, metadata=metadata, weather_df=weather)
+        assert (result["temp_x_outdoor"] == 30.0).all()
+
+    def test_weather_features_backward_compat_default_none(self):
+        from ml.features import build_features, FEATURE_COLUMNS
+        """Calling build_features without weather_df still produces all base columns."""
+        df = make_df(n=48)
+        result = build_features(df)
+        for col in FEATURE_COLUMNS:
+            assert col in result.columns

@@ -1,5 +1,6 @@
 """Badi Predictor API — FastAPI application."""
 import json
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -7,13 +8,23 @@ from pathlib import Path
 from dateutil.parser import parse as datetime_parser
 from dateutil.parser import parse as date_parser_raw
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse as _JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+
+
+class JSONResponse(_JSONResponse):
+    """Force charset=utf-8 in Content-Type to prevent Safari misinterpreting the encoding."""
+    media_type = "application/json; charset=utf-8"
 
 from api.schemas import PoolInfo, PredictionResponse, RangePredictionResponse, RangePredictionItem
 from api.predictor import predictor
 
 POOL_METADATA_PATH = Path(__file__).parent.parent / "ml" / "pool_metadata.json"
+TEMPLATES_PATH = Path(__file__).parent / "templates"
+STATIC_PATH = Path(__file__).parent / "static"
 
 _pools_cache: list | None = None
 
@@ -21,7 +32,7 @@ _pools_cache: list | None = None
 def get_pools() -> list[dict]:
     global _pools_cache
     if _pools_cache is None:
-        _pools_cache = json.load(open(POOL_METADATA_PATH))
+        _pools_cache = json.loads(POOL_METADATA_PATH.read_text(encoding="utf-8"))
     return _pools_cache
 
 
@@ -35,12 +46,17 @@ async def lifespan(app: FastAPI):
     yield
 
 
+templates = Jinja2Templates(directory=str(TEMPLATES_PATH))
+
 app = FastAPI(
     title="Badi Predictor",
     description="Predict pool occupancy for Zürich's public pools.",
     version="0.1.0",
+    default_response_class=JSONResponse,
     lifespan=lifespan,
 )
+
+app.mount("/static", StaticFiles(directory=str(STATIC_PATH)), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -48,6 +64,51 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/", response_class=HTMLResponse, tags=["dashboard"])
+async def dashboard_index(request: Request):
+    """Pool overview dashboard."""
+    pools = get_pools()
+    return templates.TemplateResponse("index.html", {"request": request, "pools": pools})
+
+
+@app.get("/dashboard/pools/{pool_uid}", response_class=HTMLResponse, tags=["dashboard"])
+async def dashboard_pool(request: Request, pool_uid: str):
+    """Pool detail dashboard."""
+    from fastapi import HTTPException
+    pools = get_pools()
+    pool = next((p for p in pools if p["uid"] == pool_uid), None)
+    if pool is None:
+        raise HTTPException(status_code=404, detail=f"Pool '{pool_uid}' not found")
+    return templates.TemplateResponse("pool.html", {"request": request, "pool": pool})
+
+
+@app.get("/api/current", tags=["dashboard"])
+async def current_occupancy():
+    """Return latest occupancy reading per pool. Returns [] if DB unavailable."""
+    database_url = os.environ.get("DATABASE_URL")
+    if not database_url:
+        return []
+    try:
+        import asyncpg
+        conn = await asyncpg.connect(database_url)
+        try:
+            rows = await conn.fetch(
+                """
+                SELECT DISTINCT ON (pool_uid)
+                    pool_uid, current_fill, max_space, free_space,
+                    ROUND((current_fill::numeric / NULLIF(max_space, 0)) * 100, 1) AS occupancy_pct,
+                    recorded_at
+                FROM pool_occupancy
+                ORDER BY pool_uid, recorded_at DESC
+                """
+            )
+            return [dict(row) for row in rows]
+        finally:
+            await conn.close()
+    except Exception:
+        return []
 
 
 @app.get("/health", tags=["meta"])

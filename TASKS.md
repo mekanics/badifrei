@@ -545,8 +545,8 @@ Write `README.md` with quickstart, architecture diagram (ASCII), env vars refere
 | TASK-015 | `/predict` endpoint | 3 | ✅ DONE |
 | TASK-016 | `/predict/range` endpoint | 3 | ✅ DONE |
 | TASK-017 | Docker Compose — API service | 3 | TODO |
-| TASK-018 | Automated retraining cron | 4 | TODO |
+| TASK-018 | Automated retraining cron | 4 | ✅ DONE |
 | TASK-019 | Weather feature integration | 4 | TODO |
-| TASK-020 | Collector deduplication | 4 | TODO |
+| TASK-020 | Collector deduplication | 4 | ✅ DONE |
 | TASK-021 | Integration test suite | 4 | TODO |
 | TASK-022 | README & developer docs | 4 | ✅ DONE |
