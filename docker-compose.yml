@@ -1,0 +1,75 @@
+version: "3.9"
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: badi
+      POSTGRES_PASSWORD: badi
+      POSTGRES_DB: badi
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U badi -d badi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  db_test:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: badi
+      POSTGRES_PASSWORD: badi
+      POSTGRES_DB: badi_test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    volumes:
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  collector:
+    build:
+      context: .
+      dockerfile: collector/Dockerfile
+    environment:
+      WS_URL: wss://badi-public.crowdmonitor.ch:9591/api
+      DATABASE_URL: postgresql://badi:badi@db:5432/badi
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://badi:badi@db:5432/badi
+    ports:
+      - "8000:8000"
+    volumes:
+      - model_artifacts:/app/ml/models
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  db_data:
+  model_artifacts:
