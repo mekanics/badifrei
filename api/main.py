@@ -1,7 +1,10 @@
 """Badi Predictor API — FastAPI application."""
 import json
+import logging
 import os
 from contextlib import asynccontextmanager
+
+logger = logging.getLogger(__name__)
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -43,7 +46,22 @@ def date_parser(date_str: str):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     predictor.load()
+
+    # Create asyncpg connection pool for DB-backed endpoints
+    database_url = os.environ.get("DATABASE_URL")
+    app.state.db_pool = None
+    if database_url:
+        try:
+            import asyncpg
+            app.state.db_pool = await asyncpg.create_pool(database_url, min_size=1, max_size=5)
+            logger.info("DB connection pool created")
+        except Exception as e:
+            logger.warning(f"Could not create DB pool: {e}")
+
     yield
+
+    if app.state.db_pool is not None:
+        await app.state.db_pool.close()
 
 
 templates = Jinja2Templates(directory=str(TEMPLATES_PATH))
@@ -85,28 +103,23 @@ async def dashboard_pool(request: Request, pool_uid: str):
 
 
 @app.get("/api/current", tags=["dashboard"])
-async def current_occupancy():
+async def current_occupancy(request: Request):
     """Return latest occupancy reading per pool. Returns [] if DB unavailable."""
-    database_url = os.environ.get("DATABASE_URL")
-    if not database_url:
+    db_pool = getattr(request.app.state, "db_pool", None)
+    if db_pool is None:
         return []
     try:
-        import asyncpg
-        conn = await asyncpg.connect(database_url)
-        try:
-            rows = await conn.fetch(
-                """
-                SELECT DISTINCT ON (pool_uid)
-                    pool_uid, current_fill, max_space, free_space,
-                    ROUND((current_fill::numeric / NULLIF(max_space, 0)) * 100, 1) AS occupancy_pct,
-                    recorded_at
-                FROM pool_occupancy
-                ORDER BY pool_uid, recorded_at DESC
-                """
-            )
-            return [dict(row) for row in rows]
-        finally:
-            await conn.close()
+        rows = await db_pool.fetch(
+            """
+            SELECT DISTINCT ON (pool_uid)
+                pool_uid, current_fill, max_space, free_space,
+                ROUND((current_fill::numeric / NULLIF(max_space, 0)) * 100, 1) AS occupancy_pct,
+                time
+            FROM pool_occupancy
+            ORDER BY pool_uid, time DESC
+            """
+        )
+        return [dict(row) for row in rows]
     except Exception:
         return []
 

@@ -10,7 +10,7 @@ import xgboost as xgb
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.model_selection import train_test_split
 
-from ml.features import build_features, FEATURE_COLUMNS
+from ml.features import build_features, get_pool_uid_encoding, FEATURE_COLUMNS
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +48,11 @@ def train(df: pd.DataFrame, test_fraction: float = 0.2) -> tuple[xgb.XGBRegresso
     """
     logger.info(f"Training on {len(df)} records")
 
+    # Build stable encoding map from the full training dataset before building features
+    encoding_map = get_pool_uid_encoding(df["pool_uid"].tolist())
+
     # Build features
-    df_features = build_features(df)
+    df_features = build_features(df, encoding_map=encoding_map)
 
     # Time-based split
     train_df, test_df = time_based_split(df_features, test_fraction)
@@ -100,27 +103,41 @@ def train(df: pd.DataFrame, test_fraction: float = 0.2) -> tuple[xgb.XGBRegresso
         "trained_at": datetime.now(timezone.utc).isoformat(),
     }
 
+    # Embed encoding map in metrics so save_model() can persist it as a sidecar
+    metrics["pool_uid_encoding"] = {k: encoding_map[k] for k in sorted(encoding_map)}
+
     logger.info(f"MAE: {mae:.2f}%  RMSE: {rmse:.2f}%")
     return model, metrics
 
 
 def save_model(model: xgb.XGBRegressor, metrics: dict) -> Path:
-    """Save model and training report to models/ directory."""
+    """Save model, encoding map sidecar, and training report to models/ directory."""
     MODELS_DIR.mkdir(exist_ok=True)
 
     date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     model_path = MODELS_DIR / f"model_{date_str}.ubj"
     latest_path = MODELS_DIR / "model_latest.ubj"
+    encoding_path = MODELS_DIR / f"model_{date_str}.json"
+    latest_encoding_path = MODELS_DIR / "model_latest.json"
     report_path = MODELS_DIR / "training_report.json"
 
     model.save_model(str(model_path))
 
-    # Update symlink
+    # Save uid encoding map sidecar (extracted from metrics, sorted keys for stability)
+    encoding_map = metrics.get("pool_uid_encoding", {})
+    with open(encoding_path, "w") as f:
+        json.dump(encoding_map, f, indent=2)
+
+    # Update symlinks
     if latest_path.exists() or latest_path.is_symlink():
         latest_path.unlink()
     latest_path.symlink_to(model_path.name)
 
-    # Save report
+    if latest_encoding_path.exists() or latest_encoding_path.is_symlink():
+        latest_encoding_path.unlink()
+    latest_encoding_path.symlink_to(encoding_path.name)
+
+    # Save report (includes pool_uid_encoding for full auditability)
     with open(report_path, "w") as f:
         json.dump(metrics, f, indent=2)
 

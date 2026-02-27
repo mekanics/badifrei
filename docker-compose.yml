@@ -3,26 +3,28 @@ version: "3.9"
 services:
   db:
     image: timescale/timescaledb:latest-pg16
+    env_file: .env
     environment:
-      POSTGRES_USER: badi
-      POSTGRES_PASSWORD: badi
-      POSTGRES_DB: badi
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U badi -d badi"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   db_test:
     image: timescale/timescaledb:latest-pg16
+    env_file: .env
     environment:
-      POSTGRES_USER: badi
-      POSTGRES_PASSWORD: badi
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: badi_test
     ports:
       - "5433:5432"
@@ -35,9 +37,10 @@ services:
     build:
       context: .
       dockerfile: collector/Dockerfile
+    env_file: .env
     environment:
       WS_URL: wss://badi-public.crowdmonitor.ch:9591/api
-      DATABASE_URL: postgresql://badi:badi@db:5432/badi
+      DATABASE_URL: ${DATABASE_URL}
     ports:
       - "8080:8080"
     depends_on:
@@ -54,8 +57,9 @@ services:
     build:
       context: .
       dockerfile: api/Dockerfile
+    env_file: .env
     environment:
-      DATABASE_URL: postgresql://badi:badi@db:5432/badi
+      DATABASE_URL: ${DATABASE_URL}
     ports:
       - "8000:8000"
     volumes:
@@ -69,6 +73,22 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+
+  retrain:
+    build:
+      context: .
+      dockerfile: ml/Dockerfile
+    env_file: .env
+    volumes:
+      - model_artifacts:/app/ml/models
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - RETRAIN_INTERVAL_DAYS=1
+      - MIN_RECORDS=100
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   db_data:

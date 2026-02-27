@@ -22,8 +22,19 @@ def load_pool_metadata() -> dict[str, dict]:
     return {p["uid"]: p for p in data}
 
 
-def get_pool_uid_encoding(uids: list[str]) -> dict[str, int]:
-    """Create stable integer encoding for pool UIDs (sorted for determinism)."""
+def get_pool_uid_encoding(
+    uids: list[str],
+    encoding_map: dict[str, int] | None = None,
+) -> dict[str, int]:
+    """Return stable integer encoding for pool UIDs.
+
+    If *encoding_map* is provided (e.g. loaded from the model sidecar JSON),
+    it is returned as-is.  Otherwise a new mapping is derived from *uids*
+    by sorting them for determinism — this is only safe at training time when
+    the full population of UIDs is present in the DataFrame.
+    """
+    if encoding_map is not None:
+        return encoding_map
     return {uid: i for i, uid in enumerate(sorted(set(uids)))}
 
 
@@ -48,13 +59,17 @@ def add_holiday_feature(df: pd.DataFrame, country: str = "CH", subdiv: str = "ZH
     return df
 
 
-def add_pool_features(df: pd.DataFrame, metadata: dict[str, dict] | None = None) -> pd.DataFrame:
+def add_pool_features(
+    df: pd.DataFrame,
+    metadata: dict[str, dict] | None = None,
+    encoding_map: dict[str, int] | None = None,
+) -> pd.DataFrame:
     """Add pool type encoding and metadata features."""
     df = df.copy()
     if metadata is None:
         metadata = load_pool_metadata()
 
-    uid_encoding = get_pool_uid_encoding(df["pool_uid"].tolist())
+    uid_encoding = get_pool_uid_encoding(df["pool_uid"].tolist(), encoding_map=encoding_map)
     df["pool_uid_encoded"] = df["pool_uid"].map(uid_encoding).fillna(-1).astype(int)
     df["pool_type"] = df["pool_uid"].map(
         lambda uid: POOL_TYPE_ENCODING.get(metadata.get(uid, {}).get("type", "other"), 4)
@@ -135,6 +150,9 @@ def build_features(
     df: pd.DataFrame,
     metadata: dict[str, dict] | None = None,
     weather_df: "pd.DataFrame | None" = None,
+    encoding_map: dict[str, int] | None = None,
+    lag_1h_override: float | None = None,
+    lag_1w_override: float | None = None,
 ) -> pd.DataFrame:
     """
     Full feature pipeline. Input df must have columns:
@@ -147,15 +165,25 @@ def build_features(
       precipitation_mm, weathercode). When provided, weather features are
       merged in and four new columns are added: temperature_c,
       precipitation_mm, is_rainy, temp_x_outdoor.
+    - encoding_map: pre-computed uid→int mapping (required at inference to
+      match training-time encoding; if None it is derived from the DataFrame).
+    - lag_1h_override: when provided, overrides the lag_1h column (use at
+      inference to supply the most-recent real occupancy reading).
+    - lag_1w_override: when provided, overrides the lag_1w column (use at
+      inference to supply the reading from 7 days ago).
 
     Returns df with all features added.
     """
     df = df.copy()
     df = add_time_features(df)
     df = add_holiday_feature(df)
-    df = add_pool_features(df, metadata)
+    df = add_pool_features(df, metadata, encoding_map=encoding_map)
     df = add_lag_features(df)
     df = add_rolling_features(df)
+    if lag_1h_override is not None:
+        df["lag_1h"] = lag_1h_override
+    if lag_1w_override is not None:
+        df["lag_1w"] = lag_1w_override
     if weather_df is not None:
         df = add_weather_features(df, weather_df)
     return df
