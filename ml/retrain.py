@@ -95,7 +95,8 @@ async def main():
     stop_event = asyncio.Event()
 
     def _shutdown(sig, frame):
-        logger.info(f"Received {sig.name}, shutting down...")
+        sig_name = signal.Signals(sig).name if isinstance(sig, int) else sig.name
+        logger.info(f"Received {sig_name}, shutting down...")
         loop.call_soon_threadsafe(stop_event.set)
 
     signal.signal(signal.SIGTERM, _shutdown)
