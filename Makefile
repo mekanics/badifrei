@@ -27,4 +27,4 @@ run-api:
 	$(PYTHON) -m uvicorn api.main:app --reload
 
 train:
-	$(PYTHON) scripts/train.py
+	DATABASE_URL=$${DATABASE_URL:-postgresql://badi:badi@localhost:5432/badi} $(PYTHON) scripts/train.py
