@@ -3,27 +3,129 @@
 {% block content %}
 <h1 class="page-title">Zürich Pools</h1>
 <p class="subtitle">Live occupancy updates every 60 seconds</p>
-<div class="pool-grid" id="pool-grid">
-  {% for pool in pools %}
-  <a href="/dashboard/pools/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}">
-    <div class="pool-header">
-      <span class="pool-name">{{ pool.name }}</span>
-      <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>
-    </div>
-    <div class="pool-body">
-      <div class="occupancy-bar-wrap">
-        <div class="occupancy-bar" id="bar-{{ pool.uid }}" style="width:0%"></div>
+
+<!-- Favorites section (hidden when empty) -->
+<div class="section-block" id="favorites-section" style="display:none">
+  <h2 class="section-title">⭐ Favorites</h2>
+  <div class="pool-grid" id="favorites-grid"></div>
+</div>
+
+<!-- All pools section -->
+<div class="section-block">
+  <h2 class="section-title">All Pools</h2>
+  <div class="pool-grid" id="pool-grid">
+    {% for pool in pools %}
+    <a href="/dashboard/pools/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}">
+      <button class="star-btn" data-uid="{{ pool.uid }}" aria-label="Add to favorites">★</button>
+      <div class="pool-header">
+        <span class="pool-name">{{ pool.name }}</span>
+        <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>
       </div>
-      <div class="occupancy-label" id="occ-{{ pool.uid }}">—</div>
-    </div>
-    {% if pool.max_capacity > 0 %}
-    <div class="pool-footer">Capacity: {{ pool.max_capacity }}</div>
-    {% endif %}
-  </a>
-  {% endfor %}
+      <div class="pool-body">
+        <div class="occupancy-bar-wrap">
+          <div class="occupancy-bar" id="bar-{{ pool.uid }}" style="width:0%"></div>
+        </div>
+        <div class="occupancy-label" id="occ-{{ pool.uid }}">—</div>
+      </div>
+      {% if pool.max_capacity > 0 %}
+      <div class="pool-footer">Capacity: {{ pool.max_capacity }}</div>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
 </div>
 
 <script>
+  const FAVORITES_KEY = 'badi_favorites';
+
+  function getFavorites() {
+    try { return JSON.parse(localStorage.getItem(FAVORITES_KEY)) || []; }
+    catch (e) { return []; }
+  }
+
+  function setFavorites(favs) {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs));
+  }
+
+  function isFavorite(uid) {
+    return getFavorites().includes(uid);
+  }
+
+  function toggleFavorite(uid) {
+    let favs = getFavorites();
+    if (favs.includes(uid)) {
+      favs = favs.filter(f => f !== uid);
+    } else {
+      favs.push(uid);
+    }
+    setFavorites(favs);
+    renderSections();
+  }
+
+  function applyStarState() {
+    document.querySelectorAll('.star-btn').forEach(btn => {
+      const uid = btn.dataset.uid;
+      const fav = isFavorite(uid);
+      btn.classList.toggle('starred', fav);
+      btn.setAttribute('aria-label', fav ? 'Remove from favorites' : 'Add to favorites');
+    });
+  }
+
+  function cloneCardForFavorites(uid) {
+    const original = document.querySelector(`#pool-grid .pool-card[data-uid="${uid}"]`);
+    if (!original) return null;
+    const clone = original.cloneNode(true);
+    // Wire up the star button on the clone
+    const starBtn = clone.querySelector('.star-btn');
+    starBtn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleFavorite(uid);
+    });
+    return clone;
+  }
+
+  function renderSections() {
+    applyStarState();
+
+    const favs = getFavorites();
+    const favSection = document.getElementById('favorites-section');
+    const favGrid = document.getElementById('favorites-grid');
+
+    favGrid.innerHTML = '';
+
+    if (favs.length === 0) {
+      favSection.style.display = 'none';
+      return;
+    }
+
+    favSection.style.display = '';
+    for (const uid of favs) {
+      const card = cloneCardForFavorites(uid);
+      if (card) {
+        // Sync bar/label IDs — use prefixed IDs to avoid conflicts
+        const bar = card.querySelector('.occupancy-bar');
+        const label = card.querySelector('.occupancy-label');
+        if (bar) bar.id = 'fav-bar-' + uid;
+        if (label) label.id = 'fav-occ-' + uid;
+        favGrid.appendChild(card);
+      }
+    }
+  }
+
+  // Wire star buttons in main grid
+  document.querySelectorAll('#pool-grid .star-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleFavorite(btn.dataset.uid);
+    });
+  });
+
+  // Initial render
+  renderSections();
+
+  // Occupancy polling
   async function fetchOccupancy() {
     try {
       const res = await fetch('/api/current');
@@ -31,10 +133,13 @@
       const data = await res.json();
       const map = {};
       for (const item of data) { map[item.pool_uid] = item; }
+
+      // Update all bar/label pairs (main grid + favorites clones)
       document.querySelectorAll('.pool-card').forEach(card => {
         const uid = card.dataset.uid;
-        const label = document.getElementById('occ-' + uid);
-        const bar = document.getElementById('bar-' + uid);
+        // find bar and label within this card (works for both main and fav)
+        const label = card.querySelector('.occupancy-label');
+        const bar = card.querySelector('.occupancy-bar');
         const item = map[uid];
         if (item && item.occupancy_pct !== null) {
           const pct = item.occupancy_pct;
@@ -51,6 +156,7 @@
       console.warn('Occupancy fetch failed', e);
     }
   }
+
   fetchOccupancy();
   setInterval(fetchOccupancy, 60000);
 </script>
