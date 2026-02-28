@@ -39,7 +39,8 @@
   }
 
   function currentZurichHour() {
-    return parseInt(new Date().toLocaleString('en-US', { timeZone: 'Europe/Zurich', hour: 'numeric', hour12: false }), 10);
+    const h = parseInt(new Date().toLocaleString('en-US', { timeZone: 'Europe/Zurich', hour: 'numeric', hour12: false }), 10);
+    return h === 24 ? 0 : h;
   }
 
   const picker = document.getElementById('date-picker');
@@ -79,7 +80,17 @@
         y: { min: 0, max: 100, title: { display: true, text: 'Occupancy %' } },
         x: { title: { display: true, text: 'Hour' } }
       },
-      plugins: { legend: { display: true } }
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: true },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y !== null ? ctx.parsed.y.toFixed(1) + '%' : '—'}`
+          }
+        }
+      }
     }
   });
 

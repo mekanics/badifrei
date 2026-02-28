@@ -221,7 +221,7 @@ async def history(request: Request, pool_uid: str, date: str):
         rows = await db_pool.fetch(
             """
             SELECT
-              EXTRACT(HOUR FROM time AT TIME ZONE 'UTC') AS hour,
+              EXTRACT(HOUR FROM time AT TIME ZONE 'Europe/Zurich') AS hour,
               AVG(occupancy_pct) AS occupancy_pct
             FROM pool_occupancy
             WHERE pool_uid = $1
