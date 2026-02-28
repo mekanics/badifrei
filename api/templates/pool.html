@@ -19,6 +19,16 @@
 <div class="chart-wrap">
   <canvas id="occupancy-chart"></canvas>
 </div>
+<p id="chart-legend-note" class="chart-legend-note"></p>
+
+<style>
+  .chart-legend-note {
+    text-align: center;
+    font-size: 0.82rem;
+    color: #888;
+    margin-top: 0.25rem;
+  }
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -26,6 +36,10 @@
 
   function todayZurich() {
     return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Zurich' });
+  }
+
+  function currentZurichHour() {
+    return parseInt(new Date().toLocaleString('en-US', { timeZone: 'Europe/Zurich', hour: 'numeric', hour12: false }), 10);
   }
 
   const picker = document.getElementById('date-picker');
@@ -36,15 +50,28 @@
     type: 'line',
     data: {
       labels: Array.from({length: 24}, (_, i) => String(i).padStart(2,'0') + ':00'),
-      datasets: [{
-        label: 'Predicted Occupancy %',
-        data: Array(24).fill(null),
-        borderColor: '#4f8ef7',
-        backgroundColor: 'rgba(79,142,247,0.1)',
-        fill: true,
-        tension: 0.3,
-        pointRadius: 3,
-      }]
+      datasets: [
+        {
+          label: 'Actual Occupancy %',
+          data: Array(24).fill(null),
+          borderColor: '#34d399',
+          backgroundColor: 'rgba(52,211,153,0.1)',
+          fill: false,
+          tension: 0.3,
+          pointRadius: 3,
+          borderDash: [],
+        },
+        {
+          label: 'Predicted Occupancy %',
+          data: Array(24).fill(null),
+          borderColor: '#4f8ef7',
+          backgroundColor: 'rgba(79,142,247,0.1)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 3,
+          borderDash: [5, 5],
+        }
+      ]
     },
     options: {
       responsive: true,
@@ -52,20 +79,53 @@
         y: { min: 0, max: 100, title: { display: true, text: 'Occupancy %' } },
         x: { title: { display: true, text: 'Hour' } }
       },
-      plugins: { legend: { display: false } }
+      plugins: { legend: { display: true } }
     }
   });
 
   async function loadChart(date) {
+    const today = todayZurich();
+    const isPast = date < today;
+    const isToday = date === today;
+    const isFuture = date > today;
+
     try {
-      const res = await fetch(`/predict/range?pool_uid=${encodeURIComponent(POOL_UID)}&date=${date}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      const values = data.predictions.map(p => p.predicted_occupancy_pct);
-      const allZero = values.every(v => v === 0.0);
+      // Always fetch predictions
+      const predRes = await fetch(`/predict/range?pool_uid=${encodeURIComponent(POOL_UID)}&date=${date}`);
+      if (!predRes.ok) return;
+      const predData = await predRes.json();
+      const predValues = predData.predictions.map(p => p.predicted_occupancy_pct);
+      const allZero = predValues.every(v => v === 0.0);
       document.getElementById('no-model-msg').style.display = allZero ? 'block' : 'none';
-      chart.data.datasets[0].data = values;
+      chart.data.datasets[1].data = predValues;
+
+      // Fetch actuals for past/today
+      let actuals = Array(24).fill(null);
+      if (isPast || isToday) {
+        try {
+          const histRes = await fetch(`/api/history?pool_uid=${encodeURIComponent(POOL_UID)}&date=${date}`);
+          if (histRes.ok) {
+            const histData = await histRes.json();
+            actuals = histData.actuals.map(a => a.occupancy_pct);
+            // For today: null out future hours
+            if (isToday) {
+              const currentHour = currentZurichHour();
+              actuals = actuals.map((v, i) => i <= currentHour ? v : null);
+            }
+          }
+        } catch (e) {
+          console.warn('History fetch failed', e);
+        }
+      }
+      chart.data.datasets[0].data = actuals;
+
       chart.update();
+
+      // Update legend note
+      const note = document.getElementById('chart-legend-note');
+      note.textContent = isFuture
+        ? '╌ Predicted only'
+        : '— Actual (green)  ╌ Predicted (blue)';
     } catch (e) {
       console.warn('Predict fetch failed', e);
     }
