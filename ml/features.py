@@ -42,6 +42,7 @@ def add_time_features(df: pd.DataFrame) -> pd.DataFrame:
     """Add time-based features from the 'time' column."""
     df = df.copy()
     dt = pd.to_datetime(df["time"])
+    df["date"] = dt.dt.date  # calendar date (for weather merge)
     df["hour_of_day"] = dt.dt.hour
     df["day_of_week"] = dt.dt.dayofweek  # 0=Monday, 6=Sunday
     df["is_weekend"] = (df["day_of_week"] >= 5).astype(int)
@@ -125,10 +126,11 @@ def add_weather_features(df: pd.DataFrame, weather_df: pd.DataFrame) -> pd.DataF
     Adds: temperature_c, precipitation_mm, is_rainy, temp_x_outdoor.
     """
     df = df.copy()
-    weather_cols = weather_df[["hour", "temperature_c", "precipitation_mm", "weathercode"]].copy()
+    weather_cols = weather_df[["date", "hour", "temperature_c", "precipitation_mm", "weathercode"]].copy()
     weather_cols = weather_cols.rename(columns={"hour": "hour_of_day"})
 
-    df = df.merge(weather_cols, on="hour_of_day", how="left")
+    # Merge on both date AND hour to avoid all 14:00 rows getting same weather value
+    df = df.merge(weather_cols, on=["date", "hour_of_day"], how="left")
 
     # Fill NaN weather with sensible defaults
     df["temperature_c"] = df["temperature_c"].fillna(15.0)
@@ -186,6 +188,8 @@ def build_features(
         df["lag_1w"] = lag_1w_override
     if weather_df is not None:
         df = add_weather_features(df, weather_df)
+    # Drop helper columns not used as model features
+    df = df.drop(columns=["date"], errors="ignore")
     return df
 
 
