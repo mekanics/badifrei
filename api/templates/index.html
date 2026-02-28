@@ -16,7 +16,7 @@
   <div class="pool-grid" id="pool-grid">
     {% for pool in pools %}
     <a href="/dashboard/pools/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}">
-      <button class="star-btn" data-uid="{{ pool.uid }}" aria-label="Add to favorites">★</button>
+      <button class="star-btn" data-uid="{{ pool.uid }}" aria-label="Add to favorites">⭐</button>
       <div class="pool-header">
         <span class="pool-name">{{ pool.name }}</span>
         <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>

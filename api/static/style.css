@@ -43,7 +43,7 @@ body {
 }
 
 .page-title { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
-.subtitle { color: var(--muted); margin-bottom: 2rem; }
+.subtitle { color: var(--muted); margin-bottom: 2.5rem; }
 
 /* Pool grid */
 .pool-grid {
@@ -118,37 +118,44 @@ body {
 .pool-footer { font-size: 0.75rem; color: var(--muted); margin-top: 0.75rem; }
 
 /* Favorites / sections */
-.section-block { margin-bottom: 2.5rem; }
-.section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text); }
+.section-block { margin-bottom: 3.5rem; }
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
 
 /* Star button */
 .pool-card { position: relative; }
 
 .star-btn {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
+  top: 0.6rem;
+  right: 0.6rem;
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 1.25rem;
+  font-size: 1rem;
   line-height: 1;
-  color: var(--muted);
   opacity: 0;
-  transition: opacity 0.15s, color 0.15s, transform 0.15s;
-  padding: 0.1rem 0.25rem;
+  transition: opacity 0.15s, transform 0.15s;
+  padding: 0.2rem;
   z-index: 2;
+  filter: grayscale(1);
 }
 
-.star-btn:hover { transform: scale(1.2); }
-.star-btn.starred { color: #f59e0b; opacity: 1; }
+.star-btn:hover { transform: scale(1.2); filter: grayscale(0); }
+.star-btn.starred { opacity: 1; filter: grayscale(0); }
 
 .pool-card:hover .star-btn { opacity: 1; }
 
 @media (pointer: coarse) {
   /* Always show star on touch devices */
   .star-btn { opacity: 0.5; }
-  .star-btn.starred { opacity: 1; }
+  .star-btn.starred { opacity: 1; filter: grayscale(0); }
 }
 
 /* Pool detail */
