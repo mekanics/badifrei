@@ -211,6 +211,7 @@ async def predict_range(pool_uid: str, date: str):
 @app.get("/api/history", tags=["history"])
 async def history(request: Request, pool_uid: str, date: str):
     """Return hourly average occupancy from DB for a given pool and date."""
+    from datetime import date as date_type, timedelta
     null_actuals = [{"hour": i, "occupancy_pct": None} for i in range(24)]
 
     db_pool = getattr(request.app.state, "db_pool", None)
@@ -218,6 +219,8 @@ async def history(request: Request, pool_uid: str, date: str):
         return {"pool_uid": pool_uid, "date": date, "actuals": null_actuals}
 
     try:
+        # Parse to datetime.date so asyncpg sends the correct binary type
+        d = date_type.fromisoformat(date)
         rows = await db_pool.fetch(
             """
             SELECT
@@ -225,13 +228,14 @@ async def history(request: Request, pool_uid: str, date: str):
               AVG(occupancy_pct) AS occupancy_pct
             FROM pool_occupancy
             WHERE pool_uid = $1
-              AND time >= $2::date
-              AND time < $2::date + interval '1 day'
+              AND time >= $2
+              AND time < $3
             GROUP BY hour
             ORDER BY hour
             """,
             pool_uid,
-            date,
+            d,
+            d + timedelta(days=1),
         )
         hour_map = {int(row["hour"]): float(row["occupancy_pct"]) if row["occupancy_pct"] is not None else None for row in rows}
         actuals = [{"hour": i, "occupancy_pct": hour_map.get(i)} for i in range(24)]
