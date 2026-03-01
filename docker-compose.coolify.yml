@@ -1,0 +1,75 @@
+# docker-compose.coolify.yml — Production config for Coolify
+# Env vars are injected via Coolify UI (no .env file needed)
+# The API service is exposed via Coolify's proxy (Traefik) — no port mapping needed here
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  collector:
+    build:
+      context: .
+      dockerfile: collector/Dockerfile
+    environment:
+      WS_URL: wss://badi-public.crowdmonitor.ch:9591/api
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    volumes:
+      - model_artifacts:/app/ml/models
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  retrain:
+    build:
+      context: .
+      dockerfile: ml/Dockerfile
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      RETRAIN_INTERVAL_HOURS: ${RETRAIN_INTERVAL_HOURS:-168}
+      MIN_RECORDS_FOR_TRAINING: ${MIN_RECORDS_FOR_TRAINING:-1000}
+      LOOKBACK_DAYS: ${LOOKBACK_DAYS:-90}
+    volumes:
+      - model_artifacts:/app/ml/models
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  model_artifacts:
