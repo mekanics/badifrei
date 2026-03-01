@@ -1,23 +1,23 @@
 {% extends "base.html" %}
-{% block title %}Pool Overview — Badi Predictor{% endblock %}
+{% block title %}Badi Predictor — Übersicht{% endblock %}
 {% block content %}
-<h1 class="page-title">Zürich Pools</h1>
-<p class="subtitle">Live occupancy updates every 60 seconds</p>
+<h1 class="page-title">Zürcher Bäder</h1>
+<p class="subtitle">Auslastung wird jede Minute aktualisiert</p>
 
-<!-- Favorites section (hidden when empty) -->
+<!-- Favoriten (nur sichtbar wenn vorhanden) -->
 <div class="section-block" id="favorites-section" style="display:none">
-  <h2 class="section-title">⭐ Favorites</h2>
+  <h2 class="section-title">⭐ Favoriten</h2>
   <div class="pool-grid" id="favorites-grid"></div>
 </div>
 
-<!-- City sections -->
+<!-- Städte-Sektionen -->
 {% for city in cities %}
 <div class="section-block">
   <h2 class="section-title">{{ city.label }}</h2>
   <div class="pool-grid" id="pool-grid-{{ city.key }}">
     {% for pool in city.pools %}
     <a href="/dashboard/pools/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}">
-      <button class="star-btn" data-uid="{{ pool.uid }}" aria-label="Add to favorites">⭐</button>
+      <button class="star-btn" data-uid="{{ pool.uid }}" aria-label="Zu Favoriten hinzufügen">⭐</button>
       <div class="pool-header">
         <span class="pool-name">{{ pool.name }}</span>
         <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>
@@ -32,7 +32,7 @@
         </div>
       </div>
       {% if pool.max_capacity > 0 %}
-      <div class="pool-footer">Capacity: {{ pool.max_capacity }}</div>
+      <div class="pool-footer">Kapazität: {{ pool.max_capacity }}</div>
       {% endif %}
     </a>
     {% endfor %}
@@ -61,7 +61,7 @@
     document.querySelectorAll('.star-btn').forEach(btn => {
       const fav = isFavorite(btn.dataset.uid);
       btn.classList.toggle('starred', fav);
-      btn.setAttribute('aria-label', fav ? 'Remove from favorites' : 'Add to favorites');
+      btn.setAttribute('aria-label', fav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen');
     });
   }
 
@@ -89,7 +89,6 @@
     }
   }
 
-  // Wire main grid star buttons
   document.querySelectorAll('.pool-card .star-btn').forEach(btn => {
     btn.addEventListener('click', e => {
       e.preventDefault(); e.stopPropagation(); toggleFavorite(btn.dataset.uid);
@@ -98,7 +97,6 @@
 
   renderSections();
 
-  // Occupancy + status polling
   async function fetchOccupancy() {
     try {
       const res = await fetch('/api/current');
@@ -120,7 +118,7 @@
           bar.style.width = Math.min(pct, 100) + '%';
           bar.className = 'occupancy-bar ' + (pct <= 50 ? 'green' : pct <= 80 ? 'yellow' : 'red');
         } else {
-          label.textContent = 'No data';
+          label.textContent = 'Keine Daten';
           bar.style.width = '0%';
           bar.className = 'occupancy-bar grey';
         }
@@ -129,13 +127,13 @@
           if (item.is_open) {
             badge.innerHTML = '<span class="status-dot open"></span>';
           } else {
-            const hint = item.next_open ? ` · Opens ${item.next_open}` : '';
-            badge.innerHTML = `<span class="status-dot closed"></span><span class="status-text">Closed${hint}</span>`;
+            const hint = item.next_open ? ` · Öffnet ${item.next_open}` : '';
+            badge.innerHTML = `<span class="status-dot closed"></span><span class="status-text">Geschlossen${hint}</span>`;
           }
         }
       });
     } catch (e) {
-      console.warn('Occupancy fetch failed', e);
+      console.warn('Auslastung konnte nicht geladen werden', e);
     }
   }
 

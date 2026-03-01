@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block title %}{{ pool.name }} — Badi Predictor{% endblock %}
 {% block content %}
-<a href="/" class="back-link">← All Pools</a>
+<a href="/" class="back-link">← Alle Bäder</a>
 <div class="pool-detail-header">
   <h1>{{ pool.name }}</h1>
   <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>
   {% if pool.max_capacity > 0 %}
-  <span class="capacity-label">Capacity: {{ pool.max_capacity }}</span>
+  <span class="capacity-label">Kapazität: {{ pool.max_capacity }}</span>
   {% endif %}
 </div>
 
@@ -23,26 +23,26 @@
           {% if sched %}
             <td class="day-hours">{{ sched.open }} – {{ sched.close }}</td>
           {% else %}
-            <td class="day-hours closed-day">Closed</td>
+            <td class="day-hours closed-day">Geschlossen</td>
           {% endif %}
         </tr>
       {% endfor %}
       </tbody>
     </table>
     {% if oh.seasonal_open and oh.seasonal_close %}
-    <p class="seasonal-note">🏊 Season: {{ oh.seasonal_open }} – {{ oh.seasonal_close }}</p>
+    <p class="seasonal-note">🏊 Saison: {{ oh.seasonal_open }} – {{ oh.seasonal_close }}</p>
     {% endif %}
   {% else %}
-    <p class="pool-info-muted">Opening hours not available.</p>
+    <p class="pool-info-muted">Öffnungszeiten nicht verfügbar.</p>
   {% endif %}
 </div>
 
 <div class="date-row">
-  <label for="date-picker">Date:</label>
+  <label for="date-picker">Datum:</label>
   <input type="date" id="date-picker">
 </div>
 
-<div id="no-model-msg" class="no-model" style="display:none">No prediction model available for this pool yet.</div>
+<div id="no-model-msg" class="no-model" style="display:none">Für dieses Bad ist noch kein Prognosemodell verfügbar.</div>
 <div class="chart-wrap">
   <canvas id="occupancy-chart"></canvas>
 </div>
@@ -80,7 +80,7 @@
       labels: Array.from({length: 24}, (_, i) => String(i).padStart(2,'0') + ':00'),
       datasets: [
         {
-          label: 'Actual Occupancy %',
+          label: 'Effektive Auslastung %',
           data: Array(24).fill(null),
           borderColor: '#34d399',
           backgroundColor: 'rgba(52,211,153,0.1)',
@@ -90,7 +90,7 @@
           borderDash: [],
         },
         {
-          label: 'Predicted Occupancy %',
+          label: 'Prognose Auslastung %',
           data: Array(24).fill(null),
           borderColor: '#4f8ef7',
           backgroundColor: 'rgba(79,142,247,0.1)',
@@ -104,8 +104,8 @@
     options: {
       responsive: true,
       scales: {
-        y: { min: 0, max: 100, title: { display: true, text: 'Occupancy %' } },
-        x: { title: { display: true, text: 'Hour' } }
+        y: { min: 0, max: 100, title: { display: true, text: 'Auslastung %' } },
+        x: { title: { display: true, text: 'Uhrzeit' } }
       },
       interaction: { mode: 'index', intersect: false },
       plugins: {
@@ -128,7 +128,6 @@
     const isFuture = date > today;
 
     try {
-      // Always fetch predictions
       const predRes = await fetch(`/predict/range?pool_uid=${encodeURIComponent(POOL_UID)}&date=${date}`);
       if (!predRes.ok) return;
       const predData = await predRes.json();
@@ -137,7 +136,6 @@
       document.getElementById('no-model-msg').style.display = allZero ? 'block' : 'none';
       chart.data.datasets[1].data = predValues;
 
-      // Fetch actuals for past/today
       let actuals = Array(24).fill(null);
       if (isPast || isToday) {
         try {
@@ -145,27 +143,24 @@
           if (histRes.ok) {
             const histData = await histRes.json();
             actuals = histData.actuals.map(a => a.occupancy_pct);
-            // For today: null out future hours
             if (isToday) {
               const currentHour = currentZurichHour();
               actuals = actuals.map((v, i) => i <= currentHour ? v : null);
             }
           }
         } catch (e) {
-          console.warn('History fetch failed', e);
+          console.warn('Verlaufsdaten konnten nicht geladen werden', e);
         }
       }
       chart.data.datasets[0].data = actuals;
-
       chart.update();
 
-      // Update legend note
       const note = document.getElementById('chart-legend-note');
       note.textContent = isFuture
-        ? '╌ Predicted only'
-        : '— Actual (green)  ╌ Predicted (blue)';
+        ? '╌ Nur Prognose'
+        : '— Effektiv (grün)  ╌ Prognose (blau)';
     } catch (e) {
-      console.warn('Predict fetch failed', e);
+      console.warn('Prognosedaten konnten nicht geladen werden', e);
     }
   }
 
