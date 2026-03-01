@@ -102,9 +102,51 @@ async def dashboard_pool(request: Request, pool_uid: str):
     return templates.TemplateResponse("pool.html", {"request": request, "pool": pool})
 
 
+def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
+    """Compute is_open status for a pool given current Zürich time.
+
+    Returns dict with keys: is_open (bool), next_open (str|None).
+    """
+    from ml.features import compute_opening_hours_for_row, _DAY_NAMES
+    opening_hours = pool.get("opening_hours")
+    if not opening_hours:
+        return {"is_open": True, "next_open": None}
+
+    day_of_week = now_zurich.weekday()  # 0=Mon
+    hour = now_zurich.hour
+    is_open, _, _ = compute_opening_hours_for_row(hour, day_of_week, opening_hours)
+
+    next_open = None
+    if not is_open:
+        # Find next opening time (look ahead up to 7 days)
+        schedule = opening_hours.get("schedule", {})
+        for offset in range(1, 8):
+            check_dow = (day_of_week + offset) % 7
+            day_name = _DAY_NAMES[check_dow]
+            day_sched = schedule.get(day_name)
+            if day_sched:
+                next_open = day_sched.get("open")
+                break
+        # Also check if still today and opens later
+        day_name = _DAY_NAMES[day_of_week]
+        today_sched = schedule.get(day_name)
+        if today_sched:
+            open_h, open_m = map(int, today_sched["open"].split(":"))
+            if hour < open_h or (hour == open_h and now_zurich.minute < open_m):
+                next_open = today_sched["open"]
+
+    return {"is_open": bool(is_open), "next_open": next_open}
+
+
 @app.get("/api/current", tags=["dashboard"])
 async def current_occupancy(request: Request):
     """Return latest occupancy reading per pool. Returns [] if DB unavailable."""
+    import zoneinfo
+    tz_zurich = zoneinfo.ZoneInfo("Europe/Zurich")
+    now_zurich = datetime.now(tz_zurich)
+
+    pools_by_uid = {p["uid"]: p for p in get_pools()}
+
     db_pool = getattr(request.app.state, "db_pool", None)
     if db_pool is None:
         return []
@@ -119,7 +161,15 @@ async def current_occupancy(request: Request):
             ORDER BY pool_uid, time DESC
             """
         )
-        return [dict(row) for row in rows]
+        result = []
+        for row in rows:
+            item = dict(row)
+            pool = pools_by_uid.get(item["pool_uid"], {})
+            status = _compute_pool_is_open(pool, now_zurich)
+            item["is_open"] = status["is_open"]
+            item["next_open"] = status["next_open"]
+            result.append(item)
+        return result
     except Exception:
         return []
 

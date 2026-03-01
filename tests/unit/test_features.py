@@ -255,3 +255,100 @@ class TestWeatherFeatures:
         result = build_features(df)
         for col in FEATURE_COLUMNS:
             assert col in result.columns
+
+
+# Mock opening hours metadata for tests
+_MOCK_OPENING_HOURS = {
+    "schedule": {
+        "Mon": {"open": "06:00", "close": "22:00"},
+        "Tue": {"open": "06:00", "close": "22:00"},
+        "Wed": {"open": "06:00", "close": "22:00"},
+        "Thu": {"open": "06:00", "close": "22:00"},
+        "Fri": {"open": "06:00", "close": "22:00"},
+        "Sat": {"open": "08:00", "close": "20:00"},
+        "Sun": None,
+    },
+    "seasonal_close": None,
+    "seasonal_open": None,
+}
+
+_MOCK_METADATA = {
+    "TEST-1": {
+        "uid": "TEST-1",
+        "name": "Test Pool",
+        "type": "hallenbad",
+        "seasonal": False,
+        "opening_hours": _MOCK_OPENING_HOURS,
+    }
+}
+
+
+class TestOpeningHoursFeatures:
+    """Tests for add_opening_hours_features()."""
+
+    def _make_single_row(self, hour: int, day_of_week: int, pool_uid: str = "TEST-1") -> pd.DataFrame:
+        """Make a single-row DataFrame with hour_of_day and day_of_week set."""
+        # 2026-02-02 is a Monday (day_of_week=0)
+        from datetime import timedelta
+        base = pd.Timestamp("2026-02-02 00:00:00", tz="UTC")
+        t = base + pd.Timedelta(days=day_of_week, hours=hour)
+        df = pd.DataFrame({"time": [t], "pool_uid": pool_uid, "occupancy_pct": [50.0]})
+        from ml.features import add_time_features
+        return add_time_features(df)
+
+    def test_midnight_is_closed(self):
+        from ml.features import add_opening_hours_features
+        df = self._make_single_row(hour=0, day_of_week=0)  # Mon midnight
+        result = add_opening_hours_features(df, _MOCK_METADATA)
+        assert result.iloc[0]["is_open"] == 0
+
+    def test_morning_hour_is_open(self):
+        from ml.features import add_opening_hours_features
+        # Hour 7 on Monday → open (06:00–22:00)
+        # minutes_since_open = (7-6)*60 = 60
+        # minutes_until_close = (22-7)*60 = 900
+        df = self._make_single_row(hour=7, day_of_week=0)
+        result = add_opening_hours_features(df, _MOCK_METADATA)
+        row = result.iloc[0]
+        assert row["is_open"] == 1
+        assert row["minutes_since_open"] == 60
+        assert row["minutes_until_close"] == 900
+
+    def test_hour_22_is_closed(self):
+        from ml.features import add_opening_hours_features
+        # Hour 22 → closed (close is 22:00, condition is hour < 22:00)
+        df = self._make_single_row(hour=22, day_of_week=0)
+        result = add_opening_hours_features(df, _MOCK_METADATA)
+        assert result.iloc[0]["is_open"] == 0
+
+    def test_sunday_is_closed(self):
+        from ml.features import add_opening_hours_features
+        df = self._make_single_row(hour=12, day_of_week=6)  # Sunday noon
+        result = add_opening_hours_features(df, _MOCK_METADATA)
+        assert result.iloc[0]["is_open"] == 0
+
+    def test_defensive_default_unknown_pool(self):
+        from ml.features import add_opening_hours_features
+        df = self._make_single_row(hour=0, day_of_week=0, pool_uid="UNKNOWN-999")
+        result = add_opening_hours_features(df, _MOCK_METADATA)
+        row = result.iloc[0]
+        # Pool not in metadata → treat as always open
+        assert row["is_open"] == 1
+        assert row["minutes_since_open"] == 0
+        assert row["minutes_until_close"] == 0
+
+    def test_defensive_default_no_opening_hours_key(self):
+        from ml.features import add_opening_hours_features
+        # Pool exists in metadata but has no opening_hours key
+        metadata = {"TEST-2": {"uid": "TEST-2", "name": "No Hours Pool", "type": "hallenbad"}}
+        df = self._make_single_row(hour=3, day_of_week=0, pool_uid="TEST-2")
+        result = add_opening_hours_features(df, metadata)
+        assert result.iloc[0]["is_open"] == 1
+
+    def test_build_features_includes_opening_hours(self):
+        from ml.features import build_features, OPENING_HOURS_FEATURE_COLUMNS
+        # build_features should add opening hours columns (uses real metadata — no hours data yet → defaults)
+        df = make_df(n=24)
+        result = build_features(df)
+        for col in OPENING_HOURS_FEATURE_COLUMNS:
+            assert col in result.columns, f"Missing column: {col}"

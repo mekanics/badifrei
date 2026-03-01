@@ -26,6 +26,7 @@
           <div class="occupancy-bar" id="bar-{{ pool.uid }}" style="width:0%"></div>
         </div>
         <div class="occupancy-label" id="occ-{{ pool.uid }}">—</div>
+        <div class="status-badge" id="status-{{ pool.uid }}"></div>
       </div>
       {% if pool.max_capacity > 0 %}
       <div class="pool-footer">Capacity: {{ pool.max_capacity }}</div>
@@ -150,6 +151,18 @@
           label.textContent = 'No data';
           bar.style.width = '0%';
           bar.className = 'occupancy-bar grey';
+        }
+        // Update open/closed badge
+        const statusBadge = card.querySelector('.status-badge');
+        if (statusBadge && item) {
+          const isOpen = item.is_open;
+          const nextOpen = item.next_open;
+          if (isOpen) {
+            statusBadge.innerHTML = '<span class="status-dot open"></span>Open';
+          } else {
+            const hint = nextOpen ? ` · Opens ${nextOpen}` : '';
+            statusBadge.innerHTML = `<span class="status-dot closed"></span>Closed${hint}`;
+          }
         }
       });
     } catch (e) {

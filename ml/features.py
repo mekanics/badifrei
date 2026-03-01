@@ -188,6 +188,7 @@ def build_features(
         df["lag_1w"] = lag_1w_override
     if weather_df is not None:
         df = add_weather_features(df, weather_df)
+    df = add_opening_hours_features(df, metadata)
     # Drop helper columns not used as model features
     df = df.drop(columns=["date"], errors="ignore")
     return df
@@ -198,6 +199,12 @@ WEATHER_FEATURE_COLUMNS = [
     "precipitation_mm",
     "is_rainy",
     "temp_x_outdoor",
+]
+
+OPENING_HOURS_FEATURE_COLUMNS = [
+    "is_open",
+    "minutes_since_open",
+    "minutes_until_close",
 ]
 
 FEATURE_COLUMNS = [
@@ -213,4 +220,93 @@ FEATURE_COLUMNS = [
     "lag_1h",
     "lag_1w",
     "rolling_mean_7d",
+    "is_open",
+    "minutes_since_open",
+    "minutes_until_close",
 ]
+
+_DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+
+def compute_opening_hours_for_row(
+    hour: int,
+    day_of_week: int,
+    opening_hours: dict | None,
+) -> tuple[int, int, int]:
+    """Compute is_open, minutes_since_open, minutes_until_close for a single row.
+
+    Args:
+        hour: hour of day (0-23)
+        day_of_week: 0=Mon ... 6=Sun
+        opening_hours: the pool's opening_hours dict (may be None)
+
+    Returns:
+        (is_open, minutes_since_open, minutes_until_close)
+    """
+    if opening_hours is None:
+        return 1, 0, 0  # defensive: treat as always open
+
+    schedule = opening_hours.get("schedule", {})
+    day_name = _DAY_NAMES[day_of_week]
+    day_schedule = schedule.get(day_name)
+
+    if not day_schedule:
+        # Pool closed on this day
+        return 0, 0, 0
+
+    try:
+        open_h, open_m = map(int, day_schedule["open"].split(":"))
+        close_h, close_m = map(int, day_schedule["close"].split(":"))
+    except (KeyError, ValueError):
+        return 1, 0, 0  # defensive
+
+    open_minutes = open_h * 60 + open_m
+    close_minutes = close_h * 60 + close_m
+    current_minutes = hour * 60  # beginning of the hour
+
+    if open_minutes <= current_minutes < close_minutes:
+        is_open = 1
+        minutes_since_open = current_minutes - open_minutes
+        minutes_until_close = close_minutes - current_minutes
+    else:
+        is_open = 0
+        minutes_since_open = 0
+        minutes_until_close = 0
+
+    return is_open, minutes_since_open, minutes_until_close
+
+
+def add_opening_hours_features(
+    df: pd.DataFrame,
+    pool_metadata: dict[str, dict] | None = None,
+) -> pd.DataFrame:
+    """Add opening hours features to the DataFrame.
+
+    Adds columns: is_open, minutes_since_open, minutes_until_close.
+    Requires hour_of_day and day_of_week columns (from add_time_features).
+    Defaults to is_open=1, minutes_since_open=0, minutes_until_close=0 when
+    no opening hours data is available for a pool (defensive).
+    """
+    df = df.copy()
+    if pool_metadata is None:
+        pool_metadata = load_pool_metadata()
+
+    rows_is_open = []
+    rows_since_open = []
+    rows_until_close = []
+
+    for _, row in df.iterrows():
+        uid = row.get("pool_uid")
+        hour = int(row.get("hour_of_day", 0))
+        dow = int(row.get("day_of_week", 0))
+        meta = pool_metadata.get(uid, {}) if pool_metadata else {}
+        opening_hours = meta.get("opening_hours", None)
+        is_open, since_open, until_close = compute_opening_hours_for_row(hour, dow, opening_hours)
+        rows_is_open.append(is_open)
+        rows_since_open.append(since_open)
+        rows_until_close.append(until_close)
+
+    df["is_open"] = rows_is_open
+    df["minutes_since_open"] = rows_since_open
+    df["minutes_until_close"] = rows_until_close
+    return df
