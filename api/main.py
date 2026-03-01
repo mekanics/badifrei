@@ -174,7 +174,7 @@ async def current_occupancy(request: Request):
             """
             SELECT DISTINCT ON (pool_uid)
                 pool_uid, current_fill, max_space, free_space,
-                ROUND((current_fill::numeric / NULLIF(max_space, 0)) * 100, 1) AS occupancy_pct,
+                ROUND((current_fill::numeric / NULLIF(max_space, 0)) * 100) AS occupancy_pct,
                 time
             FROM pool_occupancy
             ORDER BY pool_uid, time DESC

@@ -114,7 +114,7 @@
           mode: 'index',
           intersect: false,
           callbacks: {
-            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y !== null ? ctx.parsed.y.toFixed(1) + '%' : '—'}`
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y !== null ? Math.round(ctx.parsed.y) + '%' : '—'}`
           }
         }
       }

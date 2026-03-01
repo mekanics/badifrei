@@ -115,7 +115,7 @@
         const badge = card.querySelector('.status-badge');
 
         if (item && item.occupancy_pct !== null) {
-          const pct = item.occupancy_pct;
+          const pct = Math.round(item.occupancy_pct);
           label.textContent = pct + '%';
           bar.style.width = Math.min(pct, 100) + '%';
           bar.className = 'occupancy-bar ' + (pct <= 50 ? 'green' : pct <= 80 ? 'yellow' : 'red');
