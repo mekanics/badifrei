@@ -342,3 +342,41 @@ input[type='date'] {
 		gap: 0.5rem;
 	}
 }
+
+/* Footer */
+.site-footer {
+  margin-top: 4rem;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  padding: 2rem 0 1.5rem;
+}
+.footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2rem;
+}
+.footer-heading {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+}
+.footer-col p {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 0 0 0.4rem;
+  line-height: 1.5;
+}
+.footer-col a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.footer-col a:hover {
+  text-decoration: underline;
+}
