@@ -1,24 +1,486 @@
 [
-  {"uid": "fb001", "name": "Freibad Allenmoos", "type": "freibad", "seasonal": true, "city": "zurich", "max_capacity": 2500},
-  {"uid": "fb008", "name": "Freibad Auhof", "type": "freibad", "seasonal": true, "city": "zurich", "max_capacity": 2001},
-  {"uid": "fb012", "name": "Freibad Heuried", "type": "freibad", "seasonal": true, "city": "zurich", "max_capacity": 2600},
-  {"uid": "LETZI-1", "name": "Freibad Letzigraben", "type": "freibad", "seasonal": true, "city": "zurich", "max_capacity": 3800},
-  {"uid": "SSD-11", "name": "Freibad Seebach", "type": "freibad", "seasonal": true, "city": "zurich", "max_capacity": 2000},
-  {"uid": "fb018", "name": "Freibad Zwischen den Hölzern", "type": "freibad", "seasonal": true, "city": "zurich", "max_capacity": 2000},
-  {"uid": "SSD-1", "name": "Hallenbad Altstetten", "type": "hallenbad", "seasonal": false, "city": "zurich", "max_capacity": 0},
-  {"uid": "SSD-2", "name": "Hallenbad Blaesi", "type": "hallenbad", "seasonal": false, "city": "zurich", "max_capacity": 70},
-  {"uid": "SSD-3", "name": "Hallenbad Bungertwies", "type": "hallenbad", "seasonal": false, "city": "zurich", "max_capacity": 70},
-  {"uid": "SSD-4", "name": "Hallenbad City", "type": "hallenbad", "seasonal": false, "city": "zurich", "max_capacity": 220},
-  {"uid": "SSD-6", "name": "Hallenbad Leimbach", "type": "hallenbad", "seasonal": false, "city": "zurich", "max_capacity": 80},
-  {"uid": "SSD-7", "name": "Hallenbad Oerlikon", "type": "hallenbad", "seasonal": false, "city": "zurich", "max_capacity": 200},
-  {"uid": "SSD-8", "name": "Josel-Areal", "type": "hallenbad", "seasonal": false, "city": "zurich", "max_capacity": 200},
-  {"uid": "LIDO-1", "name": "Luzern", "type": "other", "seasonal": true, "city": "luzern", "max_capacity": 3500},
-  {"uid": "RISCH-1", "name": "Rotkreuz", "type": "other", "seasonal": true, "city": "rotkreuz", "max_capacity": 600},
-  {"uid": "SSD-10", "name": "Seebad Utoquai", "type": "seebad", "seasonal": true, "city": "zurich", "max_capacity": 800},
-  {"uid": "seb6946", "name": "Strandbad Mythenquai", "type": "strandbad", "seasonal": true, "city": "zurich", "max_capacity": 4500},
-  {"uid": "seb6947", "name": "Strandbad Tiefenbrunnen", "type": "strandbad", "seasonal": true, "city": "zurich", "max_capacity": 3500},
-  {"uid": "seb6948", "name": "Strandbad Wollishofen", "type": "strandbad", "seasonal": true, "city": "zurich", "max_capacity": 700},
-  {"uid": "SSD-5", "name": "Wärmebad Käferberg", "type": "hallenbad", "seasonal": false, "city": "zurich", "max_capacity": 70},
-  {"uid": "WEN-1", "name": "Wengen", "type": "other", "seasonal": true, "city": "wengen", "max_capacity": 70},
-  {"uid": "HUENENBERG-1", "name": "Zug", "type": "other", "seasonal": true, "city": "zug", "max_capacity": 1000}
+  {
+    "uid": "fb001",
+    "name": "Freibad Allenmoos",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 2500,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "09:00", "close": "20:00"},
+        "Tue": {"open": "09:00", "close": "20:00"},
+        "Wed": {"open": "09:00", "close": "20:00"},
+        "Thu": {"open": "09:00", "close": "20:00"},
+        "Fri": {"open": "09:00", "close": "20:00"},
+        "Sat": {"open": "09:00", "close": "20:00"},
+        "Sun": {"open": "09:00", "close": "20:00"}
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-20",
+      "notes": "Weather-dependent: opens at 09:00 regardless of weather, extended until 20:00 in good weather only. Peak summer (Jun 19 - Aug 22) closes 21:00."
+    }
+  },
+  {
+    "uid": "fb008",
+    "name": "Freibad Auhof",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 2001,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "09:00", "close": "20:00"},
+        "Tue": {"open": "09:00", "close": "20:00"},
+        "Wed": {"open": "09:00", "close": "20:00"},
+        "Thu": {"open": "09:00", "close": "20:00"},
+        "Fri": {"open": "09:00", "close": "20:00"},
+        "Sat": {"open": "09:00", "close": "20:00"},
+        "Sun": {"open": "09:00", "close": "20:00"}
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-27",
+      "notes": "Weather-dependent hours. Closes end of September (same weekend as Letzigraben, Mythenquai, Tiefenbrunnen)."
+    }
+  },
+  {
+    "uid": "fb012",
+    "name": "Freibad Heuried",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 2600,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "09:00", "close": "20:00"},
+        "Tue": {"open": "09:00", "close": "20:00"},
+        "Wed": {"open": "09:00", "close": "20:00"},
+        "Thu": {"open": "09:00", "close": "20:00"},
+        "Fri": {"open": "09:00", "close": "20:00"},
+        "Sat": {"open": "09:00", "close": "20:00"},
+        "Sun": {"open": "09:00", "close": "20:00"}
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-20",
+      "notes": "Weather-dependent hours. Typical close early-mid September."
+    }
+  },
+  {
+    "uid": "LETZI-1",
+    "name": "Freibad Letzigraben",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 3800,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "07:00", "close": "21:00"},
+        "Tue": {"open": "07:00", "close": "21:00"},
+        "Wed": {"open": "07:00", "close": "21:00"},
+        "Thu": {"open": "07:00", "close": "21:00"},
+        "Fri": {"open": "07:00", "close": "21:00"},
+        "Sat": {"open": "07:00", "close": "21:00"},
+        "Sun": {"open": "07:00", "close": "21:00"}
+      },
+      "seasonal_open": "2026-05-01",
+      "seasonal_close": "2026-09-27",
+      "notes": "Opens 1 May (earlier than most Freibäder). Early morning swim from 07:00. Peak summer until 21:00; shoulder season until 19:00 or 20:00. Weather-dependent extended hours."
+    }
+  },
+  {
+    "uid": "SSD-11",
+    "name": "Freibad Seebach",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 2000,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "07:00", "close": "21:00"},
+        "Tue": {"open": "07:00", "close": "21:00"},
+        "Wed": {"open": "07:00", "close": "21:00"},
+        "Thu": {"open": "07:00", "close": "21:00"},
+        "Fri": {"open": "07:00", "close": "21:00"},
+        "Sat": {"open": "07:00", "close": "21:00"},
+        "Sun": {"open": "07:00", "close": "21:00"}
+      },
+      "seasonal_open": "2026-04-11",
+      "seasonal_close": "2026-10-25",
+      "notes": "One of the first and last outdoor pools open each season. Extends to late October along with Seebad Utoquai."
+    }
+  },
+  {
+    "uid": "fb018",
+    "name": "Freibad Zwischen den Hölzern",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 2000,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "09:00", "close": "20:00"},
+        "Tue": {"open": "09:00", "close": "20:00"},
+        "Wed": {"open": "09:00", "close": "20:00"},
+        "Thu": {"open": "09:00", "close": "20:00"},
+        "Fri": {"open": "09:00", "close": "20:00"},
+        "Sat": {"open": "09:00", "close": "20:00"},
+        "Sun": {"open": "09:00", "close": "20:00"}
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-20",
+      "notes": "Weather-dependent hours. Always open 09:00-14:00; extended to 20:00 in good weather."
+    }
+  },
+  {
+    "uid": "SSD-1",
+    "name": "Hallenbad Altstetten",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "zurich",
+    "max_capacity": 0,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "06:00", "close": "21:00"},
+        "Tue": {"open": "08:00", "close": "21:00"},
+        "Wed": {"open": "06:00", "close": "21:00"},
+        "Thu": {"open": "08:00", "close": "21:00"},
+        "Fri": {"open": "06:00", "close": "21:00"},
+        "Sat": {"open": "08:00", "close": "18:00"},
+        "Sun": {"open": "08:00", "close": "18:00"}
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "Operated by Betriebsgenossenschaft Hallenbad Altstetten. Wellness pool and slide. Mon/Wed/Fri early start 06:00; Tue/Thu from 08:00. Sauna has separate hours. Revision planned 2027-2029."
+    }
+  },
+  {
+    "uid": "SSD-2",
+    "name": "Hallenbad Blaesi",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "zurich",
+    "max_capacity": 70,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "12:00", "close": "19:00"},
+        "Tue": {"open": "09:00", "close": "20:00"},
+        "Wed": {"open": "09:00", "close": "19:00"},
+        "Thu": {"open": "09:00", "close": "22:00"},
+        "Fri": {"open": "12:00", "close": "19:00"},
+        "Sat": {"open": "09:00", "close": "16:00"},
+        "Sun": {"open": "09:00", "close": "16:00"}
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "Small neighbourhood pool in Höngg. Wed afternoon: Kinderspielnachmittag 14:00-16:30. Last entry 30 min before closing."
+    }
+  },
+  {
+    "uid": "SSD-3",
+    "name": "Hallenbad Bungertwies",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "zurich",
+    "max_capacity": 70,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "12:00", "close": "19:00"},
+        "Tue": {"open": "12:00", "close": "19:00"},
+        "Wed": {"open": "12:00", "close": "19:00"},
+        "Thu": {"open": "12:00", "close": "19:00"},
+        "Fri": null,
+        "Sat": null,
+        "Sun": {"open": "09:00", "close": "16:00"}
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "Mon-Thu split hours: 12:00-13:30 and 16:00-19:00 (closed 13:30-16:00 for school lessons). Fri and Sat closed. Wed afternoon: Kinderspielnachmittag."
+    }
+  },
+  {
+    "uid": "SSD-4",
+    "name": "Hallenbad City",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "zurich",
+    "max_capacity": 220,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "06:00", "close": "22:00"},
+        "Tue": {"open": "06:00", "close": "22:00"},
+        "Wed": {"open": "06:00", "close": "22:00"},
+        "Thu": {"open": "06:00", "close": "22:00"},
+        "Fri": {"open": "06:00", "close": "22:00"},
+        "Sat": {"open": "06:00", "close": "22:00"},
+        "Sun": {"open": "06:00", "close": "22:00"}
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "Central location (Kreis 1). 50m pool, sauna, open 365 days 06:00-22:00. Sauna has separate hours and gender-restricted sessions."
+    }
+  },
+  {
+    "uid": "SSD-6",
+    "name": "Hallenbad Leimbach",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "zurich",
+    "max_capacity": 80,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "06:00", "close": "21:00"},
+        "Tue": {"open": "06:00", "close": "21:00"},
+        "Wed": {"open": "06:00", "close": "21:00"},
+        "Thu": {"open": "06:00", "close": "21:00"},
+        "Fri": {"open": "06:00", "close": "21:00"},
+        "Sat": {"open": "09:00", "close": "18:00"},
+        "Sun": {"open": "09:00", "close": "18:00"}
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "Mon/Tue/Thu/Fri: split hours 06:00-08:00 (Frühschwimmen) and 12:00-21:00 (closed 08:00-12:00 for school). Wed: continuous 06:00-21:00. Sat: Familienschwimmen until 14:00, Sportschwimmen 14:30+."
+    }
+  },
+  {
+    "uid": "SSD-7",
+    "name": "Hallenbad Oerlikon",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "zurich",
+    "max_capacity": 200,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "06:00", "close": "20:00"},
+        "Tue": {"open": "06:00", "close": "20:00"},
+        "Wed": {"open": "06:00", "close": "22:00"},
+        "Thu": {"open": "06:00", "close": "20:00"},
+        "Fri": {"open": "06:00", "close": "22:00"},
+        "Sat": {"open": "06:00", "close": "22:00"},
+        "Sun": {"open": "06:00", "close": "22:00"}
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "50m pool with 10m diving tower. Wed: Kinderspielnachmittag 14:00-16:00. Frequently booked for competitions. New Sportzentrum Oerlikon planned (build from 2027, open ~2031)."
+    }
+  },
+  {
+    "uid": "SSD-8",
+    "name": "Josel-Areal",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "zurich",
+    "max_capacity": 200,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "08:00", "close": "22:00"},
+        "Tue": {"open": "08:00", "close": "22:00"},
+        "Wed": {"open": "08:00", "close": "22:00"},
+        "Thu": {"open": "08:00", "close": "22:00"},
+        "Fri": {"open": "08:00", "close": "22:00"},
+        "Sat": {"open": "08:00", "close": "22:00"},
+        "Sun": {"open": "08:00", "close": "22:00"}
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "Sportzentrum Josef (Josefstrasse 219). No public swimming pool on site — this is a sports and exercise facility. Hours are for the sports hall. A new 50m pool is planned for the Josef-Areal as future development."
+    }
+  },
+  {
+    "uid": "LIDO-1",
+    "name": "Luzern",
+    "type": "other",
+    "seasonal": true,
+    "city": "luzern",
+    "max_capacity": 3500,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "09:00", "close": "20:00"},
+        "Tue": {"open": "09:00", "close": "20:00"},
+        "Wed": {"open": "09:00", "close": "20:00"},
+        "Thu": {"open": "09:00", "close": "20:00"},
+        "Fri": {"open": "09:00", "close": "20:00"},
+        "Sat": {"open": "09:00", "close": "20:00"},
+        "Sun": {"open": "09:00", "close": "20:00"}
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-20",
+      "notes": "Lido Luzern outdoor pool. Exact hours approximate; verify at luzern.ch."
+    }
+  },
+  {
+    "uid": "RISCH-1",
+    "name": "Rotkreuz",
+    "type": "other",
+    "seasonal": true,
+    "city": "rotkreuz",
+    "max_capacity": 600,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "09:00", "close": "20:00"},
+        "Tue": {"open": "09:00", "close": "20:00"},
+        "Wed": {"open": "09:00", "close": "20:00"},
+        "Thu": {"open": "09:00", "close": "20:00"},
+        "Fri": {"open": "09:00", "close": "20:00"},
+        "Sat": {"open": "09:00", "close": "20:00"},
+        "Sun": {"open": "09:00", "close": "20:00"}
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-20",
+      "notes": "Outdoor pool in Rotkreuz (Kanton Zug). Approximate hours; verify with local operator."
+    }
+  },
+  {
+    "uid": "SSD-10",
+    "name": "Seebad Utoquai",
+    "type": "seebad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 800,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "07:00", "close": "21:00"},
+        "Tue": {"open": "07:00", "close": "21:00"},
+        "Wed": {"open": "07:00", "close": "21:00"},
+        "Thu": {"open": "07:00", "close": "21:00"},
+        "Fri": {"open": "07:00", "close": "21:00"},
+        "Sat": {"open": "07:00", "close": "21:00"},
+        "Sun": {"open": "07:00", "close": "21:00"}
+      },
+      "seasonal_open": "2026-04-11",
+      "seasonal_close": "2026-10-25",
+      "notes": "One of the first pools to open and last to close each season. Lake swimming. Winter swimming (Winterschwimmen) Sat/Sun 11:00-14:00 outside main season."
+    }
+  },
+  {
+    "uid": "seb6946",
+    "name": "Strandbad Mythenquai",
+    "type": "strandbad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 4500,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "07:00", "close": "20:00"},
+        "Tue": {"open": "07:00", "close": "20:00"},
+        "Wed": {"open": "07:00", "close": "20:00"},
+        "Thu": {"open": "07:00", "close": "20:00"},
+        "Fri": {"open": "07:00", "close": "20:00"},
+        "Sat": {"open": "07:00", "close": "20:00"},
+        "Sun": {"open": "07:00", "close": "20:00"}
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-27",
+      "notes": "Large lake beach. Open 07:00-11:00 at all weather; extended to 20:00 (21:00 peak summer) in good weather. Park area open year-round. Children's area from 09:00."
+    }
+  },
+  {
+    "uid": "seb6947",
+    "name": "Strandbad Tiefenbrunnen",
+    "type": "strandbad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 3500,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "07:00", "close": "20:00"},
+        "Tue": {"open": "07:00", "close": "20:00"},
+        "Wed": {"open": "07:00", "close": "20:00"},
+        "Thu": {"open": "07:00", "close": "20:00"},
+        "Fri": {"open": "07:00", "close": "20:00"},
+        "Sat": {"open": "07:00", "close": "20:00"},
+        "Sun": {"open": "07:00", "close": "20:00"}
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-27",
+      "notes": "Lake beach on right shore of Zürichsee. Similar season and hours to Mythenquai. Weather-dependent extended hours."
+    }
+  },
+  {
+    "uid": "seb6948",
+    "name": "Strandbad Wollishofen",
+    "type": "strandbad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 700,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "09:00", "close": "20:00"},
+        "Tue": {"open": "09:00", "close": "20:00"},
+        "Wed": {"open": "09:00", "close": "20:00"},
+        "Thu": {"open": "09:00", "close": "20:00"},
+        "Fri": {"open": "09:00", "close": "20:00"},
+        "Sat": {"open": "09:00", "close": "20:00"},
+        "Sun": {"open": "09:00", "close": "20:00"}
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-20",
+      "notes": "Smaller lake beach south of Mythenquai. Closes mid-September."
+    }
+  },
+  {
+    "uid": "SSD-5",
+    "name": "Wärmebad Käferberg",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "zurich",
+    "max_capacity": 70,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "11:00", "close": "15:00"},
+        "Tue": {"open": "06:30", "close": "22:00"},
+        "Wed": {"open": "06:30", "close": "22:00"},
+        "Thu": {"open": "06:30", "close": "22:00"},
+        "Fri": {"open": "06:30", "close": "22:00"},
+        "Sat": {"open": "09:00", "close": "18:00"},
+        "Sun": {"open": "09:00", "close": "18:00"}
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "Warm bath (32°C). Mon: 11:00-15:00 only. Tue-Fri: early slot 06:30-08:00, then complex schedule with adult-only and swimmer-only periods through to 22:00. Sat/Sun: 09:00-16:00 (May-Sep), 09:00-18:00 (Oct-Apr). Not suitable for lane swimming."
+    }
+  },
+  {
+    "uid": "WEN-1",
+    "name": "Wengen",
+    "type": "other",
+    "seasonal": true,
+    "city": "wengen",
+    "max_capacity": 70,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "09:00", "close": "18:00"},
+        "Tue": {"open": "09:00", "close": "18:00"},
+        "Wed": {"open": "09:00", "close": "18:00"},
+        "Thu": {"open": "09:00", "close": "18:00"},
+        "Fri": {"open": "09:00", "close": "18:00"},
+        "Sat": {"open": "09:00", "close": "18:00"},
+        "Sun": {"open": "09:00", "close": "18:00"}
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-20",
+      "notes": "Mountain pool in Wengen (Bernese Oberland). Approximate hours; verify with local operator."
+    }
+  },
+  {
+    "uid": "HUENENBERG-1",
+    "name": "Zug",
+    "type": "other",
+    "seasonal": true,
+    "city": "zug",
+    "max_capacity": 1000,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {"open": "09:00", "close": "20:00"},
+        "Tue": {"open": "09:00", "close": "20:00"},
+        "Wed": {"open": "09:00", "close": "20:00"},
+        "Thu": {"open": "09:00", "close": "20:00"},
+        "Fri": {"open": "09:00", "close": "20:00"},
+        "Sat": {"open": "09:00", "close": "20:00"},
+        "Sun": {"open": "09:00", "close": "20:00"}
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-20",
+      "notes": "Outdoor pool in Zug/Hünenberg area. Approximate hours; verify at zug.ch."
+    }
+  }
 ]
