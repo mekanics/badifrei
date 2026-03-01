@@ -347,7 +347,7 @@ input[type='date'] {
 /* Mobile */
 @media (max-width: 600px) {
 	.pool-grid {
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: 1fr;
 	}
 	.page-title { font-size: 1.6rem; }
 	.pool-detail-header {
@@ -355,10 +355,6 @@ input[type='date'] {
 		align-items: flex-start;
 		gap: 0.5rem;
 	}
-}
-
-@media (max-width: 400px) {
-	.pool-grid { grid-template-columns: 1fr; }
 }
 
 /* Footer */
