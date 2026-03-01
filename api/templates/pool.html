@@ -10,6 +10,33 @@
   {% endif %}
 </div>
 
+<div class="pool-info-block">
+  {% set oh = pool.opening_hours %}
+  {% if oh %}
+    {% set days = [("Mon","Mo"),("Tue","Di"),("Wed","Mi"),("Thu","Do"),("Fri","Fr"),("Sat","Sa"),("Sun","So")] %}
+    <table class="hours-table">
+      <tbody>
+      {% for key, label in days %}
+        {% set sched = oh.schedule.get(key) %}
+        <tr>
+          <td class="day-label">{{ label }}</td>
+          {% if sched %}
+            <td class="day-hours">{{ sched.open }} – {{ sched.close }}</td>
+          {% else %}
+            <td class="day-hours closed-day">Closed</td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% if oh.seasonal_open and oh.seasonal_close %}
+    <p class="seasonal-note">🏊 Season: {{ oh.seasonal_open }} – {{ oh.seasonal_close }}</p>
+    {% endif %}
+  {% else %}
+    <p class="pool-info-muted">Opening hours not available.</p>
+  {% endif %}
+</div>
+
 <div class="date-row">
   <label for="date-picker">Date:</label>
   <input type="date" id="date-picker">

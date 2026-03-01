@@ -10,11 +10,12 @@
   <div class="pool-grid" id="favorites-grid"></div>
 </div>
 
-<!-- All pools section -->
+<!-- City sections -->
+{% for city in cities %}
 <div class="section-block">
-  <h2 class="section-title">All Pools</h2>
-  <div class="pool-grid" id="pool-grid">
-    {% for pool in pools %}
+  <h2 class="section-title">{{ city.label }}</h2>
+  <div class="pool-grid" id="pool-grid-{{ city.key }}">
+    {% for pool in city.pools %}
     <a href="/dashboard/pools/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}">
       <button class="star-btn" data-uid="{{ pool.uid }}" aria-label="Add to favorites">⭐</button>
       <div class="pool-header">
@@ -23,10 +24,12 @@
       </div>
       <div class="pool-body">
         <div class="occupancy-bar-wrap">
-          <div class="occupancy-bar" id="bar-{{ pool.uid }}" style="width:0%"></div>
+          <div class="occupancy-bar" style="width:0%"></div>
         </div>
-        <div class="occupancy-label" id="occ-{{ pool.uid }}">—</div>
-        <div class="status-badge" id="status-{{ pool.uid }}"></div>
+        <div class="occupancy-row">
+          <span class="occupancy-label">—</span>
+          <span class="status-badge"></span>
+        </div>
       </div>
       {% if pool.max_capacity > 0 %}
       <div class="pool-footer">Capacity: {{ pool.max_capacity }}</div>
@@ -35,6 +38,7 @@
     {% endfor %}
   </div>
 </div>
+{% endfor %}
 
 <script>
   const FAVORITES_KEY = 'badi_favorites';
@@ -43,105 +47,73 @@
     try { return JSON.parse(localStorage.getItem(FAVORITES_KEY)) || []; }
     catch (e) { return []; }
   }
-
-  function setFavorites(favs) {
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs));
-  }
-
-  function isFavorite(uid) {
-    return getFavorites().includes(uid);
-  }
+  function setFavorites(favs) { localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs)); }
+  function isFavorite(uid) { return getFavorites().includes(uid); }
 
   function toggleFavorite(uid) {
     let favs = getFavorites();
-    if (favs.includes(uid)) {
-      favs = favs.filter(f => f !== uid);
-    } else {
-      favs.push(uid);
-    }
+    favs = favs.includes(uid) ? favs.filter(f => f !== uid) : [...favs, uid];
     setFavorites(favs);
     renderSections();
   }
 
   function applyStarState() {
     document.querySelectorAll('.star-btn').forEach(btn => {
-      const uid = btn.dataset.uid;
-      const fav = isFavorite(uid);
+      const fav = isFavorite(btn.dataset.uid);
       btn.classList.toggle('starred', fav);
       btn.setAttribute('aria-label', fav ? 'Remove from favorites' : 'Add to favorites');
     });
   }
 
   function cloneCardForFavorites(uid) {
-    const original = document.querySelector(`#pool-grid .pool-card[data-uid="${uid}"]`);
+    const original = document.querySelector(`.pool-card[data-uid="${uid}"]`);
     if (!original) return null;
     const clone = original.cloneNode(true);
-    // Wire up the star button on the clone
-    const starBtn = clone.querySelector('.star-btn');
-    starBtn.addEventListener('click', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleFavorite(uid);
+    clone.querySelector('.star-btn').addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation(); toggleFavorite(uid);
     });
     return clone;
   }
 
   function renderSections() {
     applyStarState();
-
     const favs = getFavorites();
     const favSection = document.getElementById('favorites-section');
     const favGrid = document.getElementById('favorites-grid');
-
     favGrid.innerHTML = '';
-
-    if (favs.length === 0) {
-      favSection.style.display = 'none';
-      return;
-    }
-
+    if (!favs.length) { favSection.style.display = 'none'; return; }
     favSection.style.display = '';
     for (const uid of favs) {
       const card = cloneCardForFavorites(uid);
-      if (card) {
-        // Sync bar/label IDs — use prefixed IDs to avoid conflicts
-        const bar = card.querySelector('.occupancy-bar');
-        const label = card.querySelector('.occupancy-label');
-        if (bar) bar.id = 'fav-bar-' + uid;
-        if (label) label.id = 'fav-occ-' + uid;
-        favGrid.appendChild(card);
-      }
+      if (card) favGrid.appendChild(card);
     }
   }
 
-  // Wire star buttons in main grid
-  document.querySelectorAll('#pool-grid .star-btn').forEach(btn => {
+  // Wire main grid star buttons
+  document.querySelectorAll('.pool-card .star-btn').forEach(btn => {
     btn.addEventListener('click', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleFavorite(btn.dataset.uid);
+      e.preventDefault(); e.stopPropagation(); toggleFavorite(btn.dataset.uid);
     });
   });
 
-  // Initial render
   renderSections();
 
-  // Occupancy polling
+  // Occupancy + status polling
   async function fetchOccupancy() {
     try {
       const res = await fetch('/api/current');
       if (!res.ok) return;
       const data = await res.json();
       const map = {};
-      for (const item of data) { map[item.pool_uid] = item; }
+      for (const item of data) map[item.pool_uid] = item;
 
-      // Update all bar/label pairs (main grid + favorites clones)
       document.querySelectorAll('.pool-card').forEach(card => {
         const uid = card.dataset.uid;
-        // find bar and label within this card (works for both main and fav)
+        const item = map[uid];
         const label = card.querySelector('.occupancy-label');
         const bar = card.querySelector('.occupancy-bar');
-        const item = map[uid];
+        const badge = card.querySelector('.status-badge');
+
         if (item && item.occupancy_pct !== null) {
           const pct = item.occupancy_pct;
           label.textContent = pct + '%';
@@ -152,16 +124,13 @@
           bar.style.width = '0%';
           bar.className = 'occupancy-bar grey';
         }
-        // Update open/closed badge
-        const statusBadge = card.querySelector('.status-badge');
-        if (statusBadge && item) {
-          const isOpen = item.is_open;
-          const nextOpen = item.next_open;
-          if (isOpen) {
-            statusBadge.innerHTML = '<span class="status-dot open"></span>Open';
+
+        if (badge && item) {
+          if (item.is_open) {
+            badge.innerHTML = '<span class="status-dot open"></span>';
           } else {
-            const hint = nextOpen ? ` · Opens ${nextOpen}` : '';
-            statusBadge.innerHTML = `<span class="status-dot closed"></span>Closed${hint}`;
+            const hint = item.next_open ? ` · Opens ${item.next_open}` : '';
+            badge.innerHTML = `<span class="status-dot closed"></span><span class="status-text">Closed${hint}</span>`;
           }
         }
       });

@@ -84,11 +84,30 @@ app.add_middleware(
 )
 
 
+CITY_DISPLAY = {
+    "zurich": "Zürich",
+    "luzern": "Luzern",
+    "zug": "Zug",
+    "wengen": "Wengen",
+}
+CITY_ORDER = ["zurich", "luzern", "zug", "wengen"]
+
+
 @app.get("/", response_class=HTMLResponse, tags=["dashboard"])
 async def dashboard_index(request: Request):
     """Pool overview dashboard."""
     pools = get_pools()
-    return templates.TemplateResponse("index.html", {"request": request, "pools": pools})
+    # Group pools by city, Zürich first then alphabetical
+    from collections import defaultdict
+    by_city: dict[str, list] = defaultdict(list)
+    for p in pools:
+        by_city[p.get("city", "zurich")].append(p)
+    city_keys = sorted(by_city.keys(), key=lambda c: (c != "zurich", c))
+    cities = [
+        {"key": k, "label": CITY_DISPLAY.get(k, k.title()), "pools": by_city[k]}
+        for k in city_keys
+    ]
+    return templates.TemplateResponse("index.html", {"request": request, "pools": pools, "cities": cities})
 
 
 @app.get("/dashboard/pools/{pool_uid}", response_class=HTMLResponse, tags=["dashboard"])
