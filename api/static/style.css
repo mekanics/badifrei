@@ -101,8 +101,8 @@ body {
 }
 
 .pool-header {
-	display: flex;
-	justify-content: space-between;
+	display: grid;
+	grid-template-columns: 1fr auto;
 	align-items: flex-start;
 	gap: 0.5rem;
 	margin-bottom: 1rem;
