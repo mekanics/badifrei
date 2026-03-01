@@ -43,6 +43,8 @@ services:
       dockerfile: api/Dockerfile
     environment:
       DATABASE_URL: ${DATABASE_URL}
+    expose:
+      - "8000"
     volumes:
       - model_artifacts:/app/ml/models
     depends_on:
