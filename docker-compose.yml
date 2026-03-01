@@ -81,8 +81,9 @@ services:
       - model_artifacts:/app/ml/models
     environment:
       - DATABASE_URL=${DATABASE_URL}
-      - RETRAIN_INTERVAL_DAYS=1
-      - MIN_RECORDS=100
+      - RETRAIN_INTERVAL_HOURS=168
+      - MIN_RECORDS_FOR_TRAINING=1000
+      - LOOKBACK_DAYS=90
     depends_on:
       db:
         condition: service_healthy

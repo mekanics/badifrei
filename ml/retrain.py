@@ -8,7 +8,8 @@ from pathlib import Path
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from collector.config import settings
+import os
+
 from ml.data_loader import load_data, InsufficientDataError
 from ml.train import train, save_model
 from ml.evaluate import evaluate
@@ -16,9 +17,9 @@ from ml.evaluate import evaluate
 logger = logging.getLogger(__name__)
 
 # Configurable via env
-RETRAIN_INTERVAL_HOURS = int(getattr(settings, "retrain_interval_hours", 168))  # 7 days default
-LOOKBACK_DAYS = int(getattr(settings, "lookback_days", 90))
-MIN_RECORDS = int(getattr(settings, "min_records_for_training", 1000))
+RETRAIN_INTERVAL_HOURS = int(os.getenv("RETRAIN_INTERVAL_HOURS", "168"))  # 7 days default
+LOOKBACK_DAYS = int(os.getenv("LOOKBACK_DAYS", "90"))
+MIN_RECORDS = int(os.getenv("MIN_RECORDS_FOR_TRAINING", "1000"))
 MODELS_DIR = Path(__file__).parent / "models"
 
 
