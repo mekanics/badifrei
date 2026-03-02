@@ -1,4 +1,5 @@
 """Tests for FastAPI app scaffold."""
+
 import pytest
 from httpx import AsyncClient, ASGITransport
 
@@ -6,7 +7,10 @@ from httpx import AsyncClient, ASGITransport
 @pytest.fixture
 async def client():
     from api.main import app
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         yield c
 
 
@@ -31,15 +35,13 @@ class TestHealth:
 
 
 class TestOpenAPI:
-    async def test_openapi_docs_available(self, client):
+    async def test_openapi_docs_not_available(self, client):
         response = await client.get("/docs")
-        assert response.status_code == 200
+        assert response.status_code == 404
 
-    async def test_openapi_schema_available(self, client):
+    async def test_openapi_schema_not_available(self, client):
         response = await client.get("/openapi.json")
-        assert response.status_code == 200
-        schema = response.json()
-        assert schema["info"]["title"] == "Badi Predictor"
+        assert response.status_code == 404
 
 
 class TestPools:
