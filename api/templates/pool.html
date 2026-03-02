@@ -110,7 +110,10 @@
       },
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { display: true },
+        legend: {
+          display: true,
+          labels: { usePointStyle: true, pointStyle: 'line', boxWidth: 30 }
+        },
         tooltip: {
           mode: 'index',
           intersect: false,
