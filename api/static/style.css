@@ -334,6 +334,16 @@ input[type='date'] {
 	box-shadow: var(--shadow);
 }
 
+.chart-wrap canvas {
+	min-height: 320px;
+}
+
+@media (max-width: 600px) {
+	.chart-wrap canvas {
+		min-height: 280px;
+	}
+}
+
 .no-model {
 	background: rgba(251,191,36,0.08);
 	border: 1px solid #78350f;
