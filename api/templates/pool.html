@@ -46,7 +46,7 @@
 <div class="chart-wrap">
   <canvas id="occupancy-chart"></canvas>
 </div>
-<p id="chart-legend-note" class="chart-legend-note"></p>
+
 
 <style>
   .chart-legend-note {
@@ -156,10 +156,7 @@
       chart.data.datasets[0].data = actuals;
       chart.update();
 
-      const note = document.getElementById('chart-legend-note');
-      note.textContent = isFuture
-        ? '╌ Nur Prognose'
-        : '— Effektiv (grün)  ╌ Prognose (blau)';
+
     } catch (e) {
       console.warn('Prognosedaten konnten nicht geladen werden', e);
     }
