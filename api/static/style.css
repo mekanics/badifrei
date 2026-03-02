@@ -332,15 +332,17 @@ input[type='date'] {
 	padding: 1.5rem;
 	max-width: 900px;
 	box-shadow: var(--shadow);
+	height: 380px;
 }
 
 .chart-wrap canvas {
-	min-height: 320px;
+	width: 100% !important;
+	height: 100% !important;
 }
 
 @media (max-width: 600px) {
-	.chart-wrap canvas {
-		min-height: 280px;
+	.chart-wrap {
+		height: 300px;
 	}
 }
 
