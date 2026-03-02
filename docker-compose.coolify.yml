@@ -56,6 +56,14 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    labels:
+      # Traefik rate limiting — 60 req/min average, burst of 30
+      - "traefik.http.middlewares.badi-ratelimit.ratelimit.average=60"
+      - "traefik.http.middlewares.badi-ratelimit.ratelimit.burst=30"
+      - "traefik.http.middlewares.badi-ratelimit.ratelimit.period=1m"
+      # Apply rate limit + compress middleware to the api router
+      - "traefik.http.routers.api.middlewares=badi-ratelimit,badi-compress"
+      - "traefik.http.middlewares.badi-compress.compress=true"
 
   retrain:
     build:

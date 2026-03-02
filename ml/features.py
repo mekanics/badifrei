@@ -126,11 +126,16 @@ def add_weather_features(df: pd.DataFrame, weather_df: pd.DataFrame) -> pd.DataF
     Adds: temperature_c, precipitation_mm, is_rainy, temp_x_outdoor.
     """
     df = df.copy()
-    weather_cols = weather_df[["date", "hour", "temperature_c", "precipitation_mm", "weathercode"]].copy()
+    # weather_df may or may not have a 'date' column — support both
+    w_cols = ["hour", "temperature_c", "precipitation_mm", "weathercode"]
+    if "date" in weather_df.columns:
+        w_cols = ["date"] + w_cols
+    weather_cols = weather_df[w_cols].copy()
     weather_cols = weather_cols.rename(columns={"hour": "hour_of_day"})
 
-    # Merge on both date AND hour to avoid all 14:00 rows getting same weather value
-    df = df.merge(weather_cols, on=["date", "hour_of_day"], how="left")
+    # Merge on date+hour if date is available, otherwise hour only
+    merge_on = ["date", "hour_of_day"] if "date" in weather_cols.columns else ["hour_of_day"]
+    df = df.merge(weather_cols, on=merge_on, how="left")
 
     # Fill NaN weather with sensible defaults
     df["temperature_c"] = df["temperature_c"].fillna(15.0)

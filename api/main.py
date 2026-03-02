@@ -8,10 +8,10 @@ logger = logging.getLogger(__name__)
 from datetime import datetime, timezone
 from pathlib import Path
 
-from dateutil.parser import parse as datetime_parser
 from dateutil.parser import parse as date_parser_raw
 
 from fastapi import FastAPI, Request
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse as _JSONResponse, HTMLResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -66,12 +66,35 @@ async def lifespan(app: FastAPI):
 
 templates = Jinja2Templates(directory=str(TEMPLATES_PATH))
 
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+        if "text/html" in response.headers.get("content-type", ""):
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' cdn.jsdelivr.net 'unsafe-inline'; "
+                "style-src 'self' fonts.googleapis.com 'unsafe-inline'; "
+                "font-src 'self' fonts.gstatic.com; "
+                "img-src 'self' data:; "
+                "connect-src 'self';"
+            )
+        return response
+
+
 app = FastAPI(
     title="Badi Predictor",
     description="Predict pool occupancy for Zürich's public pools.",
     version="0.1.0",
     default_response_class=JSONResponse,
     lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 
 app.mount("/static", StaticFiles(directory=str(STATIC_PATH)), name="static")
@@ -79,9 +102,10 @@ app.mount("/static", StaticFiles(directory=str(STATIC_PATH)), name="static")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET"],
+    allow_headers=["Accept", "Content-Type"],
 )
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 CITY_DISPLAY = {
@@ -242,9 +266,9 @@ async def predict(pool_uid: str, dt_str: str):
 
     # Parse datetime
     try:
-        dt = datetime_parser(dt_str)
-    except Exception:
-        raise HTTPException(status_code=422, detail=f"Invalid datetime: '{dt_str}'")
+        dt = datetime.fromisoformat(dt_str)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid datetime. Use ISO 8601 format (e.g. 2026-03-07T14:00:00).")
 
     if not predictor.is_loaded():
         # Return a placeholder when model isn't trained yet
@@ -306,15 +330,25 @@ async def predict_range(pool_uid: str, date: str):
 async def history(request: Request, pool_uid: str, date: str):
     """Return hourly average occupancy from DB for a given pool and date."""
     from datetime import date as date_type, timedelta
+    from fastapi import HTTPException
     null_actuals = [{"hour": i, "occupancy_pct": None} for i in range(24)]
+
+    # Validate pool exists
+    if not any(p["uid"] == pool_uid for p in get_pools()):
+        raise HTTPException(status_code=404, detail="Pool not found")
+
+    # Validate date early
+    try:
+        d = date_type.fromisoformat(date)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid date. Use YYYY-MM-DD format.")
 
     db_pool = getattr(request.app.state, "db_pool", None)
     if db_pool is None:
         return {"pool_uid": pool_uid, "date": date, "actuals": null_actuals}
 
     try:
-        # Parse to datetime.date so asyncpg sends the correct binary type
-        d = date_type.fromisoformat(date)
+        # d already parsed above
         rows = await db_pool.fetch(
             """
             SELECT

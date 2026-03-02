@@ -109,7 +109,7 @@ async def fetch_weather(date: datetime.date) -> pd.DataFrame:
     df = _parse_response(data, date)
     _cache[date] = df
     logger.info("Fetched weather for %s (%d rows)", date, len(df))
-    return df
+    return df.drop(columns=["date"], errors="ignore")
 
 
 def clear_cache() -> None:
