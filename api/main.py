@@ -294,7 +294,7 @@ async def history(request: Request, pool_uid: str, date: str):
             """
             SELECT
               EXTRACT(HOUR FROM time AT TIME ZONE 'Europe/Zurich') AS hour,
-              AVG(occupancy_pct) AS occupancy_pct
+              AVG(current_fill::float / NULLIF(max_space, 0) * 100) AS occupancy_pct
             FROM pool_occupancy
             WHERE pool_uid = $1
               AND time >= $2
