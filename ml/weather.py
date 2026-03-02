@@ -22,11 +22,9 @@ HOURLY_FIELDS = ["temperature_2m", "precipitation", "weathercode"]
 _cache: dict[datetime.date, pd.DataFrame] = {}
 
 
-def _nan_df(date: datetime.date | None = None) -> pd.DataFrame:
-    """Return an empty NaN-filled DataFrame with expected columns."""
-    d = date or datetime.date.today()
+def _nan_df() -> pd.DataFrame:
+    """Return an empty NaN-filled DataFrame with expected columns (no date column)."""
     return pd.DataFrame({
-        "date": [d] * 24,
         "hour": list(range(24)),
         "temperature_c": [np.nan] * 24,
         "precipitation_mm": [np.nan] * 24,
@@ -66,7 +64,7 @@ def _parse_response(data: dict[str, Any], date: datetime.date) -> pd.DataFrame:
 
     if not rows:
         logger.warning("No hourly data found for %s in response", date)
-        return _nan_df(date)
+        return _nan_df()
 
     return pd.DataFrame(rows).sort_values("hour").reset_index(drop=True)
 
@@ -100,11 +98,11 @@ async def fetch_weather(date: datetime.date) -> pd.DataFrame:
             async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
                 if resp.status != 200:
                     logger.error("Open-Meteo returned HTTP %s for date %s", resp.status, date)
-                    return _nan_df(date)
+                    return _nan_df()
                 data = await resp.json()
     except Exception as exc:
         logger.error("Failed to fetch weather for %s: %s", date, exc)
-        return _nan_df(date)
+        return _nan_df()
 
     df = _parse_response(data, date)
     _cache[date] = df
