@@ -13,7 +13,7 @@ from dateutil.parser import parse as date_parser_raw
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse as _JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse as _JSONResponse, HTMLResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -196,6 +196,31 @@ async def current_occupancy(request: Request):
 @app.get("/health", tags=["meta"])
 async def health():
     return {"status": "ok", "version": "0.1.0"}
+
+
+@app.get("/robots.txt", include_in_schema=False)
+async def robots():
+    content = """User-agent: *
+Allow: /
+Sitemap: https://badifrei.ch/sitemap.xml
+"""
+    return PlainTextResponse(content)
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+async def sitemap():
+    pool_uids = [p["uid"] for p in get_pools()]
+    urls = ["https://badifrei.ch/"]
+    for uid in pool_uids:
+        urls.append(f"https://badifrei.ch/dashboard/pools/{uid}")
+
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    for url in urls:
+        xml += f"  <url><loc>{url}</loc></url>\n"
+    xml += "</urlset>"
+
+    return Response(content=xml, media_type="application/xml")
 
 
 @app.get("/pools", response_model=list[PoolInfo], tags=["pools"])
