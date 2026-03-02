@@ -5,9 +5,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}badifrei.ch – Ist die Badi voll?{% endblock %}</title>
-  <meta name="description" content="{% block description %}Echtzeit-Belegung und Vorhersagen für Zürichs Schwimmbäder. Schau bevor du gehst.{% endblock %}">
+  <meta name="description"
+    content="{% block description %}Echtzeit-Belegung und Vorhersagen für Zürichs Schwimmbäder. Schau bevor du gehst.{% endblock %}">
   <meta property="og:title" content="{% block og_title %}badifrei.ch – Ist die Badi voll?{% endblock %}">
-  <meta property="og:description" content="Echtzeit-Belegung und Vorhersagen für Zürichs Schwimmbäder. Schau bevor du gehst.">
+  <meta property="og:description"
+    content="Echtzeit-Belegung und Vorhersagen für Zürichs Schwimmbäder. Schau bevor du gehst.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://badifrei.ch">
   <link rel="stylesheet" href="/static/style.css">
@@ -24,19 +26,26 @@
     <div class="footer-inner">
       <div class="footer-col">
         <span class="footer-heading">Daten</span>
-        <p>Live-Auslastungsdaten von <a href="https://badi-info.ch" target="_blank" rel="noopener">badi-info.ch</a> via CrowdMonitor.</p>
-        <p>Öffnungszeiten von <a href="https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen.html" target="_blank" rel="noopener">Stadt Zürich</a>.</p>
-        <p>Wetterprognosen von <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>.</p>
+        <p>Live-Auslastungsdaten von <a href="https://badi-info.ch" target="_blank" rel="noopener">badi-info.ch</a> via
+          CrowdMonitor.</p>
+        <p>Öffnungszeiten von <a
+            href="https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen.html"
+            target="_blank" rel="noopener">Stadt Zürich</a>.</p>
       </div>
       <div class="footer-col">
         <span class="footer-heading">Prognosen</span>
-        <p>Die Auslastungsprognosen werden von einem XGBoost-Modell erstellt, das auf historischen Badi-Daten trainiert wurde. Wöchentlich aktualisiert.</p>
+        <p>Die Auslastungsprognosen werden von einem XGBoost-Modell erstellt, das auf historischen Badi-Daten trainiert
+          wurde. Wöchentlich aktualisiert.</p>
         <p>Merkmale: Tageszeit, Wochentag, Wetter, Öffnungszeiten, aktuelle Auslastung.</p>
       </div>
       <div class="footer-col">
         <span class="footer-heading">Über</span>
-        <p>Entwickelt mit ☕ und 🤖 — von einer KI programmiert, orchestriert von <a href="https://j2y.dev" target="_blank" rel="noopener">j2y.dev</a>.</p>
+        <p>Entwickelt mit ☕ und 🤖 — von einer KI programmiert, orchestriert von <a href="https://j2y.dev"
+            target="_blank" rel="noopener">j2y.dev</a>.</p>
       </div>
+    </div>
+    <div class="footer-bottom">
+      Alle Angaben ohne Gewähr. Prognosen sind Schätzungen und kein Ersatz für offizielle Informationen.
     </div>
   </footer>
 </body>
