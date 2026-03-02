@@ -1,6 +1,22 @@
 {% extends "base.html" %}
 {% block title %}{{ pool.name }} – badifrei.ch{% endblock %}
 {% block canonical_path %}/dashboard/pools/{{ pool.uid }}{% endblock %}
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SportsActivityLocation",
+  "name": "{{ pool.name }}",
+  "description": "Schwimmbad in Zürich — aktuelle Auslastung und Tagesprognose",
+  "url": "https://badifrei.ch/dashboard/pools/{{ pool.uid }}",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Zürich",
+    "addressCountry": "CH"
+  }
+}
+</script>
+{% endblock %}
 {% block content %}
 <a href="/" class="back-link">← Alle Bäder</a>
 <div class="pool-detail-header">
