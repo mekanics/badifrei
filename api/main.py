@@ -75,7 +75,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
         if "text/html" in response.headers.get("content-type", ""):
-            response.headers["Content-Security-Policy-Report-Only"] = (
+            response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; "
                 "script-src 'self' cdn.jsdelivr.net 'unsafe-inline'; "
                 "style-src 'self' fonts.googleapis.com 'unsafe-inline'; "
