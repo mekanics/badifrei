@@ -160,13 +160,69 @@ async def pool_detail(request: Request, pool_uid: str):
     open_preds = [(i, v) for i, v in enumerate(today_predictions) if v > 0]
     quietest_hour = min(open_preds, key=lambda x: x[1])[0] if open_preds else None
 
+    opening_hours_summary = _build_opening_hours_summary(pool.get("opening_hours"))
+
     return templates.TemplateResponse("pool.html", {
         "request": request,
         "pool": pool,
         "today_predictions_json": json.dumps(today_predictions),
         "today_date": today.isoformat(),
         "quietest_hour": quietest_hour,
+        "opening_hours_summary": opening_hours_summary,
     })
+
+
+def _build_opening_hours_summary(opening_hours: dict | None) -> str | None:
+    """Build a compact German summary of opening hours, grouping days with identical times.
+
+    Returns a string like "Mo–Fr: 09:00–20:00 Uhr. Sa–So: 10:00–18:00 Uhr."
+    or None if no schedule data.
+    """
+    if not opening_hours:
+        return None
+    schedule = opening_hours.get("schedule")
+    if not schedule:
+        return None
+
+    _DAY_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    _DAY_DE = {"Mon": "Mo", "Tue": "Di", "Wed": "Mi", "Thu": "Do", "Fri": "Fr", "Sat": "Sa", "Sun": "So"}
+
+    # Build list of (day_key, open, close) for days that are open
+    entries = []
+    for day in _DAY_ORDER:
+        s = schedule.get(day)
+        if s:
+            entries.append((day, s["open"], s["close"]))
+
+    if not entries:
+        return None
+
+    # Group consecutive days with identical hours
+    groups = []
+    i = 0
+    while i < len(entries):
+        day, open_t, close_t = entries[i]
+        # Find run of same hours
+        j = i + 1
+        while j < len(entries) and entries[j][1] == open_t and entries[j][2] == close_t:
+            # Only group if consecutive in _DAY_ORDER
+            idx_prev = _DAY_ORDER.index(entries[j-1][0])
+            idx_curr = _DAY_ORDER.index(entries[j][0])
+            if idx_curr == idx_prev + 1:
+                j += 1
+            else:
+                break
+        # entries[i..j-1] are a group
+        start_day = _DAY_DE[entries[i][0]]
+        end_day = _DAY_DE[entries[j-1][0]]
+        if start_day == end_day:
+            label = start_day
+        else:
+            label = f"{start_day}–{end_day}"
+        groups.append(f"{label}: {open_t}–{close_t} Uhr")
+        i = j
+
+    return ". ".join(groups) + "."
 
 
 def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
