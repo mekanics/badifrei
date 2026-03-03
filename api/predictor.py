@@ -330,6 +330,12 @@ class Predictor:
         # Batch predict once
         X = df_feat[FEATURE_COLUMNS].fillna(0)
         preds = self.model.predict(X)
+
+        # Hard-zero predictions for closed hours — XGBoost can't guarantee 0.0
+        # when is_open=0 because lag features carry non-zero values from prior open hours
+        is_open_mask = df_feat["is_open"].values
+        preds = np.where(is_open_mask == 0, 0.0, preds)
+
         return [float(np.clip(p, 0.0, 100.0)) for p in preds]
 
     def predict(self, pool_uid: str, dt: datetime) -> float:
@@ -356,6 +362,10 @@ class Predictor:
             lag_1h_override=lag_1h,
             lag_1w_override=lag_1w,
         )
+
+        # Short-circuit: if pool is closed, return 0 immediately
+        if int(df_feat["is_open"].iloc[0]) == 0:
+            return 0.0
 
         # Fill NaNs (lag features will be NaN for single-row inference if DB unavailable)
         X = df_feat[FEATURE_COLUMNS].fillna(0)

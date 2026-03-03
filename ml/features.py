@@ -1,4 +1,5 @@
 """Feature engineering for pool occupancy prediction."""
+import datetime
 import json
 import logging
 from pathlib import Path
@@ -247,6 +248,7 @@ def compute_opening_hours_for_row(
     hour: int,
     day_of_week: int,
     opening_hours: dict | None,
+    date: "datetime.date | None" = None,
 ) -> tuple[int, int, int]:
     """Compute is_open, minutes_since_open, minutes_until_close for a single row.
 
@@ -254,12 +256,26 @@ def compute_opening_hours_for_row(
         hour: hour of day (0-23)
         day_of_week: 0=Mon ... 6=Sun
         opening_hours: the pool's opening_hours dict (may be None)
+        date: calendar date for the row (used to check seasonal windows)
 
     Returns:
         (is_open, minutes_since_open, minutes_until_close)
     """
     if opening_hours is None:
         return 1, 0, 0  # defensive: treat as always open
+
+    # Check seasonal window (Freibäder etc. are only open part of the year)
+    if date is not None:
+        seasonal_open = opening_hours.get("seasonal_open")
+        seasonal_close = opening_hours.get("seasonal_close")
+        if seasonal_open and seasonal_close:
+            try:
+                so = datetime.date.fromisoformat(seasonal_open)
+                sc = datetime.date.fromisoformat(seasonal_close)
+                if not (so <= date <= sc):
+                    return 0, 0, 0  # outside seasonal window — pool closed
+            except (ValueError, TypeError):
+                pass  # malformed date — don't block
 
     schedule = opening_hours.get("schedule", {})
     day_name = _DAY_NAMES[day_of_week]
@@ -316,7 +332,16 @@ def add_opening_hours_features(
         dow = int(row.get("day_of_week", 0))
         meta = pool_metadata.get(uid, {}) if pool_metadata else {}
         opening_hours = meta.get("opening_hours", None)
-        is_open, since_open, until_close = compute_opening_hours_for_row(hour, dow, opening_hours)
+        time_val = row.get("time")
+        row_date = None
+        if time_val is not None:
+            try:
+                row_date = pd.Timestamp(time_val).date()
+            except Exception:
+                pass
+        is_open, since_open, until_close = compute_opening_hours_for_row(
+            hour, dow, opening_hours, date=row_date
+        )
         rows_is_open.append(is_open)
         rows_since_open.append(since_open)
         rows_until_close.append(until_close)
