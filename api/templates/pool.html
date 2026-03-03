@@ -69,7 +69,7 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
       "name": "Wann hat {{ pool.name | replace('"', '') }} geöffnet?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "{% if opening_hours_summary %}{{ pool.name | replace('"', '') }}: {{ opening_hours_summary }}{% if pool.opening_hours and pool.opening_hours.seasonal_open and pool.opening_hours.seasonal_close %} Saison: {{ pool.opening_hours.seasonal_open }} bis {{ pool.opening_hours.seasonal_close }}.{% endif %}{% else %}Die aktuellen Öffnungszeiten finden Sie auf dieser Seite.{% endif %}"
+        "text": "{% if opening_hours_summary %}{{ pool.name | replace('"', '') }}: {{ opening_hours_summary }}{% if pool.opening_hours and pool.opening_hours.seasonal_open and pool.opening_hours.seasonal_close %} Saison: {{ pool.opening_hours.seasonal_open | date_de }} bis {{ pool.opening_hours.seasonal_close | date_de }}.{% endif %}{% else %}Die aktuellen Öffnungszeiten finden Sie auf dieser Seite.{% endif %}"
       }
     }
   ]
@@ -108,7 +108,7 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
       </tbody>
     </table>
     {% if oh.seasonal_open and oh.seasonal_close %}
-    <p class="seasonal-note">🏊 Saison: {{ oh.seasonal_open }} – {{ oh.seasonal_close }}</p>
+    <p class="seasonal-note">🏊 Saison: {{ oh.seasonal_open | date_de }} – {{ oh.seasonal_close | date_de }}</p>
     {% endif %}
     {% else %}
     <p class="pool-info-muted">Öffnungszeiten nicht verfügbar.</p>

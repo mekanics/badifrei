@@ -72,6 +72,20 @@ _css_path = STATIC_PATH / "style.css"
 _STATIC_VER = _hashlib.md5(_css_path.read_bytes()).hexdigest()[:8] if _css_path.exists() else "0"
 templates.env.globals["static_ver"] = _STATIC_VER
 
+_MONTHS_DE = ["Januar","Februar","März","April","Mai","Juni",
+               "Juli","August","September","Oktober","November","Dezember"]
+
+def _fmt_date_de(value: str) -> str:
+    """Format ISO date string (YYYY-MM-DD) as German date: '9. Mai 2026'."""
+    try:
+        parts = str(value).split("-")
+        y, m, d = int(parts[0]), int(parts[1]), int(parts[2])
+        return f"{d}. {_MONTHS_DE[m - 1]} {y}"
+    except Exception:
+        return str(value)
+
+templates.env.filters["date_de"] = _fmt_date_de
+
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
