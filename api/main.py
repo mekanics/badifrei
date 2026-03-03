@@ -71,11 +71,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
         if "text/html" in response.headers.get("content-type", ""):
-            response.headers["Content-Security-Policy"] = (
+            response.headers["Content-Security-Policy-Report-Only"] = (
                 "default-src 'self'; "
                 "script-src 'self' cdn.jsdelivr.net 'unsafe-inline'; "
                 "style-src 'self' fonts.googleapis.com 'unsafe-inline'; "
@@ -230,6 +230,7 @@ Disallow: /dashboard/
 Disallow: /api/
 Disallow: /predict/
 Disallow: /health
+Disallow: /pools
 Sitemap: https://badifrei.ch/sitemap.xml
 """
     return PlainTextResponse(content)
@@ -238,14 +239,27 @@ Sitemap: https://badifrei.ch/sitemap.xml
 @app.get("/sitemap.xml", include_in_schema=False)
 async def sitemap():
     pool_uids = [p["uid"] for p in get_pools()]
-    urls = ["https://badifrei.ch/"]
-    for uid in pool_uids:
-        urls.append(f"https://badifrei.ch/bad/{uid}")
+    today = datetime.now(timezone.utc).date().isoformat()
 
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    for url in urls:
-        xml += f"  <url><loc>{url}</loc></url>\n"
+    xml += (
+        "  <url>\n"
+        "    <loc>https://badifrei.ch/</loc>\n"
+        f"    <lastmod>{today}</lastmod>\n"
+        "    <changefreq>daily</changefreq>\n"
+        "    <priority>1.0</priority>\n"
+        "  </url>\n"
+    )
+    for uid in pool_uids:
+        xml += (
+            "  <url>\n"
+            f"    <loc>https://badifrei.ch/bad/{uid}</loc>\n"
+            f"    <lastmod>{today}</lastmod>\n"
+            "    <changefreq>always</changefreq>\n"
+            "    <priority>0.8</priority>\n"
+            "  </url>\n"
+        )
     xml += "</urlset>"
 
     return Response(content=xml, media_type="application/xml")
