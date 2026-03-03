@@ -79,78 +79,80 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
 {% block content %}
 <a href="/" class="back-link">← Alle Bäder</a>
 <div class="pool-layout">
-<div class="pool-detail-header">
-  <h1>{{ pool.name }}</h1>
-  <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>
-  {% if pool.max_capacity > 0 %}
-  <span class="capacity-label">Kapazität: {{ pool.max_capacity }}</span>
-  {% endif %}
-</div>
-
-<div class="pool-info-grid">
-  <div class="pool-info-block">
-    {% set oh = pool.opening_hours %}
-    {% if oh %}
-    {% set days = [("Mon","Mo"),("Tue","Di"),("Wed","Mi"),("Thu","Do"),("Fri","Fr"),("Sat","Sa"),("Sun","So")] %}
-    <table class="hours-table">
-      <tbody>
-        {% for key, label in days %}
-        {% set sched = oh.schedule.get(key) %}
-        <tr>
-          <td class="day-label">{{ label }}</td>
-          {% if sched %}
-          <td class="day-hours">{{ sched.open }} – {{ sched.close }}</td>
-          {% else %}
-          <td class="day-hours closed-day">Geschlossen</td>
-          {% endif %}
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% if oh.seasonal_open and oh.seasonal_close %}
-    <p class="seasonal-note">🏊 Saison: {{ oh.seasonal_open | date_de }} – {{ oh.seasonal_close | date_de }}</p>
-    {% endif %}
-    {% else %}
-    <p class="pool-info-muted">Öffnungszeiten nicht verfügbar.</p>
+  <div class="pool-detail-header">
+    <h1>{{ pool.name }}</h1>
+    <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>
+    {% if pool.max_capacity > 0 %}
+    <span class="capacity-label">Kapazität: {{ pool.max_capacity }}</span>
     {% endif %}
   </div>
 
-  {% if pool.description %}
-  <div class="pool-description-block">
-    <p class="pool-description-text">{{ pool.description }}</p>
-    {% if pool.official_url %}
-    <p class="pool-official-link"><a href="{{ pool.official_url }}" target="_blank" rel="noopener noreferrer">Offizielle
-        Seite →</a></p>
+  <div class="pool-info-grid">
+    <div class="pool-info-block">
+      {% set oh = pool.opening_hours %}
+      {% if oh %}
+      {% set days = [("Mon","Mo"),("Tue","Di"),("Wed","Mi"),("Thu","Do"),("Fri","Fr"),("Sat","Sa"),("Sun","So")] %}
+      <table class="hours-table">
+        <tbody>
+          {% for key, label in days %}
+          {% set sched = oh.schedule.get(key) %}
+          <tr>
+            <td class="day-label">{{ label }}</td>
+            {% if sched %}
+            <td class="day-hours">{{ sched.open }} – {{ sched.close }}</td>
+            {% else %}
+            <td class="day-hours closed-day">Geschlossen</td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if oh.seasonal_open and oh.seasonal_close %}
+      <p class="seasonal-note">🏊 Saison: {{ oh.seasonal_open | date_de }} – {{ oh.seasonal_close | date_de }}</p>
+      {% endif %}
+      {% else %}
+      <p class="pool-info-muted">Öffnungszeiten nicht verfügbar.</p>
+      {% endif %}
+    </div>
+
+    {% if pool.description %}
+    <div class="pool-description-block">
+      <p class="pool-description-text">{{ pool.description }}</p>
+      {% if pool.official_url %}
+      <p class="pool-official-link"><a href="{{ pool.official_url }}" target="_blank"
+          rel="noopener noreferrer">Offizielle
+          Seite →</a></p>
+      {% endif %}
+    </div>
     {% endif %}
   </div>
+
+  {% if weekly_insights and weekly_insights.has_data %}
+  <div class="beste-zeiten-block">
+    <h3 class="beste-zeiten-title">🕐 Beste Besuchszeiten</h3>
+    <p class="beste-zeiten-text">
+      Die ruhigste Zeit im Wochenverlauf ist typischerweise <strong>{{ weekly_insights.quietest_day_name }}</strong> um
+      <strong>{{ weekly_insights.quietest_hour_str }} Uhr</strong>.
+      {% if weekly_insights.weekday_quieter_than_weekend == true %}
+      Unter der Woche ist es in der Regel ruhiger als am Wochenende.
+      {% elif weekly_insights.weekday_quieter_than_weekend == false %}
+      Am Wochenende ist es tendenziell ruhiger als unter der Woche.
+      {% endif %}
+      Die Hauptstosszeiten liegen typischerweise um <strong>{{ weekly_insights.peak_hour_str }} Uhr</strong>.
+    </p>
+  </div>
   {% endif %}
-</div>
 
-{% if weekly_insights and weekly_insights.has_data %}
-<div class="beste-zeiten-block">
-  <h3 class="beste-zeiten-title">🕐 Beste Besuchszeiten</h3>
-  <p class="beste-zeiten-text">
-    Die ruhigste Zeit im Wochenverlauf ist typischerweise <strong>{{ weekly_insights.quietest_day_name }}</strong> um <strong>{{ weekly_insights.quietest_hour_str }} Uhr</strong>.
-    {% if weekly_insights.weekday_quieter_than_weekend == true %}
-    Unter der Woche ist es in der Regel ruhiger als am Wochenende.
-    {% elif weekly_insights.weekday_quieter_than_weekend == false %}
-    Am Wochenende ist es tendenziell ruhiger als unter der Woche.
-    {% endif %}
-    Die Hauptstosszeiten liegen typischerweise um <strong>{{ weekly_insights.peak_hour_str }} Uhr</strong>.
-  </p>
-</div>
-{% endif %}
+  <div class="date-row">
+    <label for="date-picker">Datum:</label>
+    <input type="date" id="date-picker">
+  </div>
 
-<div class="date-row">
-  <label for="date-picker">Datum:</label>
-  <input type="date" id="date-picker">
-</div>
-
-<div id="no-model-msg" class="no-model" style="display:none">Für dieses Bad ist noch kein Prognosemodell verfügbar.
-</div>
-<div class="chart-wrap">
-  <canvas id="occupancy-chart"></canvas>
-</div>
+  <div id="no-model-msg" class="no-model" style="display:none">Für dieses Bad ist noch kein Prognosemodell verfügbar.
+  </div>
+  <div class="chart-wrap">
+    <canvas id="occupancy-chart"></canvas>
+  </div>
 </div>{# end .pool-layout #}
 
 {% if related_pools %}
@@ -168,13 +170,13 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
 <style>
   .pool-layout {
     display: grid;
-    gap: 0.75rem;
+    gap: 1.25rem;
   }
 
   .pool-info-grid {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 1.2rem;
+    gap: 1.25rem;
   }
 
   @media (max-width: 600px) {
@@ -217,12 +219,14 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
     border-radius: 8px;
     border-left: 3px solid #34d399;
   }
+
   .beste-zeiten-title {
     margin: 0 0 0.4rem;
     font-size: 0.95rem;
     font-weight: 700;
     color: #e8eaf0;
   }
+
   .beste-zeiten-text {
     margin: 0;
     color: #c8d0e0;
@@ -233,6 +237,7 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
   .related-pools-block {
     margin-top: 2.5rem;
   }
+
   .related-pools-title {
     font-size: 0.95rem;
     font-weight: 700;
@@ -241,6 +246,7 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
+
   .related-pools-list {
     list-style: none;
     padding: 0;
@@ -249,6 +255,7 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
     flex-wrap: wrap;
     gap: 0.5rem;
   }
+
   .related-pool-link {
     display: inline-block;
     padding: 0.35rem 0.85rem;
@@ -259,6 +266,7 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
     text-decoration: none;
     transition: border-color 0.15s, color 0.15s;
   }
+
   .related-pool-link:hover {
     border-color: var(--accent);
     color: var(--accent);
