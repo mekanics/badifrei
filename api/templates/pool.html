@@ -78,6 +78,7 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
 {% endblock %}
 {% block content %}
 <a href="/" class="back-link">← Alle Bäder</a>
+<div class="pool-layout">
 <div class="pool-detail-header">
   <h1>{{ pool.name }}</h1>
   <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>
@@ -150,14 +151,18 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
 <div class="chart-wrap">
   <canvas id="occupancy-chart"></canvas>
 </div>
-
+</div>{# end .pool-layout #}
 
 <style>
+  .pool-layout {
+    display: grid;
+    gap: 0.75rem;
+  }
+
   .pool-info-grid {
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 1.2rem;
-    margin: 1.25rem 0;
   }
 
   @media (max-width: 600px) {
@@ -195,7 +200,6 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
   }
 
   .beste-zeiten-block {
-    margin: 0.6rem 0 0;
     padding: 0.9rem 1.2rem;
     background: #1a2035;
     border-radius: 8px;
