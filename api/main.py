@@ -134,8 +134,8 @@ async def dashboard_index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "pools": pools, "cities": cities})
 
 
-@app.get("/dashboard/pools/{pool_uid}", response_class=HTMLResponse, tags=["dashboard"])
-async def dashboard_pool(request: Request, pool_uid: str):
+@app.get("/bad/{pool_uid}", response_class=HTMLResponse, tags=["pools"])
+async def pool_detail(request: Request, pool_uid: str):
     """Pool detail dashboard."""
     from fastapi import HTTPException
     pools = get_pools()
@@ -226,6 +226,10 @@ async def health():
 async def robots():
     content = """User-agent: *
 Allow: /
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /predict/
+Disallow: /health
 Sitemap: https://badifrei.ch/sitemap.xml
 """
     return PlainTextResponse(content)
@@ -236,7 +240,7 @@ async def sitemap():
     pool_uids = [p["uid"] for p in get_pools()]
     urls = ["https://badifrei.ch/"]
     for uid in pool_uids:
-        urls.append(f"https://badifrei.ch/dashboard/pools/{uid}")
+        urls.append(f"https://badifrei.ch/bad/{uid}")
 
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'

@@ -16,7 +16,7 @@
   <h2 class="section-title">{{ city.label }}</h2>
   <div class="pool-grid" id="pool-grid-{{ city.key }}">
     {% for pool in city.pools %}
-    <a href="/dashboard/pools/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}">
+    <a href="/bad/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}">
       <button class="star-btn" data-uid="{{ pool.uid }}" aria-label="Zu Favoriten hinzufügen">⭐</button>
       <div class="pool-header">
         <span class="pool-name">{{ pool.name }}</span>
