@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Zürcher Schwimmbäder – Auslastung live & Prognose | badifrei.ch{% endblock %}
 {% block content %}
-<h1 class="page-title">Zürcher Bäder 🏊</h1>
+<h1 class="page-title">Zürcher Schwimmbäder – Auslastung live & Prognose 🏊</h1>
 <p class="subtitle">Ist deine Lieblingsbadi gerade voll? Schau nach — Auslastung live, jede Minute aktualisiert.</p>
 
 <!-- Favoriten (nur sichtbar wenn vorhanden) -->
@@ -13,7 +13,7 @@
 <!-- Städte-Sektionen -->
 {% for city in cities %}
 <div class="section-block">
-  <h2 class="section-title">{{ city.label }}</h2>
+  <h2 class="section-title">Schwimmbäder {{ city.label }}</h2>
   <div class="pool-grid" id="pool-grid-{{ city.key }}">
     {% for pool in city.pools %}
     <a href="/bad/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}">
