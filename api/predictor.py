@@ -9,7 +9,7 @@ from pathlib import Path
 import asyncpg
 import numpy as np
 import pandas as pd
-from ml.features import build_features, FEATURE_COLUMNS
+from ml.features import build_features, load_pool_metadata, FEATURE_COLUMNS
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,7 @@ class Predictor:
         self._metadata = None
         self._encoding_map: dict[str, int] | None = None
         self._model_mtime: float | None = None
+        self._reload_lock = asyncio.Lock()
 
     def load(self, path: Path | None = None) -> bool:
         """Load model (and encoding sidecar) from disk. Returns True if successful."""
@@ -56,14 +57,16 @@ class Predictor:
                 logger.warning(f"No encoding sidecar at {encoding_path}; predictions may be wrong")
                 self._encoding_map = None
 
+            # Eagerly load metadata so _get_metadata() never does I/O at inference time
+            self._metadata = load_pool_metadata()
             logger.info(f"Model loaded: {model_path.name}")
             return True
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
             return False
 
-    def _reload_if_stale(self) -> None:
-        """Reload model if model_latest.ubj has been updated on disk."""
+    def _reload_if_stale_sync(self) -> None:
+        """Reload model if model_latest.ubj has been updated on disk (sync version for predict())."""
         model_path = MODELS_DIR / "model_latest.ubj"
         if not model_path.exists():
             return
@@ -75,12 +78,28 @@ class Predictor:
         except Exception as e:
             logger.warning(f"Could not check model mtime: {e}")
 
+    async def _reload_if_stale(self) -> None:
+        """Reload model if model_latest.ubj has been updated. Skips if reload already in progress."""
+        if self._reload_lock.locked():
+            return
+        async with self._reload_lock:
+            model_path = MODELS_DIR / "model_latest.ubj"
+            if not model_path.exists():
+                return
+            try:
+                stat_result = await asyncio.to_thread(model_path.stat)
+                mtime = stat_result.st_mtime
+                if mtime != self._model_mtime:
+                    logger.info("Model file changed — reloading")
+                    await asyncio.to_thread(self.load, model_path)
+            except Exception as e:
+                logger.warning(f"Could not check model mtime: {e}")
+
     def is_loaded(self) -> bool:
         return self.model is not None
 
     def _get_metadata(self) -> dict:
         if self._metadata is None:
-            from ml.features import load_pool_metadata
             self._metadata = load_pool_metadata()
         return self._metadata
 
@@ -135,10 +154,12 @@ class Predictor:
                         SELECT occupancy_pct
                         FROM pool_occupancy
                         WHERE pool_uid = %s
+                          AND time BETWEEN %s - INTERVAL '30 minutes'
+                                       AND %s + INTERVAL '30 minutes'
                         ORDER BY ABS(EXTRACT(EPOCH FROM (time - %s)))
                         LIMIT 1
                         """,
-                        (pool_uid, target),
+                        (pool_uid, target, target, target),
                     )
                     row = cur.fetchone()
                     return float(row[0]) if row else None
@@ -147,6 +168,51 @@ class Predictor:
         except Exception as e:
             logger.debug(f"Could not fetch week-ago occupancy: {e}")
             return None
+
+    def _fetch_lag_sync(self, pool_uid: str, dt: datetime) -> tuple[float | None, float | None]:
+        """Fetch both lag features (recent + week-ago) in a single psycopg2 connection."""
+        database_url = os.environ.get("DATABASE_URL")
+        if not database_url:
+            return None, None
+        try:
+            import psycopg2
+            target_week = dt - timedelta(days=7)
+            conn = psycopg2.connect(database_url)
+            try:
+                with conn.cursor() as cur:
+                    # lag_1h: most recent before dt
+                    cur.execute(
+                        """
+                        SELECT occupancy_pct FROM pool_occupancy
+                        WHERE pool_uid = %s AND time < %s
+                        ORDER BY time DESC LIMIT 1
+                        """,
+                        (pool_uid, dt),
+                    )
+                    row = cur.fetchone()
+                    lag_1h = float(row[0]) if row else None
+
+                    # lag_1w: closest to same time 7 days ago, ±30 min window
+                    cur.execute(
+                        """
+                        SELECT occupancy_pct FROM pool_occupancy
+                        WHERE pool_uid = %s
+                          AND time BETWEEN %s - INTERVAL '30 minutes'
+                                       AND %s + INTERVAL '30 minutes'
+                        ORDER BY ABS(EXTRACT(EPOCH FROM (time - %s)))
+                        LIMIT 1
+                        """,
+                        (pool_uid, target_week, target_week, target_week),
+                    )
+                    row = cur.fetchone()
+                    lag_1w = float(row[0]) if row else None
+
+                    return lag_1h, lag_1w
+            finally:
+                conn.close()
+        except Exception as e:
+            logger.debug(f"Could not fetch lag features: {e}")
+            return None, None
 
     async def _fetch_lag_features_batch(
         self,
@@ -216,7 +282,7 @@ class Predictor:
             ]
             return lag_1h, lag_1w
 
-        except (asyncpg.PostgresError, asyncpg.InterfaceError, OSError) as e:
+        except (asyncpg.PostgresError, asyncpg.InterfaceError, OSError, asyncio.TimeoutError) as e:
             logger.warning(f"Batch lag fetch failed: {e}", exc_info=True)
             return [None] * len(hours), [None] * len(hours)
 
@@ -235,7 +301,7 @@ class Predictor:
             return [0.0] * len(hours)
 
         # Check for model staleness once (not once per hour)
-        self._reload_if_stale()
+        await self._reload_if_stale()
 
         # Fetch all lag values in 2 queries
         lag_1h_list, lag_1w_list = await self._fetch_lag_features_batch(db_pool, pool_uid, hours)
@@ -251,6 +317,12 @@ class Predictor:
             encoding_map=self._encoding_map,
         )
 
+        if len(df_feat) != len(hours):
+            logger.error(
+                f"build_features changed row count: expected {len(hours)}, got {len(df_feat)}. "
+                "Lag features will be misaligned."
+            )
+        df_feat = df_feat.reset_index(drop=True)
         # Inject lag values (override what build_features computed from the sparse df)
         df_feat["lag_1h"] = [v if v is not None else 0.0 for v in lag_1h_list]
         df_feat["lag_1w"] = [v if v is not None else 0.0 for v in lag_1w_list]
@@ -266,11 +338,10 @@ class Predictor:
             raise RuntimeError("Model not loaded")
 
         # Reload model if it has been updated (e.g. by retrain service)
-        self._reload_if_stale()
+        self._reload_if_stale_sync()
 
         # Fetch real lag values from DB (gracefully falls back to None → 0)
-        lag_1h = self._fetch_recent_occupancy(pool_uid, dt)
-        lag_1w = self._fetch_week_ago_occupancy(pool_uid, dt)
+        lag_1h, lag_1w = self._fetch_lag_sync(pool_uid, dt)
 
         # Build a single-row DataFrame for inference
         df = pd.DataFrame([{
