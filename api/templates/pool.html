@@ -153,6 +153,18 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
 </div>
 </div>{# end .pool-layout #}
 
+{% if related_pools %}
+{% set city_map = {"zurich": "Zürich", "luzern": "Luzern", "zug": "Zug", "wengen": "Wengen", "rotkreuz": "Rotkreuz"} %}
+<div class="related-pools-block">
+  <h3 class="related-pools-title">Weitere Bäder in {{ city_map.get(pool.city, pool.city) }}</h3>
+  <ul class="related-pools-list">
+    {% for rp in related_pools %}
+    <li><a href="/bad/{{ rp.uid }}" class="related-pool-link">{{ rp.name }}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
 <style>
   .pool-layout {
     display: grid;
@@ -216,6 +228,40 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
     color: #c8d0e0;
     line-height: 1.6;
     font-size: 0.9rem;
+  }
+
+  .related-pools-block {
+    margin-top: 1.5rem;
+  }
+  .related-pools-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--muted);
+    margin: 0 0 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .related-pools-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .related-pool-link {
+    display: inline-block;
+    padding: 0.35rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: var(--text);
+    text-decoration: none;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .related-pool-link:hover {
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   .chart-legend-note {

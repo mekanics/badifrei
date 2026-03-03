@@ -202,6 +202,13 @@ async def pool_detail(request: Request, pool_uid: str):
     weekly_preds = [flat_preds[d * 24:(d + 1) * 24] for d in range(7)]
     weekly_insights = _compute_weekly_insights(weekly_preds)
 
+    # SEO-016: related pools in same city (same type first, then others; max 4)
+    all_pools = get_pools()
+    same_city = [p for p in all_pools if p.get("city") == pool.get("city") and p["uid"] != pool_uid]
+    same_type = [p for p in same_city if p.get("type") == pool.get("type")]
+    other_type = [p for p in same_city if p.get("type") != pool.get("type")]
+    related_pools = (same_type + other_type)[:4]
+
     return templates.TemplateResponse("pool.html", {
         "request": request,
         "pool": pool,
@@ -210,6 +217,7 @@ async def pool_detail(request: Request, pool_uid: str):
         "quietest_hour": quietest_hour,
         "opening_hours_summary": opening_hours_summary,
         "weekly_insights": weekly_insights,
+        "related_pools": related_pools,
     })
 
 
