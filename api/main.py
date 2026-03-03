@@ -156,11 +156,16 @@ async def pool_detail(request: Request, pool_uid: str):
     except Exception:
         today_predictions = [0.0] * 24
 
+    # Quietest open hour for FAQPage schema (SEO-008)
+    open_preds = [(i, v) for i, v in enumerate(today_predictions) if v > 0]
+    quietest_hour = min(open_preds, key=lambda x: x[1])[0] if open_preds else None
+
     return templates.TemplateResponse("pool.html", {
         "request": request,
         "pool": pool,
         "today_predictions_json": json.dumps(today_predictions),
         "today_date": today.isoformat(),
+        "quietest_hour": quietest_hour,
     })
 
 
