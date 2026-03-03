@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ pool.name }} – badifrei.ch{% endblock %}
+{% block title %}{{ pool.name }} {{ city_map.get(pool.city, pool.city | title) }} – Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
 {% set city_map = {"zurich": "Zürich", "luzern": "Luzern", "zug": "Zug", "wengen": "Wengen"} %}
 {% block description %}{{ pool.name }} {{ city_map.get(pool.city, pool.city | title) }} – Auslastung live. Wann ist es am wenigsten voll? Prognose, Öffnungszeiten & Kapazität auf badifrei.ch.{% endblock %}
 {% block og_url_path %}/bad/{{ pool.uid }}{% endblock %}
@@ -7,18 +7,35 @@
 {% block twitter_description %}{{ pool.name }} {{ city_map.get(pool.city, pool.city | title) }} – Auslastung live mit Prognose. Wann ist es am ruhigsten?{% endblock %}
 {% block canonical_path %}/bad/{{ pool.uid }}{% endblock %}
 {% block structured_data %}
+{% set city_label = city_map.get(pool.city, pool.city | title) %}
+{% set day_schema = {"Mon": "Monday", "Tue": "Tuesday", "Wed": "Wednesday", "Thu": "Thursday", "Fri": "Friday", "Sat": "Saturday", "Sun": "Sunday"} %}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SportsActivityLocation",
   "name": "{{ pool.name }}",
-  "description": "Schwimmbad in Zürich — aktuelle Auslastung und Tagesprognose",
+  "description": "{{ pool.type | title }} in {{ city_label }} – aktuelle Auslastung und Tagesprognose auf badifrei.ch.",
   "url": "https://badifrei.ch/bad/{{ pool.uid }}",
+  "image": "https://badifrei.ch/static/og-preview.jpg",
+  {% if pool.max_capacity > 0 %}"maximumAttendeeCapacity": {{ pool.max_capacity }},{% endif %}
   "address": {
     "@type": "PostalAddress",
-    "addressLocality": "Zürich",
+    "addressLocality": "{{ city_label }}",
     "addressCountry": "CH"
-  }
+  }{% if pool.opening_hours and pool.opening_hours.schedule %},
+  "openingHoursSpecification": [
+    {% set oh = pool.opening_hours.schedule %}
+    {% set days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] %}
+    {% set ns = namespace(first=true) %}
+    {% for day in days %}{% if day in oh %}{% if not ns.first %},{% endif %}{% set ns.first = false %}
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": "https://schema.org/{{ day_schema[day] }}",
+      "opens": "{{ oh[day].open }}",
+      "closes": "{{ oh[day].close }}"
+    }{% endif %}{% endfor %}
+
+  ]{% endif %}
 }
 </script>
 {% endblock %}
