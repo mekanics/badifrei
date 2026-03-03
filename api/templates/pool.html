@@ -99,6 +99,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   const POOL_UID = {{ pool.uid | tojson }};
+  const SSR_DATE = {{ today_date | tojson }};
+  const SSR_PREDICTIONS = {{ today_predictions_json | safe }};
 
   function todayZurich() {
     return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Zurich' });
@@ -130,7 +132,7 @@
         },
         {
           label: 'Prognose Auslastung %',
-          data: Array(24).fill(null),
+          data: SSR_PREDICTIONS,
           borderColor: '#4f8ef7',
           backgroundColor: 'rgba(79,142,247,0.1)',
           fill: true,
@@ -172,10 +174,15 @@
     const isFuture = date > today;
 
     try {
-      const predRes = await fetch(`/predict/range?pool_uid=${encodeURIComponent(POOL_UID)}&date=${date}`);
-      if (!predRes.ok) return;
-      const predData = await predRes.json();
-      const predValues = predData.predictions.map(p => p.predicted_occupancy_pct);
+      let predValues;
+      if (date === SSR_DATE) {
+        predValues = SSR_PREDICTIONS;
+      } else {
+        const predRes = await fetch(`/predict/range?pool_uid=${encodeURIComponent(POOL_UID)}&date=${date}`);
+        if (!predRes.ok) return;
+        const predData = await predRes.json();
+        predValues = predData.predictions.map(p => p.predicted_occupancy_pct);
+      }
       const allZero = predValues.every(v => v === 0.0);
       document.getElementById('no-model-msg').style.display = allZero ? 'block' : 'none';
       chart.data.datasets[1].data = predValues;

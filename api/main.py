@@ -141,7 +141,27 @@ async def pool_detail(request: Request, pool_uid: str):
     pool = next((p for p in pools if p["uid"] == pool_uid), None)
     if pool is None:
         raise HTTPException(status_code=404, detail=f"Pool '{pool_uid}' not found")
-    return templates.TemplateResponse("pool.html", {"request": request, "pool": pool})
+
+    # SSR today's predictions so the chart renders on first paint (SEO-001)
+    import zoneinfo
+    now_zurich = datetime.now(tz=zoneinfo.ZoneInfo("Europe/Zurich"))
+    today = now_zurich.date()
+    hours = [
+        datetime(today.year, today.month, today.day, h, 0, 0, tzinfo=timezone.utc)
+        for h in range(24)
+    ]
+    db_pool = getattr(request.app.state, "db_pool", None)
+    try:
+        today_predictions = await predictor.predict_range_batch(pool_uid, hours, db_pool)
+    except Exception:
+        today_predictions = [0.0] * 24
+
+    return templates.TemplateResponse("pool.html", {
+        "request": request,
+        "pool": pool,
+        "today_predictions_json": json.dumps(today_predictions),
+        "today_date": today.isoformat(),
+    })
 
 
 def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
