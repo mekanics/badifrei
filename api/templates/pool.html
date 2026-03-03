@@ -125,6 +125,21 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
   {% endif %}
 </div>
 
+{% if weekly_insights and weekly_insights.has_data %}
+<div class="beste-zeiten-block">
+  <h3 class="beste-zeiten-title">🕐 Beste Besuchszeiten</h3>
+  <p class="beste-zeiten-text">
+    Die ruhigste Zeit im Wochenverlauf ist typischerweise <strong>{{ weekly_insights.quietest_day_name }}</strong> um <strong>{{ weekly_insights.quietest_hour_str }} Uhr</strong>.
+    {% if weekly_insights.weekday_quieter_than_weekend == true %}
+    Unter der Woche ist es in der Regel ruhiger als am Wochenende.
+    {% elif weekly_insights.weekday_quieter_than_weekend == false %}
+    Am Wochenende ist es tendenziell ruhiger als unter der Woche.
+    {% endif %}
+    Die Hauptstosszeiten liegen typischerweise um <strong>{{ weekly_insights.peak_hour_str }} Uhr</strong>.
+  </p>
+</div>
+{% endif %}
+
 <div class="date-row">
   <label for="date-picker">Datum:</label>
   <input type="date" id="date-picker">
@@ -177,6 +192,26 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
 
   .pool-official-link a:hover {
     text-decoration: underline;
+  }
+
+  .beste-zeiten-block {
+    margin: 0.8rem 0 0;
+    padding: 0.9rem 1.2rem;
+    background: #1a2035;
+    border-radius: 8px;
+    border-left: 3px solid #34d399;
+  }
+  .beste-zeiten-title {
+    margin: 0 0 0.4rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #e8eaf0;
+  }
+  .beste-zeiten-text {
+    margin: 0;
+    color: #c8d0e0;
+    line-height: 1.6;
+    font-size: 0.9rem;
   }
 
   .chart-legend-note {
