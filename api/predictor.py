@@ -1,16 +1,28 @@
 """Model loading and inference."""
+import asyncio
 import json
 import logging
 import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import asyncpg
 import numpy as np
 import pandas as pd
+from ml.features import build_features, FEATURE_COLUMNS
 
 logger = logging.getLogger(__name__)
 
 MODELS_DIR = Path(__file__).parent.parent / "ml" / "models"
+
+
+def _to_utc_naive(dt: datetime | None) -> datetime | None:
+    """Normalize any timezone-aware datetime to UTC-naive for dict key lookups."""
+    if dt is None:
+        return None
+    if hasattr(dt, 'utcoffset') and dt.utcoffset() is not None:
+        dt = dt.replace(tzinfo=None) - dt.utcoffset()  # convert to UTC naive
+    return dt
 
 
 class Predictor:
@@ -138,10 +150,10 @@ class Predictor:
 
     async def _fetch_lag_features_batch(
         self,
-        db_pool,
+        db_pool: "asyncpg.Pool | None",
         pool_uid: str,
-        hours: list,
-    ) -> tuple[list, list]:
+        hours: list[datetime],
+    ) -> tuple[list[float | None], list[float | None]]:
         """Fetch lag_1h and lag_1w for all hours in 2 async LATERAL queries.
 
         Returns (lag_1h_list, lag_1w_list) — None where no data available.
@@ -151,9 +163,7 @@ class Predictor:
             return [None] * len(hours), [None] * len(hours)
 
         try:
-            # Query 1: most recent occupancy before each hour
-            recent_rows = await db_pool.fetch(
-                """
+            recent_sql = """
                 SELECT h.target_time, o.occupancy_pct
                 FROM unnest($1::timestamptz[]) AS h(target_time)
                 LEFT JOIN LATERAL (
@@ -163,14 +173,13 @@ class Predictor:
                     ORDER BY time DESC
                     LIMIT 1
                 ) o ON true
-                """,
-                hours, pool_uid,
-            )
-
-            # Query 2: occupancy closest to same time 7 days ago
-            week_ago_times = [dt - timedelta(days=7) for dt in hours]
-            week_rows = await db_pool.fetch(
                 """
+
+            # Week-ago lag: ±30-min window around exact 7-day offset.
+            # Training uses pd.Series.shift(freq="7D") which is also an exact 7D shift.
+            # At inference, data is collected ~every 5–10 min, so any reading within ±30 min
+            # is a faithful approximation of the training feature. Window also enables index use.
+            week_sql = """
                 SELECT h.target_time, o.occupancy_pct
                 FROM unnest($1::timestamptz[]) AS h(target_time)
                 LEFT JOIN LATERAL (
@@ -182,33 +191,41 @@ class Predictor:
                     ORDER BY ABS(EXTRACT(EPOCH FROM (time - h.target_time)))
                     LIMIT 1
                 ) o ON true
-                """,
-                week_ago_times, pool_uid,
+                """
+
+            week_ago_times = [dt - timedelta(days=7) for dt in hours]
+            recent_rows, week_rows = await asyncio.gather(
+                db_pool.fetch(recent_sql, hours, pool_uid),
+                db_pool.fetch(week_sql, week_ago_times, pool_uid),
             )
 
-            recent_map = {r["target_time"]: r["occupancy_pct"] for r in recent_rows}
-            week_map = {r["target_time"]: r["occupancy_pct"] for r in week_rows}
+            # Normalize asyncpg datetimes to UTC-naive for reliable key lookup
+            recent_map = {_to_utc_naive(r["target_time"]): r["occupancy_pct"] for r in recent_rows}
+            week_map = {_to_utc_naive(r["target_time"]): r["occupancy_pct"] for r in week_rows}
+
+            hours_naive = [_to_utc_naive(h) for h in hours]
+            week_ago_naive = [_to_utc_naive(wa) for wa in week_ago_times]
 
             lag_1h = [
                 float(recent_map[h]) if recent_map.get(h) is not None else None
-                for h in hours
+                for h in hours_naive
             ]
             lag_1w = [
                 float(week_map.get(wa)) if week_map.get(wa) is not None else None
-                for wa, h in zip(week_ago_times, hours)
+                for wa in week_ago_naive
             ]
             return lag_1h, lag_1w
 
-        except Exception as e:
-            logger.warning(f"Batch lag fetch failed: {e}")
+        except (asyncpg.PostgresError, asyncpg.InterfaceError, OSError) as e:
+            logger.warning(f"Batch lag fetch failed: {e}", exc_info=True)
             return [None] * len(hours), [None] * len(hours)
 
     async def predict_range_batch(
         self,
         pool_uid: str,
-        hours: list,
-        db_pool=None,
-    ) -> list:
+        hours: list[datetime],
+        db_pool: "asyncpg.Pool | None" = None,
+    ) -> list[float]:
         """Predict occupancy for all hours in one batched operation.
 
         Returns list of floats clipped to [0, 100].
@@ -219,8 +236,6 @@ class Predictor:
 
         # Check for model staleness once (not once per hour)
         self._reload_if_stale()
-
-        from ml.features import build_features, FEATURE_COLUMNS
 
         # Fetch all lag values in 2 queries
         lag_1h_list, lag_1w_list = await self._fetch_lag_features_batch(db_pool, pool_uid, hours)
@@ -252,8 +267,6 @@ class Predictor:
 
         # Reload model if it has been updated (e.g. by retrain service)
         self._reload_if_stale()
-
-        from ml.features import build_features, FEATURE_COLUMNS
 
         # Fetch real lag values from DB (gracefully falls back to None → 0)
         lag_1h = self._fetch_recent_occupancy(pool_uid, dt)

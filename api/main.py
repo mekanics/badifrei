@@ -333,11 +333,11 @@ async def predict_range(request: Request, pool_uid: str, date: str):
 
     predictions = [
         RangePredictionItem(
-            hour=hour,
-            predicted_at=hours[hour],
-            predicted_occupancy_pct=pct_values[hour],
+            hour=dt.hour,
+            predicted_at=dt,
+            predicted_occupancy_pct=pct,
         )
-        for hour in range(24)
+        for dt, pct in zip(hours, pct_values)
     ]
 
     return RangePredictionResponse(

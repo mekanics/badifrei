@@ -111,6 +111,46 @@ async def test_fetch_lag_features_batch_called_once():
     mock_lag.assert_called_once_with(mock_pool, "fb001", hours)
 
 
+# --- Test: timezone key mismatch doesn't silently zero out lag features ---
+async def test_fetch_lag_features_batch_returns_actual_values():
+    """Lag values from mock DB should populate result, not silently degrade to None.
+
+    Regression test for timezone key mismatch: asyncpg returns timezone-aware
+    datetimes; the hours list uses timezone.utc. Keys must normalize correctly.
+    """
+    from unittest.mock import MagicMock
+    import asyncio
+
+    predictor = Predictor()
+    hours = [datetime(2026, 3, 3, h, 0, 0, tzinfo=timezone.utc) for h in range(24)]
+
+    # Simulate asyncpg returning timezone-aware datetimes (as asyncpg does for timestamptz)
+    # asyncpg returns datetime with tzinfo=datetime.timezone.utc
+    mock_pool = MagicMock()
+
+    # Build mock records that match hours[0] = 2026-03-03 00:00 UTC
+    mock_record_recent = {"target_time": datetime(2026, 3, 3, 0, 0, 0, tzinfo=timezone.utc), "occupancy_pct": 42.0}
+    mock_record_week = {"target_time": datetime(2026, 2, 24, 0, 0, 0, tzinfo=timezone.utc), "occupancy_pct": 37.0}
+
+    async def mock_fetch(sql, *args):
+        # Return one record for first hour, None for the rest
+        if args[0][0] == hours[0]:  # recent query
+            return [mock_record_recent] + [{"target_time": h, "occupancy_pct": None} for h in args[0][1:]]
+        else:  # week_ago query
+            return [mock_record_week] + [{"target_time": h, "occupancy_pct": None} for h in args[0][1:]]
+
+    mock_pool.fetch = mock_fetch
+
+    lag_1h, lag_1w = await predictor._fetch_lag_features_batch(mock_pool, "fb001", hours)
+
+    # First hour should have actual values, not None
+    assert lag_1h[0] == 42.0, f"Expected 42.0, got {lag_1h[0]} — possible timezone key mismatch"
+    assert lag_1w[0] == 37.0, f"Expected 37.0, got {lag_1w[0]} — possible timezone key mismatch"
+    # Rest should be None (no data)
+    assert lag_1h[1] is None
+    assert lag_1w[1] is None
+
+
 # --- Test: _fetch_lag_features_batch graceful fallback when db_pool=None ---
 async def test_fetch_lag_features_batch_no_pool_returns_nones():
     """When db_pool is None, should return (list of None, list of None)."""

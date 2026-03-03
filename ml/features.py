@@ -15,10 +15,10 @@ METADATA_PATH = Path(__file__).parent / "pool_metadata.json"
 POOL_TYPE_ENCODING = {"hallenbad": 0, "freibad": 1, "strandbad": 2, "seebad": 3, "other": 4}
 
 # Module-level holiday cache — avoids reconstructing on every call
-_HOLIDAYS_CACHE: dict[str, object] = {}
+_HOLIDAYS_CACHE: dict[str, "holidays.HolidayBase"] = {}
 
 
-def _get_holidays(country: str = "CH", subdiv: str = "ZH"):
+def _get_holidays(country: str = "CH", subdiv: str = "ZH") -> "holidays.HolidayBase":
     key = f"{country}_{subdiv}"
     if key not in _HOLIDAYS_CACHE:
         _HOLIDAYS_CACHE[key] = holidays.country_holidays(country, subdiv=subdiv)
