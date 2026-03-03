@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}{{ pool.name }} – badifrei.ch{% endblock %}
 {% set city_map = {"zurich": "Zürich", "luzern": "Luzern", "zug": "Zug", "wengen": "Wengen"} %}
-{% block description %}{{ pool.name }} {{ city_map.get(pool.city, pool.city | title) }} – Auslastung live. Wann ist es am wenigsten voll? KI-Prognose, Öffnungszeiten & Kapazität auf badifrei.ch.{% endblock %}
+{% block description %}{{ pool.name }} {{ city_map.get(pool.city, pool.city | title) }} – Auslastung live. Wann ist es am wenigsten voll? Prognose, Öffnungszeiten & Kapazität auf badifrei.ch.{% endblock %}
 {% block og_url_path %}/bad/{{ pool.uid }}{% endblock %}
-{% block og_description %}{{ pool.name }} {{ city_map.get(pool.city, pool.city | title) }} – Auslastung live und KI-Prognose auf badifrei.ch. Finde den besten Zeitpunkt für deinen Besuch.{% endblock %}
-{% block twitter_description %}{{ pool.name }} {{ city_map.get(pool.city, pool.city | title) }} – Auslastung live und KI-Prognose. Wann ist es am ruhigsten?{% endblock %}
+{% block og_description %}{{ pool.name }} {{ city_map.get(pool.city, pool.city | title) }} – Auslastung live mit Prognose auf badifrei.ch. Finde den besten Zeitpunkt für deinen Besuch.{% endblock %}
+{% block twitter_description %}{{ pool.name }} {{ city_map.get(pool.city, pool.city | title) }} – Auslastung live mit Prognose. Wann ist es am ruhigsten?{% endblock %}
 {% block canonical_path %}/bad/{{ pool.uid }}{% endblock %}
 {% block structured_data %}
 <script type="application/ld+json">
