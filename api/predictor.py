@@ -136,6 +136,115 @@ class Predictor:
             logger.debug(f"Could not fetch week-ago occupancy: {e}")
             return None
 
+    async def _fetch_lag_features_batch(
+        self,
+        db_pool,
+        pool_uid: str,
+        hours: list,
+    ) -> tuple[list, list]:
+        """Fetch lag_1h and lag_1w for all hours in 2 async LATERAL queries.
+
+        Returns (lag_1h_list, lag_1w_list) — None where no data available.
+        Falls back to (all-None, all-None) if db_pool is None or query fails.
+        """
+        if db_pool is None:
+            return [None] * len(hours), [None] * len(hours)
+
+        try:
+            # Query 1: most recent occupancy before each hour
+            recent_rows = await db_pool.fetch(
+                """
+                SELECT h.target_time, o.occupancy_pct
+                FROM unnest($1::timestamptz[]) AS h(target_time)
+                LEFT JOIN LATERAL (
+                    SELECT occupancy_pct
+                    FROM pool_occupancy
+                    WHERE pool_uid = $2 AND time < h.target_time
+                    ORDER BY time DESC
+                    LIMIT 1
+                ) o ON true
+                """,
+                hours, pool_uid,
+            )
+
+            # Query 2: occupancy closest to same time 7 days ago
+            week_ago_times = [dt - timedelta(days=7) for dt in hours]
+            week_rows = await db_pool.fetch(
+                """
+                SELECT h.target_time, o.occupancy_pct
+                FROM unnest($1::timestamptz[]) AS h(target_time)
+                LEFT JOIN LATERAL (
+                    SELECT occupancy_pct
+                    FROM pool_occupancy
+                    WHERE pool_uid = $2
+                      AND time BETWEEN h.target_time - INTERVAL '30 minutes'
+                                   AND h.target_time + INTERVAL '30 minutes'
+                    ORDER BY ABS(EXTRACT(EPOCH FROM (time - h.target_time)))
+                    LIMIT 1
+                ) o ON true
+                """,
+                week_ago_times, pool_uid,
+            )
+
+            recent_map = {r["target_time"]: r["occupancy_pct"] for r in recent_rows}
+            week_map = {r["target_time"]: r["occupancy_pct"] for r in week_rows}
+
+            lag_1h = [
+                float(recent_map[h]) if recent_map.get(h) is not None else None
+                for h in hours
+            ]
+            lag_1w = [
+                float(week_map.get(wa)) if week_map.get(wa) is not None else None
+                for wa, h in zip(week_ago_times, hours)
+            ]
+            return lag_1h, lag_1w
+
+        except Exception as e:
+            logger.warning(f"Batch lag fetch failed: {e}")
+            return [None] * len(hours), [None] * len(hours)
+
+    async def predict_range_batch(
+        self,
+        pool_uid: str,
+        hours: list,
+        db_pool=None,
+    ) -> list:
+        """Predict occupancy for all hours in one batched operation.
+
+        Returns list of floats clipped to [0, 100].
+        Returns [0.0] * len(hours) if model is not loaded.
+        """
+        if not self.is_loaded():
+            return [0.0] * len(hours)
+
+        # Check for model staleness once (not once per hour)
+        self._reload_if_stale()
+
+        from ml.features import build_features, FEATURE_COLUMNS
+
+        # Fetch all lag values in 2 queries
+        lag_1h_list, lag_1w_list = await self._fetch_lag_features_batch(db_pool, pool_uid, hours)
+
+        # Build 24-row DataFrame for vectorised feature engineering
+        df = pd.DataFrame([
+            {"time": dt, "pool_uid": pool_uid, "occupancy_pct": 0.0}
+            for dt in hours
+        ])
+        df_feat = build_features(
+            df,
+            metadata=self._get_metadata(),
+            encoding_map=self._encoding_map,
+        )
+
+        # Inject lag values (override what build_features computed from the sparse df)
+        df_feat["lag_1h"] = [v if v is not None else 0.0 for v in lag_1h_list]
+        df_feat["lag_1w"] = [v if v is not None else 0.0 for v in lag_1w_list]
+
+        # Batch predict once
+        X = df_feat[FEATURE_COLUMNS].fillna(0)
+        preds = self.model.predict(X)
+        return [float(np.clip(p, 0.0, 100.0)) for p in preds]
+
     def predict(self, pool_uid: str, dt: datetime) -> float:
         """Predict occupancy % for a pool at a given datetime."""
         if not self.is_loaded():

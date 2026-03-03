@@ -309,7 +309,7 @@ async def predict(pool_uid: str, dt_str: str):
 
 
 @app.get("/predict/range", response_model=RangePredictionResponse, tags=["predictions"])
-async def predict_range(pool_uid: str, date: str):
+async def predict_range(request: Request, pool_uid: str, date: str):
     """Predict hourly occupancy for a pool for an entire day."""
     from fastapi import HTTPException
 
@@ -323,18 +323,22 @@ async def predict_range(pool_uid: str, date: str):
     except Exception:
         raise HTTPException(status_code=422, detail=f"Invalid date: '{date}'")
 
-    predictions = []
-    for hour in range(24):
-        dt = datetime(d.year, d.month, d.day, hour, 0, 0, tzinfo=timezone.utc)
-        if predictor.is_loaded():
-            pct = predictor.predict(pool_uid, dt)
-        else:
-            pct = 0.0
-        predictions.append(RangePredictionItem(
+    hours = [
+        datetime(d.year, d.month, d.day, hour, 0, 0, tzinfo=timezone.utc)
+        for hour in range(24)
+    ]
+
+    db_pool = getattr(request.app.state, "db_pool", None)
+    pct_values = await predictor.predict_range_batch(pool_uid, hours, db_pool)
+
+    predictions = [
+        RangePredictionItem(
             hour=hour,
-            predicted_at=dt,
-            predicted_occupancy_pct=pct,
-        ))
+            predicted_at=hours[hour],
+            predicted_occupancy_pct=pct_values[hour],
+        )
+        for hour in range(24)
+    ]
 
     return RangePredictionResponse(
         pool_uid=pool_uid,

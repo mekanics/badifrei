@@ -14,6 +14,16 @@ METADATA_PATH = Path(__file__).parent / "pool_metadata.json"
 # Pool type encoding (stable integer mapping)
 POOL_TYPE_ENCODING = {"hallenbad": 0, "freibad": 1, "strandbad": 2, "seebad": 3, "other": 4}
 
+# Module-level holiday cache — avoids reconstructing on every call
+_HOLIDAYS_CACHE: dict[str, object] = {}
+
+
+def _get_holidays(country: str = "CH", subdiv: str = "ZH"):
+    key = f"{country}_{subdiv}"
+    if key not in _HOLIDAYS_CACHE:
+        _HOLIDAYS_CACHE[key] = holidays.country_holidays(country, subdiv=subdiv)
+    return _HOLIDAYS_CACHE[key]
+
 
 def load_pool_metadata() -> dict[str, dict]:
     """Load pool metadata keyed by uid."""
@@ -54,7 +64,7 @@ def add_time_features(df: pd.DataFrame) -> pd.DataFrame:
 def add_holiday_feature(df: pd.DataFrame, country: str = "CH", subdiv: str = "ZH") -> pd.DataFrame:
     """Add Swiss/Zurich public holiday flag."""
     df = df.copy()
-    ch_holidays = holidays.Switzerland(subdiv=subdiv)
+    ch_holidays = _get_holidays(country=country, subdiv=subdiv)
     dt = pd.to_datetime(df["time"])
     df["is_holiday"] = dt.dt.date.apply(lambda d: int(d in ch_holidays))
     return df
