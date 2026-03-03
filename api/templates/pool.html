@@ -81,41 +81,43 @@
   {% endif %}
 </div>
 
-<div class="pool-info-block">
-  {% set oh = pool.opening_hours %}
-  {% if oh %}
-    {% set days = [("Mon","Mo"),("Tue","Di"),("Wed","Mi"),("Thu","Do"),("Fri","Fr"),("Sat","Sa"),("Sun","So")] %}
-    <table class="hours-table">
-      <tbody>
-      {% for key, label in days %}
-        {% set sched = oh.schedule.get(key) %}
-        <tr>
-          <td class="day-label">{{ label }}</td>
-          {% if sched %}
-            <td class="day-hours">{{ sched.open }} – {{ sched.close }}</td>
-          {% else %}
-            <td class="day-hours closed-day">Geschlossen</td>
-          {% endif %}
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    {% if oh.seasonal_open and oh.seasonal_close %}
-    <p class="seasonal-note">🏊 Saison: {{ oh.seasonal_open }} – {{ oh.seasonal_close }}</p>
+<div class="pool-info-grid">
+  <div class="pool-info-block">
+    {% set oh = pool.opening_hours %}
+    {% if oh %}
+      {% set days = [("Mon","Mo"),("Tue","Di"),("Wed","Mi"),("Thu","Do"),("Fri","Fr"),("Sat","Sa"),("Sun","So")] %}
+      <table class="hours-table">
+        <tbody>
+        {% for key, label in days %}
+          {% set sched = oh.schedule.get(key) %}
+          <tr>
+            <td class="day-label">{{ label }}</td>
+            {% if sched %}
+              <td class="day-hours">{{ sched.open }} – {{ sched.close }}</td>
+            {% else %}
+              <td class="day-hours closed-day">Geschlossen</td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% if oh.seasonal_open and oh.seasonal_close %}
+      <p class="seasonal-note">🏊 Saison: {{ oh.seasonal_open }} – {{ oh.seasonal_close }}</p>
+      {% endif %}
+    {% else %}
+      <p class="pool-info-muted">Öffnungszeiten nicht verfügbar.</p>
     {% endif %}
-  {% else %}
-    <p class="pool-info-muted">Öffnungszeiten nicht verfügbar.</p>
-  {% endif %}
-</div>
+  </div>
 
-{% if pool.description %}
-<div class="pool-description-block">
-  <p class="pool-description-text">{{ pool.description }}</p>
-  {% if pool.official_url %}
-  <p class="pool-official-link"><a href="{{ pool.official_url }}" target="_blank" rel="noopener noreferrer">Offizielle Seite →</a></p>
+  {% if pool.description %}
+  <div class="pool-description-block">
+    <p class="pool-description-text">{{ pool.description }}</p>
+    {% if pool.official_url %}
+    <p class="pool-official-link"><a href="{{ pool.official_url }}" target="_blank" rel="noopener noreferrer">Offizielle Seite →</a></p>
+    {% endif %}
+  </div>
   {% endif %}
 </div>
-{% endif %}
 
 <div class="date-row">
   <label for="date-picker">Datum:</label>
@@ -129,8 +131,19 @@
 
 
 <style>
+  .pool-info-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.2rem;
+    align-items: start;
+    margin: 0.8rem 0;
+  }
+  @media (max-width: 600px) {
+    .pool-info-grid {
+      grid-template-columns: 1fr;
+    }
+  }
   .pool-description-block {
-    margin: 1.2rem 0 0.8rem;
     padding: 1rem 1.2rem;
     background: #1a2035;
     border-radius: 8px;
