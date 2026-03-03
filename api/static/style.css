@@ -9,17 +9,19 @@
 	--text: #e8eef6;
 	--muted: #7a95b8;
 	--accent: #38bdf8;
-	--accent-soft: rgba(56,189,248,0.12);
+	--accent-soft: rgba(56, 189, 248, 0.12);
 	--green: #34d399;
 	--yellow: #fbbf24;
 	--red: #f87171;
 	--grey: #4b5563;
 	--radius: 18px;
-	--shadow: 0 4px 20px rgba(0,0,0,0.35);
-	--shadow-hover: 0 8px 32px rgba(0,0,0,0.5);
+	--shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+	--shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
 	box-sizing: border-box;
 	margin: 0;
 	padding: 0;
@@ -28,7 +30,11 @@
 body {
 	background: var(--bg);
 	color: var(--text);
-	font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+	font-family:
+		'Nunito',
+		-apple-system,
+		BlinkMacSystemFont,
+		sans-serif;
 	line-height: 1.6;
 	min-height: 100vh;
 }
@@ -88,7 +94,10 @@ body {
 	padding: 1.35rem;
 	text-decoration: none;
 	color: var(--text);
-	transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+	transition:
+		border-color 0.2s,
+		transform 0.2s,
+		box-shadow 0.2s;
 	display: block;
 	box-shadow: var(--shadow);
 	position: relative;
@@ -126,14 +135,38 @@ body {
 	flex-shrink: 0;
 }
 
-.badge-freibad   { background: rgba(56,189,248,0.15); color: #7dd3fc; }
-.badge-hallenbad { background: rgba(52,211,153,0.15); color: #6ee7b7; }
-.badge-strandbad { background: rgba(251,191,36,0.15);  color: #fcd34d; }
-.badge-seebad    { background: rgba(167,139,250,0.15); color: #c4b5fd; }
-.badge-warmebad  { background: rgba(251,146,60,0.15);  color: #fdba74; }
-.badge-kombibad  { background: rgba(248,113,113,0.15); color: #fca5a5; }
-.badge-flussbad  { background: rgba(34,211,238,0.15);  color: #67e8f9; }
-.badge-other     { background: rgba(107,114,128,0.15); color: #9ca3af; }
+.badge-freibad {
+	background: rgba(56, 189, 248, 0.15);
+	color: #7dd3fc;
+}
+.badge-hallenbad {
+	background: rgba(52, 211, 153, 0.15);
+	color: #6ee7b7;
+}
+.badge-strandbad {
+	background: rgba(251, 191, 36, 0.15);
+	color: #fcd34d;
+}
+.badge-seebad {
+	background: rgba(167, 139, 250, 0.15);
+	color: #c4b5fd;
+}
+.badge-warmebad {
+	background: rgba(251, 146, 60, 0.15);
+	color: #fdba74;
+}
+.badge-kombibad {
+	background: rgba(248, 113, 113, 0.15);
+	color: #fca5a5;
+}
+.badge-flussbad {
+	background: rgba(34, 211, 238, 0.15);
+	color: #67e8f9;
+}
+.badge-other {
+	background: rgba(107, 114, 128, 0.15);
+	color: #9ca3af;
+}
 
 /* Occupancy bar */
 .occupancy-bar-wrap {
@@ -147,14 +180,24 @@ body {
 .occupancy-bar {
 	height: 100%;
 	border-radius: 99px;
-	transition: width 0.5s ease, background-color 0.5s;
+	transition:
+		width 0.5s ease,
+		background-color 0.5s;
 	background: var(--grey);
 }
 
-.occupancy-bar.green  { background: linear-gradient(90deg, #34d399, #10b981); }
-.occupancy-bar.yellow { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
-.occupancy-bar.red    { background: linear-gradient(90deg, #f87171, #ef4444); }
-.occupancy-bar.grey   { background: var(--grey); }
+.occupancy-bar.green {
+	background: linear-gradient(90deg, #34d399, #10b981);
+}
+.occupancy-bar.yellow {
+	background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+.occupancy-bar.red {
+	background: linear-gradient(90deg, #f87171, #ef4444);
+}
+.occupancy-bar.grey {
+	background: var(--grey);
+}
 
 .occupancy-row {
 	display: flex;
@@ -200,7 +243,9 @@ body {
 	font-size: 0.85rem;
 	line-height: 1;
 	opacity: 0;
-	transition: opacity 0.15s, transform 0.15s;
+	transition:
+		opacity 0.15s,
+		transform 0.15s;
 	padding: 0.2rem;
 	z-index: 2;
 	filter: grayscale(1);
@@ -221,16 +266,38 @@ body {
 }
 
 @media (pointer: coarse) {
-	.star-btn        { opacity: 0.5; }
-	.star-btn.starred { opacity: 1; filter: grayscale(0); }
+	.star-btn {
+		opacity: 0.5;
+	}
+	.star-btn.starred {
+		opacity: 1;
+		filter: grayscale(0);
+	}
 }
 
 /* Open/Closed status */
-.status-badge { display: flex; align-items: center; gap: 4px; }
-.status-dot   { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.status-dot.open   { background: #34d399; box-shadow: 0 0 5px #34d39966; }
-.status-dot.closed { background: #4b5563; }
-.status-text  { font-size: 0.72rem; color: var(--muted); }
+.status-badge {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+.status-dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+.status-dot.open {
+	background: #34d399;
+	box-shadow: 0 0 5px #34d39966;
+}
+.status-dot.closed {
+	background: #4b5563;
+}
+.status-text {
+	font-size: 0.72rem;
+	color: var(--muted);
+}
 
 /* Pool detail page */
 .back-link {
@@ -244,7 +311,9 @@ body {
 	font-weight: 600;
 }
 
-.back-link:hover { text-decoration: underline; }
+.back-link:hover {
+	text-decoration: underline;
+}
 
 .pool-detail-header {
 	display: flex;
@@ -266,7 +335,6 @@ body {
 }
 
 .pool-info-block {
-	margin: 1.25rem 0 1.75rem;
 	background: var(--surface);
 	border: 1px solid var(--border);
 	border-radius: 12px;
@@ -279,7 +347,9 @@ body {
 	font-size: 0.85rem;
 }
 
-.hours-table td { padding: 3px 14px 3px 0; }
+.hours-table td {
+	padding: 3px 14px 3px 0;
+}
 
 .day-label {
 	color: var(--muted);
@@ -287,8 +357,14 @@ body {
 	min-width: 2.2rem;
 }
 
-.day-hours  { color: var(--text); font-weight: 500; }
-.closed-day { color: var(--muted); font-style: italic; }
+.day-hours {
+	color: var(--text);
+	font-weight: 500;
+}
+.closed-day {
+	color: var(--muted);
+	font-style: italic;
+}
 
 .seasonal-note {
 	font-size: 0.8rem;
@@ -347,7 +423,7 @@ input[type='date'] {
 }
 
 .no-model {
-	background: rgba(251,191,36,0.08);
+	background: rgba(251, 191, 36, 0.08);
 	border: 1px solid #78350f;
 	color: #fcd34d;
 	border-radius: 10px;
@@ -361,7 +437,9 @@ input[type='date'] {
 	.pool-grid {
 		grid-template-columns: 1fr;
 	}
-	.page-title { font-size: 1.6rem; }
+	.page-title {
+		font-size: 1.6rem;
+	}
 	.pool-detail-header {
 		flex-direction: column;
 		align-items: flex-start;
@@ -386,7 +464,6 @@ input[type='date'] {
 	gap: 2rem;
 }
 
-
 .footer-heading {
 	display: block;
 	font-size: 0.7rem;
@@ -409,4 +486,6 @@ input[type='date'] {
 	text-decoration: none;
 }
 
-.footer-col a:hover { text-decoration: underline; }
+.footer-col a:hover {
+	text-decoration: underline;
+}
