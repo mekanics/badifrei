@@ -10,7 +10,7 @@ from pathlib import Path
 
 from dateutil.parser import parse as date_parser_raw
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse as _JSONResponse, HTMLResponse, PlainTextResponse, Response
@@ -137,7 +137,6 @@ async def dashboard_index(request: Request):
 @app.get("/bad/{pool_uid}", response_class=HTMLResponse, tags=["pools"])
 async def pool_detail(request: Request, pool_uid: str):
     """Pool detail dashboard."""
-    from fastapi import HTTPException
     pools = get_pools()
     pool = next((p for p in pools if p["uid"] == pool_uid), None)
     if pool is None:
@@ -274,8 +273,6 @@ async def list_pools():
 @app.get("/predict", response_model=PredictionResponse, tags=["predictions"])
 async def predict(pool_uid: str, dt_str: str):
     """Predict occupancy for a pool at a specific datetime (ISO 8601)."""
-    from fastapi import HTTPException
-
     # Validate pool exists
     pools = get_pools()
     pool = next((p for p in pools if p["uid"] == pool_uid), None)
@@ -311,8 +308,6 @@ async def predict(pool_uid: str, dt_str: str):
 @app.get("/predict/range", response_model=RangePredictionResponse, tags=["predictions"])
 async def predict_range(request: Request, pool_uid: str, date: str):
     """Predict hourly occupancy for a pool for an entire day."""
-    from fastapi import HTTPException
-
     pools = get_pools()
     pool = next((p for p in pools if p["uid"] == pool_uid), None)
     if pool is None:
@@ -352,7 +347,6 @@ async def predict_range(request: Request, pool_uid: str, date: str):
 async def history(request: Request, pool_uid: str, date: str):
     """Return hourly average occupancy from DB for a given pool and date."""
     from datetime import date as date_type, timedelta
-    from fastapi import HTTPException
     null_actuals = [{"hour": i, "occupancy_pct": None} for i in range(24)]
 
     # Validate pool exists
