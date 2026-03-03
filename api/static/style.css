@@ -43,7 +43,12 @@ body {
 .navbar {
 	background: var(--surface);
 	border-bottom: 1px solid var(--border);
-	padding: 0.9rem 1.75rem;
+}
+
+.navbar-inner {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0.9rem 1.25rem;
 	display: flex;
 	align-items: center;
 }
