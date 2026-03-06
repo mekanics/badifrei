@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <!-- White background with rounded corners (Apple icon standard) -->
+  <rect width="180" height="180" fill="#ffffff" rx="40"/>
+  <!-- Brutalist border -->
+  <rect x="3" y="3" width="174" height="174" fill="none" stroke="#111111" stroke-width="6" rx="37"/>
+
+  <!-- Pool lane hint — subtle top/bottom horizontal rules -->
+  <line x1="18" y1="44" x2="162" y2="44" stroke="#111111" stroke-width="2" stroke-linecap="round"/>
+  <line x1="18" y1="136" x2="162" y2="136" stroke="#111111" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Three bold S-wave strokes — water surface, centered in pool area -->
+  <path d="M 18,72 C 48,50 78,94 96,72 S 144,94 162,72"
+        fill="none" stroke="#0057ff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 18,90 C 48,112 78,68 96,90 S 144,68 162,90"
+        fill="none" stroke="#0057ff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 18,108 C 48,86 78,130 96,108 S 144,130 162,108"
+        fill="none" stroke="#0057ff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Lane divider dots (left side) -->
+  <circle cx="14" cy="72"  r="3" fill="#111111"/>
+  <circle cx="14" cy="90"  r="3" fill="#111111"/>
+  <circle cx="14" cy="108" r="3" fill="#111111"/>
+  <!-- Lane divider dots (right side) -->
+  <circle cx="166" cy="72"  r="3" fill="#111111"/>
+  <circle cx="166" cy="90"  r="3" fill="#111111"/>
+  <circle cx="166" cy="108" r="3" fill="#111111"/>
+</svg>
