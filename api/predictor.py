@@ -5,11 +5,15 @@ import logging
 import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import asyncpg
 import numpy as np
 import pandas as pd
 from ml.features import build_features, load_pool_metadata, FEATURE_COLUMNS
+
+if TYPE_CHECKING:
+    import datetime as _dt
 
 logger = logging.getLogger(__name__)
 
@@ -286,6 +290,59 @@ class Predictor:
             logger.warning(f"Batch lag fetch failed: {e}", exc_info=True)
             return [None] * len(hours), [None] * len(hours)
 
+    async def _fetch_rolling_mean_7d(
+        self,
+        db_pool: "asyncpg.Pool | None",
+        pool_uid: str,
+        before_dt: datetime | None,
+    ) -> float | None:
+        """Fetch 7-day rolling mean occupancy (avg of last 168 readings) from DB.
+
+        Returns the float value, or None when DB is unavailable or has no data.
+        This replaces the always-zero dummy value computed from the placeholder df.
+        """
+        if db_pool is None or before_dt is None:
+            return None
+        try:
+            row = await db_pool.fetchrow(
+                """
+                SELECT AVG(occupancy_pct) AS rolling_mean
+                FROM (
+                    SELECT occupancy_pct
+                    FROM pool_occupancy
+                    WHERE pool_uid = $1 AND time < $2
+                    ORDER BY time DESC
+                    LIMIT 168
+                ) recent
+                """,
+                pool_uid,
+                before_dt,
+            )
+            if row and row["rolling_mean"] is not None:
+                return float(row["rolling_mean"])
+            return None
+        except (asyncpg.PostgresError, asyncpg.InterfaceError, OSError) as e:
+            logger.warning(f"Could not fetch rolling mean for {pool_uid}: {e}")
+            return None
+
+    async def _fetch_weather_safe(
+        self,
+        date: "datetime.date | None",
+    ) -> "pd.DataFrame | None":
+        """Fetch weather from Open-Meteo for *date*, returning None on any failure.
+
+        Uses the ml.weather module which handles forecast vs archive URL selection
+        and maintains an in-memory cache per date.
+        """
+        if date is None:
+            return None
+        try:
+            from ml.weather import fetch_weather
+            return await fetch_weather(date)
+        except Exception as e:
+            logger.warning(f"Weather fetch failed for {date}: {e}")
+            return None
+
     async def predict_range_batch(
         self,
         pool_uid: str,
@@ -303,8 +360,15 @@ class Predictor:
         # Check for model staleness once (not once per hour)
         await self._reload_if_stale()
 
-        # Fetch all lag values in 2 queries
-        lag_1h_list, lag_1w_list = await self._fetch_lag_features_batch(db_pool, pool_uid, hours)
+        # Derive date for weather fetch from the first requested hour
+        target_date = hours[0].date() if hours else None
+
+        # Fetch lag features, rolling mean, and weather concurrently
+        (lag_1h_list, lag_1w_list), rolling_mean_7d, weather_df = await asyncio.gather(
+            self._fetch_lag_features_batch(db_pool, pool_uid, hours),
+            self._fetch_rolling_mean_7d(db_pool, pool_uid, hours[0] if hours else None),
+            self._fetch_weather_safe(target_date),
+        )
 
         # Build 24-row DataFrame for vectorised feature engineering
         df = pd.DataFrame([
@@ -315,7 +379,12 @@ class Predictor:
             df,
             metadata=self._get_metadata(),
             encoding_map=self._encoding_map,
+            weather_df=weather_df,  # None → sensible defaults; real df → actual weather
         )
+
+        # Inject real rolling mean (replaces dummy 0.0 computed from placeholder df)
+        if rolling_mean_7d is not None:
+            df_feat["rolling_mean_7d"] = rolling_mean_7d
 
         if len(df_feat) != len(hours):
             logger.error(

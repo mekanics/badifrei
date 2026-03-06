@@ -40,9 +40,21 @@ def prepare_xy(df: pd.DataFrame):
     return feature_df, target
 
 
-def train(df: pd.DataFrame, test_fraction: float = 0.2) -> tuple[xgb.XGBRegressor, dict]:
+def train(
+    df: pd.DataFrame,
+    test_fraction: float = 0.2,
+    weather_df: "pd.DataFrame | None" = None,
+) -> tuple[xgb.XGBRegressor, dict]:
     """
     Train XGBoost model on pool occupancy data.
+
+    Args:
+        df: Raw occupancy DataFrame (time, pool_uid, occupancy_pct, …).
+        test_fraction: Fraction of data (by time) held out for evaluation.
+        weather_df: Optional combined weather DataFrame with columns
+            [date, hour, temperature_c, precipitation_mm, weathercode].
+            When provided, weather features are included in the model.
+            Fetch with ``ml.weather.fetch_weather_batch`` before calling.
 
     Returns (model, metrics_dict).
     """
@@ -51,8 +63,8 @@ def train(df: pd.DataFrame, test_fraction: float = 0.2) -> tuple[xgb.XGBRegresso
     # Build stable encoding map from the full training dataset before building features
     encoding_map = get_pool_uid_encoding(df["pool_uid"].tolist())
 
-    # Build features
-    df_features = build_features(df, encoding_map=encoding_map)
+    # Build features (weather_df may be None — defaults will be used)
+    df_features = build_features(df, encoding_map=encoding_map, weather_df=weather_df)
 
     # Time-based split
     train_df, test_df = time_based_split(df_features, test_fraction)

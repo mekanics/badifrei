@@ -110,6 +110,55 @@ async def fetch_weather(date: datetime.date) -> pd.DataFrame:
     return df.drop(columns=["date"], errors="ignore")
 
 
+async def fetch_weather_batch(
+    dates: "Iterable[datetime.date]",
+    max_concurrency: int = 10,
+) -> pd.DataFrame:
+    """Fetch weather for multiple dates concurrently.
+
+    Returns a combined DataFrame with columns:
+        date, hour (0-23), temperature_c, precipitation_mm, weathercode
+
+    Useful at training time when you need weather for an entire historical dataset.
+    Dates already in the in-memory cache are served without network I/O.
+    Failed fetches are replaced with NaN rows (graceful degradation).
+
+    Args:
+        dates: Iterable of calendar dates to fetch.
+        max_concurrency: Maximum simultaneous Open-Meteo requests.
+    """
+    import asyncio
+    from collections.abc import Iterable as _Iterable
+
+    unique_dates = sorted(set(dates))
+    if not unique_dates:
+        return pd.DataFrame(
+            columns=["date", "hour", "temperature_c", "precipitation_mm", "weathercode"]
+        )
+
+    semaphore = asyncio.Semaphore(max_concurrency)
+
+    async def _fetch_one(d: datetime.date) -> pd.DataFrame:
+        async with semaphore:
+            try:
+                df = await fetch_weather(d)
+                df = df.copy()
+                df["date"] = d
+                return df
+            except Exception as exc:
+                logger.warning("Weather batch fetch failed for %s: %s", d, exc)
+                df = _nan_df()
+                df["date"] = d
+                return df
+
+    frames = await asyncio.gather(*[_fetch_one(d) for d in unique_dates])
+    combined = pd.concat(frames, ignore_index=True)
+    logger.info(
+        "Fetched weather for %d dates (%d rows total)", len(unique_dates), len(combined)
+    )
+    return combined
+
+
 def clear_cache() -> None:
     """Clear the in-memory weather cache (useful for testing)."""
     _cache.clear()

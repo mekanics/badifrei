@@ -204,6 +204,15 @@ def build_features(
         df["lag_1w"] = lag_1w_override
     if weather_df is not None:
         df = add_weather_features(df, weather_df)
+    else:
+        # Always populate weather columns so FEATURE_COLUMNS is fully resolvable.
+        # When weather is unavailable, use sensible defaults rather than relying
+        # on a downstream fillna(0) that would silently use wrong values.
+        df["temperature_c"] = 15.0
+        df["precipitation_mm"] = 0.0
+        df["is_rainy"] = 0
+        is_outdoor = (df["pool_type"] == POOL_TYPE_ENCODING["freibad"]).astype(float)
+        df["temp_x_outdoor"] = 15.0 * is_outdoor
     df = add_opening_hours_features(df, metadata)
     # Drop helper columns not used as model features
     df = df.drop(columns=["date"], errors="ignore")
@@ -236,6 +245,11 @@ FEATURE_COLUMNS = [
     "lag_1h",
     "lag_1w",
     "rolling_mean_7d",
+    # Weather features — always present (defaults used when weather unavailable)
+    "temperature_c",
+    "precipitation_mm",
+    "is_rainy",
+    "temp_x_outdoor",
     "is_open",
     "minutes_since_open",
     "minutes_until_close",
