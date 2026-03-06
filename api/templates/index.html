@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Zürcher Schwimmbäder – Auslastung live & Prognose | badifrei.ch{% endblock %}
 {% block content %}
-<h1 class="page-title">Zürcher Schwimmbäder – Auslastung live & Prognose 🏊</h1>
+<h1 class="page-title">Zürcher Schwimmbäder – Auslastung live & Prognose</h1>
 <p class="subtitle">Ist deine Lieblingsbadi gerade voll? Schau nach — Auslastung live, jede Minute aktualisiert.</p>
 
 <!-- Favoriten (nur sichtbar wenn vorhanden) -->
@@ -16,7 +16,7 @@
   <h2 class="section-title">Schwimmbäder {{ city.label }}</h2>
   <div class="pool-grid" id="pool-grid-{{ city.key }}">
     {% for pool in city.pools %}
-    <a href="/bad/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}">
+    <a href="/bad/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}" data-capacity="{{ pool.max_capacity }}">
       <button class="star-btn" data-uid="{{ pool.uid }}" aria-label="Zu Favoriten hinzufügen">⭐</button>
       <div class="pool-header">
         <span class="pool-name">{{ pool.name }}</span>
@@ -30,10 +30,9 @@
           <span class="occupancy-label">—</span>
           <span class="status-badge"></span>
         </div>
+        <div class="guest-count"></div>
       </div>
-      {% if pool.max_capacity > 0 %}
-      <div class="pool-footer">Kapazität: {{ pool.max_capacity }}</div>
-      {% endif %}
+
     </a>
     {% endfor %}
   </div>
@@ -109,16 +108,23 @@
         const uid = card.dataset.uid;
         const item = map[uid];
         const label = card.querySelector('.occupancy-label');
+        const guestCount = card.querySelector('.guest-count');
         const bar = card.querySelector('.occupancy-bar');
         const badge = card.querySelector('.status-badge');
 
         if (item && item.occupancy_pct !== null) {
           const pct = Math.round(item.occupancy_pct);
           label.textContent = pct + '%';
+          if (guestCount) {
+            const capacity = card.dataset.capacity;
+            const cap = capacity && capacity !== '0' ? ` / ${capacity}` : '';
+            guestCount.textContent = item.current_fill != null ? `${item.current_fill}${cap} Gäste` : '';
+          }
           bar.style.width = Math.min(pct, 100) + '%';
           bar.className = 'occupancy-bar ' + (pct <= 50 ? 'green' : pct <= 80 ? 'yellow' : 'red');
         } else {
           label.textContent = 'Keine Daten';
+          if (guestCount) guestCount.textContent = '';
           bar.style.width = '0%';
           bar.className = 'occupancy-bar grey';
         }

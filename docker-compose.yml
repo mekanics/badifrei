@@ -62,10 +62,13 @@ services:
       - "8000:8000"
     volumes:
       - model_artifacts:/app/ml/models
+      - ./api/static:/app/api/static
+      - ./api/templates:/app/api/templates
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
+    command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
       interval: 30s

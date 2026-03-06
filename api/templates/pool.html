@@ -187,14 +187,15 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
 
   .pool-description-block {
     padding: 1rem 1.2rem;
-    background: #1a2035;
-    border-radius: 8px;
-    border-left: 3px solid #4f8ef7;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-left: 4px solid var(--accent);
+    box-shadow: 3px 3px 0 var(--border);
   }
 
   .pool-description-text {
-    margin: 0 0 0.5rem;
-    color: #c8d0e0;
+    margin: 0 0 0.6rem;
+    color: var(--text);
     line-height: 1.65;
     font-size: 0.95rem;
   }
@@ -204,9 +205,10 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
   }
 
   .pool-official-link a {
-    color: #4f8ef7;
+    color: var(--accent);
     text-decoration: none;
     font-size: 0.875rem;
+    font-weight: 700;
   }
 
   .pool-official-link a:hover {
@@ -214,37 +216,46 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
   }
 
   .beste-zeiten-block {
-    padding: 0.9rem 1.2rem;
-    background: #1a2035;
-    border-radius: 8px;
-    border-left: 3px solid #34d399;
+    padding: 1rem 1.2rem;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-left: 4px solid var(--green);
+    box-shadow: 3px 3px 0 var(--border);
   }
 
   .beste-zeiten-title {
     margin: 0 0 0.4rem;
     font-size: 0.95rem;
     font-weight: 700;
-    color: #e8eaf0;
+    color: var(--text);
+    letter-spacing: -0.01em;
   }
 
   .beste-zeiten-text {
     margin: 0;
-    color: #c8d0e0;
+    color: var(--muted);
     line-height: 1.6;
     font-size: 0.9rem;
   }
 
+  .beste-zeiten-text strong {
+    color: var(--text);
+    font-weight: 700;
+  }
+
   .related-pools-block {
     margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--border);
   }
 
   .related-pools-title {
-    font-size: 0.95rem;
+    font-size: 0.65rem;
     font-weight: 700;
     color: var(--muted);
-    margin: 0 0 0.5rem;
+    margin: 0 0 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.12em;
   }
 
   .related-pools-list {
@@ -259,24 +270,22 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
   .related-pool-link {
     display: inline-block;
     padding: 0.35rem 0.85rem;
-    border: 1px solid var(--border);
-    border-radius: 20px;
+    border: 2px solid var(--border);
+    border-radius: 0;
     font-size: 0.85rem;
+    font-weight: 600;
     color: var(--text);
     text-decoration: none;
-    transition: border-color 0.15s, color 0.15s;
+    background: var(--bg);
+    box-shadow: 2px 2px 0 var(--border);
+    transition: box-shadow 0.1s, transform 0.1s;
   }
 
   .related-pool-link:hover {
+    box-shadow: 3px 3px 0 var(--accent);
     border-color: var(--accent);
     color: var(--accent);
-  }
-
-  .chart-legend-note {
-    text-align: center;
-    font-size: 0.82rem;
-    color: #888;
-    margin-top: 0.25rem;
+    transform: translate(-1px, -1px);
   }
 </style>
 
@@ -307,8 +316,8 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
         {
           label: 'Effektive Auslastung %',
           data: Array(24).fill(null),
-          borderColor: '#34d399',
-          backgroundColor: 'rgba(52,211,153,0.1)',
+          borderColor: '#111111',
+          backgroundColor: 'rgba(17,17,17,0.07)',
           fill: false,
           tension: 0.3,
           pointRadius: 3,
@@ -317,8 +326,8 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
         {
           label: 'Prognose Auslastung %',
           data: SSR_PREDICTIONS,
-          borderColor: '#4f8ef7',
-          backgroundColor: 'rgba(79,142,247,0.1)',
+          borderColor: '#0057ff',
+          backgroundColor: 'rgba(0,87,255,0.07)',
           fill: true,
           tension: 0.3,
           pointRadius: 3,
@@ -330,15 +339,24 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        y: { min: 0, max: 100, title: { display: true, text: 'Auslastung %' } },
-        x: { title: { display: true, text: 'Uhrzeit' } }
+        y: {
+          min: 0, max: 100,
+          title: { display: true, text: 'Auslastung %', color: '#666' },
+          ticks: { color: '#666' },
+          grid: { color: '#e5e5e5' }
+        },
+        x: {
+          title: { display: true, text: 'Uhrzeit', color: '#666' },
+          ticks: { color: '#666' },
+          grid: { color: '#e5e5e5' }
+        }
       },
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: {
           display: true,
           position: 'bottom',
-          labels: { usePointStyle: true, pointStyle: 'line', boxWidth: 30 }
+          labels: { usePointStyle: true, pointStyle: 'line', boxWidth: 30, color: '#111111' }
         },
         tooltip: {
           mode: 'index',
