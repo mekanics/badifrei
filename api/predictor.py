@@ -323,20 +323,43 @@ class Predictor:
                 "Lag features will be misaligned."
             )
         df_feat = df_feat.reset_index(drop=True)
-        # Inject lag values (override what build_features computed from the sparse df)
-        df_feat["lag_1h"] = [v if v is not None else 0.0 for v in lag_1h_list]
-        df_feat["lag_1w"] = [v if v is not None else 0.0 for v in lag_1w_list]
 
-        # Batch predict once
-        X = df_feat[FEATURE_COLUMNS].fillna(0)
-        preds = self.model.predict(X)
+        # Recursive forecasting: for hours where we have real lag_1h data (past/present),
+        # use it directly. For future hours where lag_1h is None, feed the previous
+        # prediction back in — this prevents the flat-line issue caused by a constant
+        # lag_1h value across all future hours.
+        preds: list[float] = []
+        last_pred: float | None = None
 
-        # Hard-zero predictions for closed hours — XGBoost can't guarantee 0.0
-        # when is_open=0 because lag features carry non-zero values from prior open hours
-        is_open_mask = df_feat["is_open"].values
-        preds = np.where(is_open_mask == 0, 0.0, preds)
+        for i in range(len(hours)):
+            row = df_feat.iloc[[i]].copy()
 
-        return [float(np.clip(p, 0.0, 100.0)) for p in preds]
+            # lag_1h: use real DB value if available, otherwise last prediction
+            real_lag_1h = lag_1h_list[i]
+            if real_lag_1h is not None:
+                row["lag_1h"] = float(real_lag_1h)
+                last_pred = float(real_lag_1h)  # anchor future recursion to last known real value
+            elif last_pred is not None:
+                row["lag_1h"] = last_pred
+            else:
+                row["lag_1h"] = 0.0
+
+            # lag_1w: real DB value or 0 (week-ago data; not recursive)
+            real_lag_1w = lag_1w_list[i]
+            row["lag_1w"] = float(real_lag_1w) if real_lag_1w is not None else 0.0
+
+            # Hard-zero for closed hours
+            if int(row["is_open"].iloc[0]) == 0:
+                preds.append(0.0)
+                last_pred = 0.0
+                continue
+
+            X = row[FEATURE_COLUMNS].fillna(0)
+            pred = float(np.clip(self.model.predict(X)[0], 0.0, 100.0))
+            preds.append(pred)
+            last_pred = pred
+
+        return preds
 
     def predict(self, pool_uid: str, dt: datetime) -> float:
         """Predict occupancy % for a pool at a given datetime."""
