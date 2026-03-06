@@ -37,6 +37,7 @@ class Predictor:
         self._encoding_map: dict[str, int] | None = None
         self._model_mtime: float | None = None
         self._reload_lock = asyncio.Lock()
+        self._model_feature_names: list[str] | None = None  # derived from model at load time
 
     def load(self, path: Path | None = None) -> bool:
         """Load model (and encoding sidecar) from disk. Returns True if successful."""
@@ -63,6 +64,20 @@ class Predictor:
 
             # Eagerly load metadata so _get_metadata() never does I/O at inference time
             self._metadata = load_pool_metadata()
+
+            # Derive feature list from the model itself so inference always matches training.
+            # This prevents shape-mismatch errors when FEATURE_COLUMNS evolves (e.g. weather
+            # columns added) but the on-disk model was trained before that change.
+            try:
+                booster_feature_names = self.model.get_booster().feature_names
+                if booster_feature_names:
+                    self._model_feature_names = list(booster_feature_names)
+                    logger.info(f"Model feature names ({len(self._model_feature_names)}): {self._model_feature_names}")
+                else:
+                    self._model_feature_names = None
+            except Exception:
+                self._model_feature_names = None
+
             logger.info(f"Model loaded: {model_path.name}")
             return True
         except Exception as e:
@@ -101,6 +116,17 @@ class Predictor:
 
     def is_loaded(self) -> bool:
         return self.model is not None
+
+    def _get_feature_columns(self) -> list[str]:
+        """Return the feature columns the loaded model expects.
+
+        Prefers the feature names stored in the model itself (set at training time).
+        Falls back to the module-level FEATURE_COLUMNS constant only when the model
+        does not expose feature names (e.g. very old XGBoost versions).
+        """
+        if self._model_feature_names:
+            return self._model_feature_names
+        return list(FEATURE_COLUMNS)
 
     def _get_metadata(self) -> dict:
         if self._metadata is None:
@@ -423,7 +449,8 @@ class Predictor:
                 last_pred = 0.0
                 continue
 
-            X = row[FEATURE_COLUMNS].fillna(0)
+            feat_cols = self._get_feature_columns()
+            X = row.reindex(columns=feat_cols).fillna(0)
             pred = float(np.clip(self.model.predict(X)[0], 0.0, 100.0))
             preds.append(pred)
             last_pred = pred
@@ -460,7 +487,8 @@ class Predictor:
             return 0.0
 
         # Fill NaNs (lag features will be NaN for single-row inference if DB unavailable)
-        X = df_feat[FEATURE_COLUMNS].fillna(0)
+        feat_cols = self._get_feature_columns()
+        X = df_feat.reindex(columns=feat_cols).fillna(0)
 
         pred = float(self.model.predict(X)[0])
         return float(np.clip(pred, 0.0, 100.0))
