@@ -82,9 +82,7 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
   <div class="pool-detail-header">
     <h1>{{ pool.name }}</h1>
     <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>
-    {% if pool.max_capacity > 0 %}
-    <span class="capacity-label">Kapazität: {{ pool.max_capacity }}</span>
-    {% endif %}
+    <span class="detail-live-count" id="detail-live-count" data-uid="{{ pool.uid }}" data-capacity="{{ pool.max_capacity }}" style="margin-left:auto"></span>
   </div>
 
   <div class="pool-info-grid">
@@ -243,6 +241,18 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
     font-weight: 700;
   }
 
+  .detail-live-count {
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0.3rem 0.8rem;
+    border: 2px solid var(--border);
+    box-shadow: 3px 3px 0 var(--border);
+    white-space: nowrap;
+  }
+  .detail-live-count.count-green  { border-color: var(--green); color: var(--green); box-shadow: 3px 3px 0 var(--green); }
+  .detail-live-count.count-yellow { border-color: var(--yellow); color: var(--yellow); box-shadow: 3px 3px 0 var(--yellow); }
+  .detail-live-count.count-red    { border-color: var(--red); color: var(--red); box-shadow: 3px 3px 0 var(--red); }
+
   .related-pools-block {
     margin-top: 2.5rem;
     padding-top: 1.5rem;
@@ -289,6 +299,29 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
   }
 </style>
 
+<script>
+async function refreshLiveCount() {
+  const el = document.getElementById('detail-live-count');
+  if (!el) return;
+  const uid = el.dataset.uid;
+  const cap = parseInt(el.dataset.capacity) || 0;
+  try {
+    const res = await fetch('/api/current');
+    if (!res.ok) return;
+    const data = await res.json();
+    const item = data.find(d => d.pool_uid === uid);
+    if (!item || item.current_fill == null) return;
+    const capStr = cap > 0 ? ` / ${cap}` : '';
+    const pct = item.occupancy_pct != null ? ` (${Math.round(item.occupancy_pct)}%)` : '';
+    el.textContent = `${item.current_fill}${capStr} Gäste${pct}`;
+    el.className = 'detail-live-count';
+    const p = item.occupancy_pct ?? 0;
+    el.classList.add(p <= 50 ? 'count-green' : p <= 80 ? 'count-yellow' : 'count-red');
+  } catch (e) { /* silent */ }
+}
+refreshLiveCount();
+setInterval(refreshLiveCount, 60000);
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   const POOL_UID = {{ pool.uid | tojson }};
@@ -314,7 +347,7 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
       labels: Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ':00'),
       datasets: [
         {
-          label: 'Effektive Auslastung %',
+          label: 'Aktuell',
           data: Array(24).fill(null),
           borderColor: '#111111',
           backgroundColor: 'rgba(17,17,17,0.07)',
@@ -324,7 +357,7 @@ Prognose. Wann ist es am ruhigsten?{% endblock %}
           borderDash: [],
         },
         {
-          label: 'Prognose Auslastung %',
+          label: 'Prognose',
           data: SSR_PREDICTIONS,
           borderColor: '#0057ff',
           backgroundColor: 'rgba(0,87,255,0.07)',
