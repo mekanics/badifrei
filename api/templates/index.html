@@ -178,25 +178,33 @@
   function readFromUrl() {
     const params = new URLSearchParams(location.search);
 
+    // open: only accept literal '1'
     if (params.get('open') === '1') {
       filters.open = true;
       document.getElementById('btn-open').setAttribute('aria-pressed', 'true');
     }
 
+    // type: only accept values that have a matching button on the page
     const typeParam = params.get('type');
     if (typeParam) {
       typeParam.split(',').filter(Boolean).forEach(t => {
-        filters.types.add(t);
-        const btn = document.querySelector(`.filter-btn-type[data-value="${t}"]`);
-        if (btn) btn.setAttribute('aria-pressed', 'true');
+        const btn = document.querySelector(`.filter-btn-type[data-value="${CSS.escape(t)}"]`);
+        if (btn) {
+          filters.types.add(t);
+          btn.setAttribute('aria-pressed', 'true');
+        }
       });
     }
 
+    // city: only accept values that exist as an <option> in the select
     const cityParam = params.get('city');
     if (cityParam) {
-      filters.city = cityParam;
       const sel = document.getElementById('city-select');
-      if (sel) sel.value = cityParam;
+      const valid = sel && [...sel.options].some(o => o.value === cityParam);
+      if (valid) {
+        filters.city = cityParam;
+        sel.value = cityParam;
+      }
     }
   }
 
