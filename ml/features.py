@@ -63,11 +63,16 @@ def add_time_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def add_holiday_feature(df: pd.DataFrame, country: str = "CH", subdiv: str = "ZH") -> pd.DataFrame:
-    """Add Swiss/Zurich public holiday flag."""
+    """Add Swiss/Zurich public holiday flag (vectorized)."""
     df = df.copy()
     ch_holidays = _get_holidays(country=country, subdiv=subdiv)
-    dt = pd.to_datetime(df["time"])
-    df["is_holiday"] = dt.dt.date.apply(lambda d: int(d in ch_holidays))
+    # Convert holiday keys to normalized Timestamps and use vectorized isin()
+    holiday_ts = pd.to_datetime(list(ch_holidays.keys()))
+    date_only = pd.to_datetime(df["time"]).dt.normalize()
+    # Strip tz from date_only so comparison with tz-naive holiday_ts works
+    if date_only.dt.tz is not None:
+        date_only = date_only.dt.tz_localize(None)
+    df["is_holiday"] = date_only.isin(holiday_ts).astype(int)
     return df
 
 
@@ -325,42 +330,119 @@ def add_opening_hours_features(
     df: pd.DataFrame,
     pool_metadata: dict[str, dict] | None = None,
 ) -> pd.DataFrame:
-    """Add opening hours features to the DataFrame.
+    """Add opening hours features to the DataFrame (vectorized).
 
     Adds columns: is_open, minutes_since_open, minutes_until_close.
     Requires hour_of_day and day_of_week columns (from add_time_features).
-    Defaults to is_open=1, minutes_since_open=0, minutes_until_close=0 when
-    no opening hours data is available for a pool (defensive).
+
+    Implementation: builds a schedule lookup table (31 pools × 7 days ≈ 217
+    rows), merges it into df via a join, then computes all three columns with
+    vectorized numpy operations. No Python-level row iteration.
     """
     df = df.copy()
     if pool_metadata is None:
         pool_metadata = load_pool_metadata()
 
-    rows_is_open = []
-    rows_since_open = []
-    rows_until_close = []
+    # --- 1. Build schedule lookup table (tiny — one row per pool×day) ---
+    # open_min / close_min = -1 sentinel means "pool closed this day"
+    schedule_rows: list[dict] = []
+    # uid -> (open_ordinal, close_ordinal) for pools with a seasonal window
+    seasonal_dict: dict[str, tuple[int, int]] = {}
 
-    for _, row in df.iterrows():
-        uid = row.get("pool_uid")
-        hour = int(row.get("hour_of_day", 0))
-        dow = int(row.get("day_of_week", 0))
-        meta = pool_metadata.get(uid, {}) if pool_metadata else {}
-        opening_hours = meta.get("opening_hours", None)
-        time_val = row.get("time")
-        row_date = None
-        if time_val is not None:
+    for uid, meta in pool_metadata.items():
+        oh = meta.get("opening_hours")
+        if oh is None:
+            # No metadata → treat as always open, no seasonal restriction
+            for dow_idx in range(7):
+                schedule_rows.append(
+                    {"pool_uid": uid, "day_of_week": dow_idx, "open_min": 0, "close_min": 1440}
+                )
+            continue
+
+        # Seasonal window (e.g. Freibäder May–Sep)
+        so_str = oh.get("seasonal_open")
+        sc_str = oh.get("seasonal_close")
+        if so_str and sc_str:
             try:
-                row_date = pd.Timestamp(time_val).date()
-            except Exception:
+                seasonal_dict[uid] = (
+                    datetime.date.fromisoformat(so_str).toordinal(),
+                    datetime.date.fromisoformat(sc_str).toordinal(),
+                )
+            except (ValueError, TypeError):
                 pass
-        is_open, since_open, until_close = compute_opening_hours_for_row(
-            hour, dow, opening_hours, date=row_date
-        )
-        rows_is_open.append(is_open)
-        rows_since_open.append(since_open)
-        rows_until_close.append(until_close)
 
-    df["is_open"] = rows_is_open
-    df["minutes_since_open"] = rows_since_open
-    df["minutes_until_close"] = rows_until_close
+        # Per-weekday schedule
+        schedule = oh.get("schedule", {})
+        for dow_idx, day_name in enumerate(_DAY_NAMES):
+            day_sched = schedule.get(day_name)
+            if not day_sched:
+                schedule_rows.append(
+                    {"pool_uid": uid, "day_of_week": dow_idx, "open_min": -1, "close_min": -1}
+                )
+            else:
+                try:
+                    oh_h, oh_m = map(int, day_sched["open"].split(":"))
+                    oc_h, oc_m = map(int, day_sched["close"].split(":"))
+                    schedule_rows.append(
+                        {
+                            "pool_uid": uid,
+                            "day_of_week": dow_idx,
+                            "open_min": oh_h * 60 + oh_m,
+                            "close_min": oc_h * 60 + oc_m,
+                        }
+                    )
+                except (KeyError, ValueError):
+                    schedule_rows.append(
+                        {"pool_uid": uid, "day_of_week": dow_idx, "open_min": 0, "close_min": 1440}
+                    )
+
+    schedule_lut = pd.DataFrame(schedule_rows)
+
+    # --- 2. Join schedule into df (O(n), no Python loops) ---
+    df = df.merge(schedule_lut, on=["pool_uid", "day_of_week"], how="left")
+    df["open_min"] = df["open_min"].fillna(0).astype(int)
+    df["close_min"] = df["close_min"].fillna(1440).astype(int)
+
+    # --- 3. Seasonal check (vectorized ordinal arithmetic) ---
+    # Convert timestamps to day ordinals without any Python-level iteration:
+    #   days_since_unix_epoch = floor(ts_ns / ns_per_day)
+    #   ordinal = days_since_unix_epoch + ordinal(1970-01-01)
+    EPOCH_ORDINAL = datetime.date(1970, 1, 1).toordinal()  # 719163
+    dt_series = pd.to_datetime(df["time"])
+    if dt_series.dt.tz is not None:
+        dt_series = dt_series.dt.tz_convert("UTC")
+    row_ordinal = (dt_series.dt.normalize().astype("int64") // (86_400 * 10**9)) + EPOCH_ORDINAL
+
+    if seasonal_dict:
+        so_map = {uid: v[0] for uid, v in seasonal_dict.items()}
+        sc_map = {uid: v[1] for uid, v in seasonal_dict.items()}
+        so_series = df["pool_uid"].map(so_map)
+        sc_series = df["pool_uid"].map(sc_map)
+        has_window = so_series.notna()
+        in_season: pd.Series = (
+            ~has_window
+            | (
+                (row_ordinal >= so_series.fillna(0).astype("int64"))
+                & (row_ordinal <= sc_series.fillna(10**8).astype("int64"))
+            )
+        )
+    else:
+        in_season = pd.Series(True, index=df.index)
+
+    # --- 4. Compute the three output columns (vectorized) ---
+    current_min = df["hour_of_day"] * 60
+    closed_day = df["open_min"] == -1
+
+    is_open_mask = (
+        in_season
+        & ~closed_day
+        & (current_min >= df["open_min"])
+        & (current_min < df["close_min"])
+    )
+
+    df["is_open"] = is_open_mask.astype(int)
+    df["minutes_since_open"] = np.where(is_open_mask, current_min - df["open_min"], 0)
+    df["minutes_until_close"] = np.where(is_open_mask, df["close_min"] - current_min, 0)
+
+    df = df.drop(columns=["open_min", "close_min"], errors="ignore")
     return df
