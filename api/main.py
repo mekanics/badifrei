@@ -357,7 +357,7 @@ def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
 
     day_of_week = now_zurich.weekday()  # 0=Mon
     hour = now_zurich.hour
-    is_open, _, _ = compute_opening_hours_for_row(hour, day_of_week, opening_hours)
+    is_open, _, _ = compute_opening_hours_for_row(hour, day_of_week, opening_hours, date=now_zurich.date())
 
     next_open = None
     if not is_open:
