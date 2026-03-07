@@ -93,7 +93,7 @@
     const typeGroup = document.getElementById('type-filter-group');
     [...types].sort().forEach(t => {
       const btn = document.createElement('button');
-      btn.className = 'filter-btn filter-btn-type';
+      btn.className = `filter-btn filter-btn-type filter-type-${t}`;
       btn.dataset.value = t;
       btn.textContent = TYPE_LABELS[t] || t;
       btn.setAttribute('aria-pressed', 'false');
@@ -141,6 +141,21 @@
       const anyVisible = [...section.querySelectorAll('.pool-card')].some(c => c.style.display !== 'none');
       section.style.display = anyVisible ? '' : 'none';
     });
+
+    // Favorites: also filter cloned cards and hide section if all filtered out
+    const favSection = document.getElementById('favorites-section');
+    if (favSection && favSection.style.display !== 'none') {
+      let anyFavVisible = false;
+      favSection.querySelectorAll('.pool-card').forEach(card => {
+        const typeOk = filters.types.size === 0 || filters.types.has(card.dataset.type);
+        const cityOk = !filters.city || card.dataset.city === filters.city;
+        const openOk = !filters.open || card.dataset.open === 'true';
+        const vis = typeOk && cityOk && openOk;
+        card.style.display = vis ? '' : 'none';
+        if (vis) anyFavVisible = true;
+      });
+      favSection.style.display = anyFavVisible ? '' : 'none';
+    }
 
     const hasFilters = filters.open || filters.types.size > 0 || filters.city !== '';
     const countEl = document.getElementById('filter-count');
