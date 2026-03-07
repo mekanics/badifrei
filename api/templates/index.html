@@ -142,9 +142,9 @@
       section.style.display = anyVisible ? '' : 'none';
     });
 
-    // Favorites: also filter cloned cards and hide section if all filtered out
+    // Favorites: filter cloned cards; show section only if favorites exist AND at least one passes filters
     const favSection = document.getElementById('favorites-section');
-    if (favSection && favSection.style.display !== 'none') {
+    if (favSection && getFavorites().length > 0) {
       let anyFavVisible = false;
       favSection.querySelectorAll('.pool-card').forEach(card => {
         const typeOk = filters.types.size === 0 || filters.types.has(card.dataset.type);
