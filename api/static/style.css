@@ -44,6 +44,11 @@ body {
 	grid-template-rows: auto 1fr auto;
 }
 
+/* Grid children must not overflow their column */
+.navbar,
+.container,
+.site-footer { min-width: 0; }
+
 /* Navbar */
 .navbar {
 	background: var(--bg);
