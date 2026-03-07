@@ -4,6 +4,20 @@
 <h1 class="page-title">Zürcher Schwimmbäder – Auslastung live & Prognose</h1>
 <p class="subtitle">Ist deine Lieblingsbadi gerade voll? Schau nach — Auslastung live, jede Minute aktualisiert.</p>
 
+<!-- Filter bar -->
+<div class="filter-bar" id="filter-bar">
+  <div class="filter-row">
+    <button class="filter-btn filter-btn-open" id="btn-open" aria-pressed="false">🟢 Offen</button>
+    <div class="filter-sep" aria-hidden="true"></div>
+    <div class="filter-group" id="type-filter-group" aria-label="Nach Typ filtern"></div>
+    <div class="filter-group" id="city-filter-group" aria-label="Nach Stadt filtern"></div>
+    <div class="filter-meta">
+      <span class="filter-count" id="filter-count"></span>
+      <button class="filter-reset" id="filter-reset" style="display:none">× Zurücksetzen</button>
+    </div>
+  </div>
+</div>
+
 <!-- Favoriten (nur sichtbar wenn vorhanden) -->
 <div class="section-block" id="favorites-section" style="display:none">
   <h2 class="section-title">⭐ Favoriten</h2>
@@ -16,7 +30,7 @@
   <h2 class="section-title">Schwimmbäder {{ city.label }}</h2>
   <div class="pool-grid" id="pool-grid-{{ city.key }}">
     {% for pool in city.pools %}
-    <a href="/bad/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}" data-capacity="{{ pool.max_capacity }}">
+    <a href="/bad/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}" data-capacity="{{ pool.max_capacity }}" data-type="{{ pool.type }}" data-city="{{ pool.city | default('zurich') }}">
       <button class="star-btn" data-uid="{{ pool.uid }}" aria-label="Zu Favoriten hinzufügen">⭐</button>
       <div class="pool-header">
         <span class="pool-name">{{ pool.name }}</span>
@@ -40,6 +54,118 @@
 {% endfor %}
 
 <script>
+  /* ── Filter state ─────────────────────────────────────────────── */
+  const filters = { open: false, types: new Set(), cities: new Set() };
+
+  const TYPE_LABELS = {
+    freibad: 'Freibad', hallenbad: 'Hallenbad',
+    strandbad: 'Strandbad', seebad: 'Seebad',
+    flussbad: 'Flussbad', kombibad: 'Kombibad',
+  };
+
+  function buildFilterBar() {
+    // Collect types and cities present on this page
+    const types = new Set(), cities = new Set(), cityLabels = {};
+    document.querySelectorAll('.pool-card').forEach(card => {
+      if (card.dataset.type) types.add(card.dataset.type);
+      if (card.dataset.city) {
+        cities.add(card.dataset.city);
+        // derive label from section heading (fallback to capitalised key)
+        const section = card.closest('.section-block');
+        if (section) {
+          const h2 = section.querySelector('.section-title');
+          if (h2) {
+            const text = h2.textContent.replace('Schwimmbäder', '').trim();
+            cityLabels[card.dataset.city] = text || card.dataset.city;
+          }
+        }
+        if (!cityLabels[card.dataset.city]) {
+          cityLabels[card.dataset.city] = card.dataset.city.charAt(0).toUpperCase() + card.dataset.city.slice(1);
+        }
+      }
+    });
+
+    // Type buttons
+    const typeGroup = document.getElementById('type-filter-group');
+    types.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn filter-btn-type';
+      btn.dataset.value = t;
+      btn.textContent = TYPE_LABELS[t] || t;
+      btn.setAttribute('aria-pressed', 'false');
+      btn.addEventListener('click', () => toggleSet(filters.types, t, btn, applyFilters));
+      typeGroup.appendChild(btn);
+    });
+
+    // City buttons — only show if more than one city
+    if (cities.size > 1) {
+      const cityGroup = document.getElementById('city-filter-group');
+      const sep = document.createElement('div');
+      sep.className = 'filter-sep'; sep.setAttribute('aria-hidden', 'true');
+      cityGroup.appendChild(sep);
+      [...cities].sort().forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn filter-btn-city';
+        btn.dataset.value = c;
+        btn.textContent = cityLabels[c] || c;
+        btn.setAttribute('aria-pressed', 'false');
+        btn.addEventListener('click', () => toggleSet(filters.cities, c, btn, applyFilters));
+        cityGroup.appendChild(btn);
+      });
+    }
+  }
+
+  function toggleSet(set, value, btn, callback) {
+    if (set.has(value)) { set.delete(value); btn.setAttribute('aria-pressed', 'false'); }
+    else                 { set.add(value);    btn.setAttribute('aria-pressed', 'true');  }
+    callback();
+  }
+
+  function applyFilters() {
+    let shown = 0, total = 0;
+    document.querySelectorAll('.pool-card').forEach(card => {
+      total++;
+      const typeOk = filters.types.size === 0 || filters.types.has(card.dataset.type);
+      const cityOk = filters.cities.size === 0 || filters.cities.has(card.dataset.city);
+      const openOk = !filters.open || card.dataset.open === 'true';
+      const visible = typeOk && cityOk && openOk;
+      card.style.display = visible ? '' : 'none';
+      if (visible) shown++;
+    });
+
+    // Hide city sections that become empty
+    document.querySelectorAll('.section-block:not(#favorites-section)').forEach(section => {
+      const anyVisible = [...section.querySelectorAll('.pool-card')].some(c => c.style.display !== 'none');
+      section.style.display = anyVisible ? '' : 'none';
+    });
+
+    // Count label
+    const countEl = document.getElementById('filter-count');
+    const hasFilters = filters.open || filters.types.size > 0 || filters.cities.size > 0;
+    if (countEl) countEl.textContent = hasFilters ? `${shown} von ${total}` : '';
+
+    // Reset button
+    const resetBtn = document.getElementById('filter-reset');
+    if (resetBtn) resetBtn.style.display = hasFilters ? '' : 'none';
+  }
+
+  function resetFilters() {
+    filters.open = false;
+    filters.types.clear();
+    filters.cities.clear();
+    document.getElementById('btn-open').setAttribute('aria-pressed', 'false');
+    document.querySelectorAll('.filter-btn[aria-pressed="true"]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    applyFilters();
+  }
+
+  document.getElementById('btn-open').addEventListener('click', () => {
+    filters.open = !filters.open;
+    document.getElementById('btn-open').setAttribute('aria-pressed', filters.open ? 'true' : 'false');
+    applyFilters();
+  });
+  document.getElementById('filter-reset').addEventListener('click', resetFilters);
+
+  /* ── Favorites ─────────────────────────────────────────────────── */
   const FAVORITES_KEY = 'badi_favorites';
 
   function getFavorites() {
@@ -137,7 +263,13 @@
             badge.innerHTML = `<span class="status-dot closed"></span><span class="status-text">Geschlossen${hint}</span>`;
           }
         }
+
+        // Set data-open for filter logic
+        if (item) card.dataset.open = item.is_open ? 'true' : 'false';
       });
+
+      // Re-apply filters after open status is known
+      applyFilters();
     } catch (e) {
       console.warn('Auslastung konnte nicht geladen werden', e);
     }
@@ -145,5 +277,8 @@
 
   fetchOccupancy();
   setInterval(fetchOccupancy, 60000);
+
+  // Build filter bar after DOM is ready
+  buildFilterBar();
 </script>
 {% endblock %}

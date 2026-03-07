@@ -131,10 +131,15 @@ app.add_middleware(SecurityHeadersMiddleware)
 CITY_DISPLAY = {
     "zurich": "Zürich",
     "luzern": "Luzern",
+    "bern": "Bern",
+    "rotkreuz": "Rotkreuz",
+    "adliswil": "Adliswil",
+    "entfelden": "Entfelden",
+    "hunenberg": "Hünenberg",
     "zug": "Zug",
     "wengen": "Wengen",
 }
-CITY_ORDER = ["zurich", "luzern", "zug", "wengen"]
+CITY_ORDER = ["zurich", "luzern", "bern", "adliswil", "rotkreuz", "entfelden", "hunenberg", "zug", "wengen"]
 
 
 @app.get("/", response_class=HTMLResponse, tags=["dashboard"])
