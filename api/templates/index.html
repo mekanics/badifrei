@@ -162,6 +162,42 @@
     if (countEl) countEl.textContent = hasFilters ? `${shown} von ${total}` : '';
     const resetBtn = document.getElementById('filter-reset');
     if (resetBtn) resetBtn.style.display = hasFilters ? '' : 'none';
+
+    syncToUrl();
+  }
+
+  function syncToUrl() {
+    const params = new URLSearchParams();
+    if (filters.open) params.set('open', '1');
+    if (filters.types.size > 0) params.set('type', [...filters.types].sort().join(','));
+    if (filters.city) params.set('city', filters.city);
+    const qs = params.toString();
+    history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+  }
+
+  function readFromUrl() {
+    const params = new URLSearchParams(location.search);
+
+    if (params.get('open') === '1') {
+      filters.open = true;
+      document.getElementById('btn-open').setAttribute('aria-pressed', 'true');
+    }
+
+    const typeParam = params.get('type');
+    if (typeParam) {
+      typeParam.split(',').filter(Boolean).forEach(t => {
+        filters.types.add(t);
+        const btn = document.querySelector(`.filter-btn-type[data-value="${t}"]`);
+        if (btn) btn.setAttribute('aria-pressed', 'true');
+      });
+    }
+
+    const cityParam = params.get('city');
+    if (cityParam) {
+      filters.city = cityParam;
+      const sel = document.getElementById('city-select');
+      if (sel) sel.value = cityParam;
+    }
   }
 
   function resetFilters() {
@@ -295,7 +331,9 @@
   fetchOccupancy();
   setInterval(fetchOccupancy, 60000);
 
-  // Build filter bar after DOM is ready
+  // Build filter bar, then restore state from URL
   buildFilterBar();
+  readFromUrl();
+  applyFilters();
 </script>
 {% endblock %}
