@@ -20,7 +20,7 @@ MIN_RECORDS = 1000  # Require at least 1000 records for training
 
 
 async def load_data(
-    start: datetime,
+    start: Optional[datetime],
     end: datetime,
     db_url: Optional[str] = None,
     min_records: int = MIN_RECORDS,
@@ -39,30 +39,51 @@ async def load_data(
 
     Raises InsufficientDataError if fewer than min_records rows returned.
     Excludes pools with max_space = 0.
+
+    When start is None, all available history is used (no lower bound).
     """
     url = db_url or settings.database_url
 
     conn = await asyncpg.connect(url)
     try:
-        rows = await conn.fetch(
-            """
-            SELECT
-                time,
-                pool_uid,
-                pool_name,
-                current_fill,
-                max_space,
-                free_space,
-                occupancy_pct
-            FROM pool_occupancy
-            WHERE time >= $1
-              AND time <= $2
-              AND max_space > 0
-            ORDER BY pool_uid, time ASC
-            """,
-            start,
-            end,
-        )
+        if start is None:
+            rows = await conn.fetch(
+                """
+                SELECT
+                    time,
+                    pool_uid,
+                    pool_name,
+                    current_fill,
+                    max_space,
+                    free_space,
+                    occupancy_pct
+                FROM pool_occupancy
+                WHERE time <= $1
+                  AND max_space > 0
+                ORDER BY pool_uid, time ASC
+                """,
+                end,
+            )
+        else:
+            rows = await conn.fetch(
+                """
+                SELECT
+                    time,
+                    pool_uid,
+                    pool_name,
+                    current_fill,
+                    max_space,
+                    free_space,
+                    occupancy_pct
+                FROM pool_occupancy
+                WHERE time >= $1
+                  AND time <= $2
+                  AND max_space > 0
+                ORDER BY pool_uid, time ASC
+                """,
+                start,
+                end,
+            )
     finally:
         await conn.close()
 
