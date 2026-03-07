@@ -1,6 +1,6 @@
 [
 	{
-		"uid": "fb001",
+		"uid": "fb006",
 		"name": "Freibad Allenmoos",
 		"type": "freibad",
 		"seasonal": true,
@@ -982,5 +982,245 @@
 		},
 		"description": "Das Schwimmbad Zug liegt in der Region Hünenberg im Kanton Zug und ist eine wichtige Freizeitanlage für die Bevölkerung der Region. Es bietet ein Schwimmbecken sowie Liegewiesen in einem ruhigen Umfeld. Die Lage in der Zuger Seenlandschaft macht einen Besuch zu einem angenehmen Erlebnis.",
 		"official_url": null
+	},
+	{
+		"uid": "BADI-1",
+		"name": "Seebad Enge",
+		"type": "seebad",
+		"seasonal": false,
+		"city": "zurich",
+		"max_capacity": 54,
+		"opening_hours": {
+			"schedule": {
+				"Mon": { "open": "08:00", "close": "20:00" },
+				"Tue": { "open": "08:00", "close": "20:00" },
+				"Wed": { "open": "08:00", "close": "20:00" },
+				"Thu": { "open": "08:00", "close": "20:00" },
+				"Fri": { "open": "08:00", "close": "20:00" },
+				"Sat": { "open": "08:00", "close": "20:00" },
+				"Sun": { "open": "08:00", "close": "20:00" }
+			},
+			"seasonal_open": null,
+			"seasonal_close": null,
+			"notes": "Lake bath on Zürichsee (Mythenquai 9). Summer season ~May 10–Sept 14, 08:00–20:00 daily. Winter: Winterschwimmen Mon–Thu 10:00–dusk only, max 30 persons at a time. Sauna year-round. Small capacity (54) due to limited winter access."
+		},
+		"description": "Das Seebad Enge (auch Seebad Tonttu) liegt direkt am Zürichsee beim Arboretum und bietet als einzige Badeanstalt Zürichs Winterschwimmen an. Im Sommer ist es ein beliebtes See- und Sonnenbad mit Schwimm- und Nichtschwimmerbereich, Bar und Selbstbedienungsrestaurant. Im Winter steht das Winterschwimmen (Mon–Do, Aufenthaltsdauer max. 1 Stunde) und die Sauna im Vordergrund.",
+		"official_url": "https://www.seebadenge.ch"
+	},
+	{
+		"uid": "FREIBAD-1",
+		"name": "Entfelden",
+		"type": "freibad",
+		"seasonal": true,
+		"city": "entfelden",
+		"max_capacity": 1300,
+		"opening_hours": {
+			"schedule": {
+				"Mon": { "open": "07:30", "close": "20:00" },
+				"Tue": { "open": "07:30", "close": "20:00" },
+				"Wed": { "open": "07:30", "close": "20:00" },
+				"Thu": { "open": "07:30", "close": "20:00" },
+				"Fri": { "open": "07:30", "close": "20:00" },
+				"Sat": { "open": "08:00", "close": "20:00" },
+				"Sun": { "open": "08:00", "close": "20:00" }
+			},
+			"seasonal_open": "2026-05-09",
+			"seasonal_close": "2026-09-15",
+			"notes": "Badi Entfelden, Kanton Aargau. Has both indoor (Hallenbad) and outdoor (Freibad) pools. WS appears to track Freibad occupancy. Indoor pool open year-round (separate crowdmonitor entry not present). Freibad season ~May 10–Sept 15."
+		},
+		"description": "Die Badi Entfelden in Oberentfelden (Kanton Aargau) bietet sowohl ein Hallenbad als auch ein Freibad mit 50-Meter-Becken, Strömungskanal, Rutschbahn und Kinderplanschbecken. Die Anlage zieht Gäste aus der gesamten Region Aarau an.",
+		"official_url": "https://badi-entfelden.ch"
+	},
+	{
+		"uid": "IMBAD-1",
+		"name": "Adliswil",
+		"type": "freibad",
+		"seasonal": true,
+		"city": "adliswil",
+		"max_capacity": 2000,
+		"opening_hours": {
+			"schedule": {
+				"Mon": { "open": "07:30", "close": "20:00" },
+				"Tue": { "open": "07:30", "close": "20:00" },
+				"Wed": { "open": "07:30", "close": "20:00" },
+				"Thu": { "open": "07:30", "close": "20:00" },
+				"Fri": { "open": "07:30", "close": "20:00" },
+				"Sat": { "open": "08:00", "close": "20:00" },
+				"Sun": { "open": "08:00", "close": "20:00" }
+			},
+			"seasonal_open": "2026-05-09",
+			"seasonal_close": "2026-09-15",
+			"notes": "Hallen- und Freibad im Tal, Adliswil (Talstrasse 10). WS appears to track Freibad section (shows 0 in winter). Freibad season ~May 10–Sept 15. Hallenbad is open year-round (Mon–Fri 06:30–20:30, Sat–Sun 08:00–18:00) but may be tracked separately or not connected."
+		},
+		"description": "Das Hallen- und Freibad im Tal in Adliswil bietet einen 25-Meter-Innenpool mit Sprungtürmen sowie ein weitläufiges Freibad mit 25-Meter-Becken, Strömungskanal, Rutschbahn und Kinderplanschbecken. Die Anlage liegt südlich von Zürich im Sihltal.",
+		"official_url": "https://www.adliswil.ch"
+	},
+	{
+		"uid": "MARZILI-1",
+		"name": "Bern Marzili",
+		"type": "freibad",
+		"seasonal": true,
+		"city": "bern",
+		"max_capacity": 14999,
+		"opening_hours": {
+			"schedule": {
+				"Mon": { "open": "07:00", "close": "21:00" },
+				"Tue": { "open": "07:00", "close": "21:00" },
+				"Wed": { "open": "07:00", "close": "21:00" },
+				"Thu": { "open": "07:00", "close": "21:00" },
+				"Fri": { "open": "07:00", "close": "21:00" },
+				"Sat": { "open": "09:00", "close": "21:00" },
+				"Sun": { "open": "09:00", "close": "21:00" }
+			},
+			"seasonal_open": "2026-05-30",
+			"seasonal_close": "2026-08-31",
+			"notes": "Freibad Marzili, Bern (Marzilistrasse 29). Free entry. Iconic Aare river bath. Under major renovation 2025–2029; 2026 season opens 'at earliest end of May 2026' with restrictions. Normal season ~May 10–Aug 31 (Schwimmkanal until Sept 21). Peak hours Mon–Fri 07:00–21:00, Sat–Sun 09:00–21:00."
+		},
+		"description": "Das Freibad Marzili ist Berns bekannteste Badeanstalt und liegt direkt an der Aare unterhalb des Bundeshauses. Mit Spitzenfrequenzen von über 13'000 Besuchern täglich ist es eines der meistbesuchten Freibäder der Schweiz. Eintritt gratis. 2026 teilweise eingeschränkter Betrieb wegen Gesamtsanierung (Kredit 67 Mio. CHF, Bauende 2029).",
+		"official_url": "https://www.sportamt-bern.ch/sportanlage/marzili/"
+	},
+	{
+		"uid": "WEYERMANNSHAUS-1",
+		"name": "Bern Weyermannshaus",
+		"type": "hallenbad",
+		"seasonal": false,
+		"city": "bern",
+		"max_capacity": 3500,
+		"opening_hours": {
+			"schedule": {
+				"Mon": { "open": "06:00", "close": "21:00" },
+				"Tue": { "open": "06:00", "close": "21:00" },
+				"Wed": { "open": "11:00", "close": "21:00" },
+				"Thu": { "open": "06:00", "close": "21:00" },
+				"Fri": { "open": "06:00", "close": "21:00" },
+				"Sat": { "open": "07:00", "close": "18:00" },
+				"Sun": { "open": "07:00", "close": "18:00" }
+			},
+			"seasonal_open": null,
+			"seasonal_close": null,
+			"notes": "Schwimmbad Weyermannshaus, Bern (Stöckackerstrasse 9). Has both Hallenbad (year-round) and Freibad (season ~May 9–Sept 13). Max capacity 3500 is the combined Freibad+Hallenbad. Hallenbad hours shown. Wed restricted due to school use mornings. Freibad 2026: reopens May 10."
+		},
+		"description": "Das Schwimmbad Weyermannshaus in Bern bietet ein ganzjährig geöffnetes Hallenbad sowie ein saisonales Freibad (gratis Eintritt). Das Hallenbad ist das Zwillingsbad des Hallenbads Wyler und bietet 25-Meter-Becken, Lehrschwimmbecken und Therapiebad.",
+		"official_url": "https://www.sportamt-bern.ch/sportanlage/freibad-weyermannshaus/"
+	},
+	{
+		"uid": "WYLERBAD-1",
+		"name": "Bern Wylerbad",
+		"type": "hallenbad",
+		"seasonal": false,
+		"city": "bern",
+		"max_capacity": 2500,
+		"opening_hours": {
+			"schedule": {
+				"Mon": { "open": "06:00", "close": "21:00" },
+				"Tue": { "open": "06:00", "close": "21:00" },
+				"Wed": { "open": "11:00", "close": "21:00" },
+				"Thu": { "open": "06:00", "close": "21:00" },
+				"Fri": { "open": "06:00", "close": "21:00" },
+				"Sat": { "open": "07:00", "close": "18:00" },
+				"Sun": { "open": "07:00", "close": "18:00" }
+			},
+			"seasonal_open": null,
+			"seasonal_close": null,
+			"notes": "Freibad / Hallenbad Wyler, Bern (Scheibenstrasse 65). Hallenbad year-round, Freibad season ~May 10–Sept 30. Max capacity 2500 is combined. Wed morning restricted for schools. Tue closes at 18:30 due to club evening. Frühschwimmen from 06:00 with Abo only."
+		},
+		"description": "Das Hallenbad Wyler (Wylerbad) in Bern ist das Zwillingsbad des Hallenbads Weyermannshaus. Es bietet ein 25-Meter-Becken mit 5 Bahnen, ein Lehrschwimmbecken sowie ein Therapiebad. Das dazugehörige Freibad (gratis Eintritt) ist von Mai bis Ende September geöffnet.",
+		"official_url": "https://www.sportamt-bern.ch/sportanlage/wyler/"
+	},
+	{
+		"uid": "flb6939",
+		"name": "Flussbad Oberer Letten",
+		"type": "freibad",
+		"seasonal": true,
+		"city": "zurich",
+		"max_capacity": 1000,
+		"opening_hours": {
+			"schedule": {
+				"Mon": { "open": "09:00", "close": "21:00" },
+				"Tue": { "open": "09:00", "close": "21:00" },
+				"Wed": { "open": "09:00", "close": "21:00" },
+				"Thu": { "open": "09:00", "close": "21:00" },
+				"Fri": { "open": "09:00", "close": "21:00" },
+				"Sat": { "open": "09:00", "close": "21:00" },
+				"Sun": { "open": "09:00", "close": "21:00" }
+			},
+			"seasonal_open": "2026-05-09",
+			"seasonal_close": "2026-09-20",
+			"notes": "Flussbad Oberer Letten (Lettensteg 10). Free entry. Limmat river bath with 400m swim canal. Guaranteed open 09:00–14:00; extended to 20:00–21:00 in good weather. Swimmers only (no young children). Season 2026: May 9–Sept 20."
+		},
+		"description": "Das Flussbad Oberer Letten liegt im Herzen Zürichs an der Limmat und bietet einen 400 Meter langen Schwimmkanal sowie ein 2-Meter-Sprungbrett. Der Eintritt ist gratis. Das Bad ist nur für gute Schwimmer geeignet – die Strömung ist stark und der Kanal bis zu 6 Meter tief.",
+		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/oberer-letten.html"
+	},
+	{
+		"uid": "flb6940",
+		"name": "Flussbad Unterer Letten",
+		"type": "freibad",
+		"seasonal": true,
+		"city": "zurich",
+		"max_capacity": 800,
+		"opening_hours": {
+			"schedule": {
+				"Mon": { "open": "09:00", "close": "20:00" },
+				"Tue": { "open": "09:00", "close": "20:00" },
+				"Wed": { "open": "09:00", "close": "20:00" },
+				"Thu": { "open": "09:00", "close": "20:00" },
+				"Fri": { "open": "09:00", "close": "20:00" },
+				"Sat": { "open": "09:00", "close": "20:00" },
+				"Sun": { "open": "09:00", "close": "20:00" }
+			},
+			"seasonal_open": "2026-05-09",
+			"seasonal_close": "2026-09-20",
+			"notes": "Flussbad Unterer Letten, Zürich. Free entry. Oldest river bath in Zürich with 100m swim canal. Tue closes 20:00 (Flussbar evening). Open-air cinema Filmfluss: mid-July, closes 19:30. Season 2026: May 9–Sept 20."
+		},
+		"description": "Das Flussbad Unterer Letten ist das älteste Flussbad Zürichs und bietet einen 100-Meter-Schwimmkanal in der Limmat sowie ein Beckenbad. Eintritt gratis. Im Sommer finden hier die Flussbar (dienstags ab 20:15 Uhr) und das Open-Air-Kino Filmfluss statt.",
+		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/unterer-letten.html"
+	},
+	{
+		"uid": "flb6941",
+		"name": "Frauenbad Stadthausquai",
+		"type": "freibad",
+		"seasonal": true,
+		"city": "zurich",
+		"max_capacity": 350,
+		"opening_hours": {
+			"schedule": {
+				"Mon": { "open": "07:00", "close": "19:30" },
+				"Tue": { "open": "07:00", "close": "19:30" },
+				"Wed": { "open": "07:00", "close": "19:30" },
+				"Thu": { "open": "07:00", "close": "19:30" },
+				"Fri": { "open": "07:00", "close": "19:30" },
+				"Sat": { "open": "07:00", "close": "19:30" },
+				"Sun": { "open": "07:00", "close": "19:30" }
+			},
+			"seasonal_open": "2026-05-09",
+			"seasonal_close": "2026-09-21",
+			"notes": "Frauenbad Stadthausquai, Zürich. Women-only during daytime. Historic Jugendstil bath on the Limmat with Grossmünster view. Barfussbar evenings (Tue/Thu/Fri) open to all. Season 2025: May 10–Sept 21."
+		},
+		"description": "Das Frauenbad Stadthausquai ist ein historisches Jugendstil-Flussbad am Limmatufer im Herzen Zürichs. Tagsüber ausschliesslich für Frauen geöffnet. Es bietet ein Schwimmer- und ein Nichtschwimmerinnenbecken mit Blick auf Grossmünster und Wasserkirche. An drei Abenden pro Woche öffnet die Barfussbar auch für Männer.",
+		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/stadthausquai.html"
+	},
+	{
+		"uid": "flb8803",
+		"name": "Flussbad Unterer Letten (Flussteil)",
+		"type": "freibad",
+		"seasonal": true,
+		"city": "zurich",
+		"max_capacity": 800,
+		"opening_hours": {
+			"schedule": {
+				"Mon": { "open": "09:00", "close": "20:00" },
+				"Tue": { "open": "09:00", "close": "20:00" },
+				"Wed": { "open": "09:00", "close": "20:00" },
+				"Thu": { "open": "09:00", "close": "20:00" },
+				"Fri": { "open": "09:00", "close": "20:00" },
+				"Sat": { "open": "09:00", "close": "20:00" },
+				"Sun": { "open": "09:00", "close": "20:00" }
+			},
+			"seasonal_open": "2026-05-09",
+			"seasonal_close": "2026-09-20",
+			"notes": "River section of Flussbad Unterer Letten (Limmat drift zone). Separate crowdmonitor sensor from the Beckenbad section (flb6940). Same season and approximate hours. Swimmers only."
+		},
+		"description": "Der Flussteil des Unteren Lettens ist die Treib-/Schwimmstrecke in der Limmat, die zum Flussbad Unterer Letten gehört. Schwimmer treiben vom Einsteigspunkt flussabwärts und verlassen das Wasser an der Ausstiegstreppe. Eintritt gratis.",
+		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/unterer-letten.html"
 	}
 ]
