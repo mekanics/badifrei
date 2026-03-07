@@ -347,6 +347,7 @@ def _build_opening_hours_summary(opening_hours: dict | None) -> str | None:
 
 _DE_MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
               "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+_DE_DAYS_SHORT = ["Mo.", "Di.", "Mi.", "Do.", "Fr.", "Sa.", "So."]
 
 
 def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
@@ -388,22 +389,26 @@ def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
 
     next_open = None
     if not is_open:
-        # Check if still today and opens later
-        day_name = _DAY_NAMES[day_of_week]
-        today_sched = opening_hours.get("schedule", {}).get(day_name)
+        schedule = opening_hours.get("schedule", {})
+
+        # Check if still today and opens later (offset=0)
+        today_sched = schedule.get(_DAY_NAMES[day_of_week])
         if today_sched:
             open_h, open_m = map(int, today_sched["open"].split(":"))
             if hour < open_h or (hour == open_h and now_zurich.minute < open_m):
-                next_open = today_sched["open"]
+                next_open = today_sched["open"]  # same day → time only
 
-        # Otherwise find next day with an opening
+        # Find next open day ahead
         if not next_open:
-            schedule = opening_hours.get("schedule", {})
             for offset in range(1, 8):
                 check_dow = (day_of_week + offset) % 7
                 day_sched = schedule.get(_DAY_NAMES[check_dow])
                 if day_sched:
-                    next_open = day_sched.get("open")
+                    t = day_sched.get("open", "")
+                    if offset == 1:
+                        next_open = t           # tomorrow → time only
+                    else:
+                        next_open = f"{_DE_DAYS_SHORT[check_dow]} {t}"  # e.g. "So. 09:00"
                     break
 
     return {"is_open": bool(is_open), "next_open": next_open, "opens_seasonal": None}
