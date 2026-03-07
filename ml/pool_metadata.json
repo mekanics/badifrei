@@ -580,93 +580,51 @@
 	},
 	{
 		"uid": "LIDO-1",
-		"name": "Luzern",
-		"type": "other",
+		"name": "Lido Luzern",
+		"type": "strandbad",
 		"seasonal": true,
 		"city": "luzern",
 		"max_capacity": 3500,
 		"opening_hours": {
 			"schedule": {
-				"Mon": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Tue": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Wed": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Thu": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Fri": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Sat": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Sun": {
-					"open": "09:00",
-					"close": "20:00"
-				}
+				"Mon": { "open": "09:30", "close": "19:30" },
+				"Tue": { "open": "09:30", "close": "19:30" },
+				"Wed": { "open": "09:30", "close": "19:30" },
+				"Thu": { "open": "09:30", "close": "19:30" },
+				"Fri": { "open": "09:30", "close": "19:30" },
+				"Sat": { "open": "09:30", "close": "19:30" },
+				"Sun": { "open": "09:30", "close": "19:30" }
 			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-20",
-			"notes": "Lido Luzern outdoor pool. Exact hours approximate; verify at luzern.ch."
+			"seasonal_open": "2026-05-01",
+			"seasonal_close": "2026-09-30",
+			"notes": "Strandbad Lido Luzern (Lidostrasse 6A). Lake beach on Vierwaldstättersee with sandy beach, sunbathing lawns, heated 25m pool, and beach volleyball. Open daily 09:30–19:30 during season. Season ~May–end of September."
 		},
-		"description": "Das Lido Luzern liegt am malerischen Ufer des Vierwaldstättersees und ist eine der bekanntesten Badeanlagen der Zentralschweiz. Mit seinem Sandstrand, den Liegewiesen und dem direkten Seezugang bietet es Erholung pur mit Blick auf die Rigi und das Bürgenstock. Die Anlage ist ideal für Familien, Sportler und alle, die die Natur Luzerns geniessen wollen.",
-		"official_url": null
+		"description": "Das Strandbad Lido Luzern liegt am Ufer des Vierwaldstättersees mit Blick auf Rigi und Bürgenstock. Es bietet einen Sandstrand, ausgedehnte Liegewiesen, einen beheizten 25-Meter-Pool, Beach-Volleyball und ein Restaurant. Mit über 45'000 m² Fläche und 500 m Strandlänge ist es die grösste Seebadeanstalt der Schweiz.",
+		"official_url": "https://www.luzern.com/en/poi/lido-lucerne"
 	},
 	{
 		"uid": "RISCH-1",
-		"name": "Rotkreuz",
-		"type": "other",
+		"name": "Schwimmbad Rotkreuz",
+		"type": "freibad",
 		"seasonal": true,
 		"city": "rotkreuz",
 		"max_capacity": 600,
 		"opening_hours": {
 			"schedule": {
-				"Mon": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Tue": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Wed": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Thu": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Fri": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Sat": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Sun": {
-					"open": "09:00",
-					"close": "20:00"
-				}
+				"Mon": { "open": "09:00", "close": "20:00" },
+				"Tue": { "open": "09:00", "close": "20:00" },
+				"Wed": { "open": "09:00", "close": "20:00" },
+				"Thu": { "open": "09:00", "close": "20:00" },
+				"Fri": { "open": "09:00", "close": "20:00" },
+				"Sat": { "open": "09:00", "close": "20:00" },
+				"Sun": { "open": "09:00", "close": "19:00" }
 			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-20",
-			"notes": "Outdoor pool in Rotkreuz (Kanton Zug). Approximate hours; verify with local operator."
+			"seasonal_open": "2026-05-02",
+			"seasonal_close": "2026-09-27",
+			"notes": "Schwimmbad Rotkreuz (Buonaserstrasse 29, 6343 Rotkreuz). Freiluftbadi (outdoor only). 50m pool with 4 lanes + kids pool. Season ~May–late Sept. Mon–Sat 09:00–20:00, Sun 09:00–19:00. Weather-dependent closures (call 079 538 47 32)."
 		},
-		"description": "Das Schwimmbad Rotkreuz liegt in der Gemeinde Risch im Kanton Zug und ist eine beliebte Freizeitanlage für die Region Rotkreuz-Zug. Das Bad bietet ein Schwimmbecken, Liegewiesen sowie Einrichtungen für Familien. Die zentrale Lage in der Agglomeration Zug macht es gut erreichbar.",
-		"official_url": null
+		"description": "Das Schwimmbad Rotkreuz in der Gemeinde Risch (Kanton Zug) ist ein klassisches Freibad mit 50-Meter-Schwimmbecken, Kinderschwimmbecken, 1m- und 2m-Sprungbrettern, Liegewiesen und Grillplatz. Eintritt kostenpflichtig. Gut erreichbar aus der gesamten Agglomeration Zug/Luzern.",
+		"official_url": "https://www.zg.ch/behoerden/gemeinden/risch-rotkreuz/verwaltung/tiefbau-umwelt-sicherheit-1/copy_of_laerm/copy_of_plaetze-und-anlagen/badi-rotkreuz-1"
 	},
 	{
 		"uid": "SSD-10",
@@ -895,93 +853,51 @@
 	},
 	{
 		"uid": "WEN-1",
-		"name": "Wengen",
-		"type": "other",
+		"name": "Freibad Wengen",
+		"type": "freibad",
 		"seasonal": true,
 		"city": "wengen",
 		"max_capacity": 70,
 		"opening_hours": {
 			"schedule": {
-				"Mon": {
-					"open": "09:00",
-					"close": "18:00"
-				},
-				"Tue": {
-					"open": "09:00",
-					"close": "18:00"
-				},
-				"Wed": {
-					"open": "09:00",
-					"close": "18:00"
-				},
-				"Thu": {
-					"open": "09:00",
-					"close": "18:00"
-				},
-				"Fri": {
-					"open": "09:00",
-					"close": "18:00"
-				},
-				"Sat": {
-					"open": "09:00",
-					"close": "18:00"
-				},
-				"Sun": {
-					"open": "09:00",
-					"close": "18:00"
-				}
+				"Mon": { "open": "10:00", "close": "19:00" },
+				"Tue": { "open": "10:00", "close": "19:00" },
+				"Wed": { "open": "10:00", "close": "19:00" },
+				"Thu": { "open": "10:00", "close": "19:00" },
+				"Fri": { "open": "10:00", "close": "19:00" },
+				"Sat": { "open": "10:00", "close": "19:00" },
+				"Sun": { "open": "10:00", "close": "19:00" }
 			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-20",
-			"notes": "Mountain pool in Wengen (Bernese Oberland). Approximate hours; verify with local operator."
+			"seasonal_open": "2026-06-06",
+			"seasonal_close": "2026-09-07",
+			"notes": "Sonnen- und Schwimmbad Waldbort, Wengen (1274m ü.M., Bernese Oberland). Outdoor mountain pool, open only in good/warm weather. Season ~June–early Sept. Hours 10:00–19:00 daily (weather-dependent). Small capacity (70). Tel: 033 855 14 66."
 		},
-		"description": "Das Schwimmbad Wengen liegt auf 1274 Metern über Meer im autofreien Bergdorf Wengen im Berner Oberland. Eingebettet zwischen Jungfrau, Mönch und Eiger bietet es ein einmaliges Schwimmerlebnis mit spektakulärem Alpenpanorama. Das Bad ist ein Geheimtipp für Gäste und Einheimische, die nach einer Wanderung oder Bergtour erfrischend abkühlen möchten.",
-		"official_url": null
+		"description": "Das Freibad Wengen (Sonnen- und Schwimmbad Waldbort) liegt auf 1274 Metern im autofreien Bergdorf Wengen im Berner Oberland. Das kleine Freibad bietet ein beheiztes Becken mit Sprungturm und spektakulärem Blick auf Jungfrau, Mönch und Eiger. Geöffnet nur bei gutem Wetter, typischerweise Juni bis Anfang September.",
+		"official_url": "https://wengen.swiss/de/map/detail/freibad-wengen-58e45aa0-121e-40ce-ae59-0527cdfae84f.html"
 	},
 	{
 		"uid": "HUENENBERG-1",
-		"name": "Zug",
-		"type": "other",
+		"name": "Strandbad Hünenberg",
+		"type": "strandbad",
 		"seasonal": true,
-		"city": "zug",
+		"city": "hunenberg",
 		"max_capacity": 1000,
 		"opening_hours": {
 			"schedule": {
-				"Mon": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Tue": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Wed": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Thu": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Fri": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Sat": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Sun": {
-					"open": "09:00",
-					"close": "20:00"
-				}
+				"Mon": { "open": "09:00", "close": "20:00" },
+				"Tue": { "open": "09:00", "close": "20:00" },
+				"Wed": { "open": "09:00", "close": "20:00" },
+				"Thu": { "open": "09:00", "close": "20:00" },
+				"Fri": { "open": "09:00", "close": "20:00" },
+				"Sat": { "open": "09:00", "close": "20:00" },
+				"Sun": { "open": "09:00", "close": "20:00" }
 			},
 			"seasonal_open": "2026-05-09",
 			"seasonal_close": "2026-09-20",
-			"notes": "Outdoor pool in Zug/Hünenberg area. Approximate hours; verify at zug.ch."
+			"notes": "Strandbad Hünenberg (Kanton Zug), lake beach on Zugersee. Season: Saturday before Muttertag to Bettag (mid-May to mid-September). Hours 09:00–20:00 daily with lifeguard supervision. Gastronomie also open Apr and Oct weather-permitting."
 		},
-		"description": "Das Schwimmbad Zug liegt in der Region Hünenberg im Kanton Zug und ist eine wichtige Freizeitanlage für die Bevölkerung der Region. Es bietet ein Schwimmbecken sowie Liegewiesen in einem ruhigen Umfeld. Die Lage in der Zuger Seenlandschaft macht einen Besuch zu einem angenehmen Erlebnis.",
-		"official_url": null
+		"description": "Das Strandbad Hünenberg liegt direkt am Zugersee in der Gemeinde Hünenberg (Kanton Zug). Es bietet einen Seezugang, Liegewiesen, Spielgeräte, eine eingezäunte Spielwiese und einen Grillplatz. Die Gastronomie ist auch ausserhalb der Badesaison bei guter Witterung geöffnet.",
+		"official_url": "https://www.zg.ch/behoerden/gemeinden/hunenberg/de/verwaltung/sicherheit-und-umwelt/strandbad/oeffnungszeiten"
 	},
 	{
 		"uid": "BADI-1",
