@@ -7,10 +7,19 @@
 <!-- Filter bar -->
 <div class="filter-bar" id="filter-bar">
   <div class="filter-row">
-    <button class="filter-btn filter-btn-open" id="btn-open" aria-pressed="false">🟢 Offen</button>
+    <button class="filter-btn filter-btn-open" id="btn-open" aria-pressed="false">
+      <span class="filter-open-dot"></span>Offen
+    </button>
     <div class="filter-sep" aria-hidden="true"></div>
-    <div class="filter-group" id="type-filter-group" aria-label="Nach Typ filtern"></div>
-    <div class="filter-group" id="city-filter-group" aria-label="Nach Stadt filtern"></div>
+    <div class="filter-group">
+      <span class="filter-label">Typ</span>
+      <div class="filter-group" id="type-filter-group" aria-label="Nach Typ filtern"></div>
+    </div>
+    <div class="filter-sep" aria-hidden="true"></div>
+    <div class="filter-group" id="city-filter-group" aria-label="Nach Stadt filtern">
+      <span class="filter-label">Stadt</span>
+      <select class="filter-select" id="city-select"><option value="">Alle</option></select>
+    </div>
     <div class="filter-meta">
       <span class="filter-count" id="filter-count"></span>
       <button class="filter-reset" id="filter-reset" style="display:none">× Zurücksetzen</button>
@@ -55,7 +64,7 @@
 
 <script>
   /* ── Filter state ─────────────────────────────────────────────── */
-  const filters = { open: false, types: new Set(), cities: new Set() };
+  const filters = { open: false, types: new Set(), city: '' };
 
   const TYPE_LABELS = {
     freibad: 'Freibad', hallenbad: 'Hallenbad',
@@ -64,61 +73,56 @@
   };
 
   function buildFilterBar() {
-    // Collect types and cities present on this page
     const types = new Set(), cities = new Set(), cityLabels = {};
+
     document.querySelectorAll('.pool-card').forEach(card => {
       if (card.dataset.type) types.add(card.dataset.type);
       if (card.dataset.city) {
         cities.add(card.dataset.city);
-        // derive label from section heading (fallback to capitalised key)
         const section = card.closest('.section-block');
         if (section) {
           const h2 = section.querySelector('.section-title');
-          if (h2) {
-            const text = h2.textContent.replace('Schwimmbäder', '').trim();
-            cityLabels[card.dataset.city] = text || card.dataset.city;
-          }
+          if (h2) cityLabels[card.dataset.city] = h2.textContent.replace('Schwimmbäder', '').trim();
         }
-        if (!cityLabels[card.dataset.city]) {
+        if (!cityLabels[card.dataset.city])
           cityLabels[card.dataset.city] = card.dataset.city.charAt(0).toUpperCase() + card.dataset.city.slice(1);
-        }
       }
     });
 
-    // Type buttons
+    // Type toggle buttons
     const typeGroup = document.getElementById('type-filter-group');
-    types.forEach(t => {
+    [...types].sort().forEach(t => {
       const btn = document.createElement('button');
       btn.className = 'filter-btn filter-btn-type';
       btn.dataset.value = t;
       btn.textContent = TYPE_LABELS[t] || t;
       btn.setAttribute('aria-pressed', 'false');
-      btn.addEventListener('click', () => toggleSet(filters.types, t, btn, applyFilters));
+      btn.addEventListener('click', () => {
+        const active = filters.types.has(t);
+        active ? filters.types.delete(t) : filters.types.add(t);
+        btn.setAttribute('aria-pressed', active ? 'false' : 'true');
+        applyFilters();
+      });
       typeGroup.appendChild(btn);
     });
 
-    // City buttons — only show if more than one city
-    if (cities.size > 1) {
-      const cityGroup = document.getElementById('city-filter-group');
-      const sep = document.createElement('div');
-      sep.className = 'filter-sep'; sep.setAttribute('aria-hidden', 'true');
-      cityGroup.appendChild(sep);
-      [...cities].sort().forEach(c => {
-        const btn = document.createElement('button');
-        btn.className = 'filter-btn filter-btn-city';
-        btn.dataset.value = c;
-        btn.textContent = cityLabels[c] || c;
-        btn.setAttribute('aria-pressed', 'false');
-        btn.addEventListener('click', () => toggleSet(filters.cities, c, btn, applyFilters));
-        cityGroup.appendChild(btn);
-      });
+    // City dropdown — only show if more than one city
+    const cityGroup = document.getElementById('city-filter-group');
+    if (cities.size <= 1) {
+      cityGroup.style.display = 'none';
+      return;
     }
-  }
-
-  function toggleSet(set, value, btn, callback) {
-    if (set.has(value)) { set.delete(value); btn.setAttribute('aria-pressed', 'false'); }
-    else                 { set.add(value);    btn.setAttribute('aria-pressed', 'true');  }
-    callback();
+    const sel = document.getElementById('city-select');
+    [...cities].sort((a, b) => (cityLabels[a] || a).localeCompare(cityLabels[b] || b)).forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = cityLabels[c] || c;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => {
+      filters.city = sel.value;
+      applyFilters();
+    });
   }
 
   function applyFilters() {
@@ -126,25 +130,21 @@
     document.querySelectorAll('.pool-card').forEach(card => {
       total++;
       const typeOk = filters.types.size === 0 || filters.types.has(card.dataset.type);
-      const cityOk = filters.cities.size === 0 || filters.cities.has(card.dataset.city);
+      const cityOk = !filters.city || card.dataset.city === filters.city;
       const openOk = !filters.open || card.dataset.open === 'true';
       const visible = typeOk && cityOk && openOk;
       card.style.display = visible ? '' : 'none';
       if (visible) shown++;
     });
 
-    // Hide city sections that become empty
     document.querySelectorAll('.section-block:not(#favorites-section)').forEach(section => {
       const anyVisible = [...section.querySelectorAll('.pool-card')].some(c => c.style.display !== 'none');
       section.style.display = anyVisible ? '' : 'none';
     });
 
-    // Count label
+    const hasFilters = filters.open || filters.types.size > 0 || filters.city !== '';
     const countEl = document.getElementById('filter-count');
-    const hasFilters = filters.open || filters.types.size > 0 || filters.cities.size > 0;
     if (countEl) countEl.textContent = hasFilters ? `${shown} von ${total}` : '';
-
-    // Reset button
     const resetBtn = document.getElementById('filter-reset');
     if (resetBtn) resetBtn.style.display = hasFilters ? '' : 'none';
   }
@@ -152,9 +152,11 @@
   function resetFilters() {
     filters.open = false;
     filters.types.clear();
-    filters.cities.clear();
+    filters.city = '';
     document.getElementById('btn-open').setAttribute('aria-pressed', 'false');
-    document.querySelectorAll('.filter-btn[aria-pressed="true"]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('.filter-btn-type[aria-pressed="true"]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    const sel = document.getElementById('city-select');
+    if (sel) sel.value = '';
     applyFilters();
   }
 

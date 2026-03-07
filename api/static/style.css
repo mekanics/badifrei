@@ -227,14 +227,25 @@ body {
 	gap: 0.4rem;
 }
 
+.filter-label {
+	font-size: 0.62rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--muted);
+	white-space: nowrap;
+	margin-right: 0.1rem;
+}
+
 .filter-sep {
 	width: 1.5px;
 	height: 1.25rem;
 	background: var(--border-light);
 	flex-shrink: 0;
-	margin: 0 0.15rem;
+	margin: 0 0.2rem;
 }
 
+/* Base button */
 .filter-btn {
 	font-family: inherit;
 	font-size: 0.72rem;
@@ -246,21 +257,68 @@ body {
 	background: var(--card);
 	color: var(--text);
 	cursor: pointer;
-	transition: background 0.1s, color 0.1s, box-shadow 0.1s, transform 0.1s;
+	transition: background 0.1s, color 0.1s, border-color 0.1s;
 	white-space: nowrap;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
 }
 
-.filter-btn:hover {
+/* "Offen" button — status, not a type */
+.filter-btn-open:hover {
+	background: var(--green-bg);
+	border-color: var(--green);
+	color: var(--green);
+}
+.filter-btn-open[aria-pressed="true"] {
+	background: var(--green);
+	color: #fff;
+	border-color: var(--green);
+}
+.filter-btn-open[aria-pressed="true"] .filter-open-dot {
+	background: #fff;
+}
+
+/* Offen dot */
+.filter-open-dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--green);
+	flex-shrink: 0;
+	transition: background 0.1s;
+}
+
+/* Type filter buttons */
+.filter-btn-type:hover {
 	background: var(--accent-bg);
 	border-color: var(--accent);
 	color: var(--accent);
 }
+.filter-btn-type[aria-pressed="true"] {
+	background: var(--accent);
+	color: #fff;
+	border-color: var(--accent);
+}
 
-.filter-btn[aria-pressed="true"],
-.filter-btn-open[aria-pressed="true"] {
-	background: var(--text);
-	color: var(--bg);
-	border-color: var(--text);
+/* City dropdown */
+.filter-select {
+	font-family: inherit;
+	font-size: 0.72rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	padding: 0.28rem 0.6rem;
+	border: 1.5px solid var(--border);
+	background: var(--card);
+	color: var(--text);
+	cursor: pointer;
+	border-radius: 0;
+	height: 2rem;
+}
+.filter-select:focus {
+	outline: 2px solid var(--accent);
+	outline-offset: 1px;
 }
 
 .filter-meta {
@@ -289,21 +347,15 @@ body {
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 }
-
 .filter-reset:hover {
 	border-color: var(--red);
 	color: var(--red);
 }
 
 @media (max-width: 600px) {
-	.filter-bar {
-		padding: 0.6rem 0.75rem;
-	}
-	.filter-meta {
-		width: 100%;
-		margin-left: 0;
-		margin-top: 0.25rem;
-	}
+	.filter-bar { padding: 0.6rem 0.75rem; }
+	.filter-sep { display: none; }
+	.filter-meta { width: 100%; margin-left: 0; margin-top: 0.25rem; }
 }
 
 /* Favorites / section layout */
