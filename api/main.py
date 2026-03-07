@@ -345,40 +345,68 @@ def _build_opening_hours_summary(opening_hours: dict | None) -> str | None:
     return ". ".join(groups) + "."
 
 
+_DE_MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
+              "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+
+
 def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
     """Compute is_open status for a pool given current Zürich time.
 
-    Returns dict with keys: is_open (bool), next_open (str|None).
+    Returns dict with keys:
+      is_open (bool), next_open (str|None), opens_seasonal (str|None)
+
+    opens_seasonal is set (e.g. "ab 9. Mai") when the pool is outside its
+    seasonal window — next_open is None in that case.
+    next_open is a time string (e.g. "09:00") for in-season daily closures.
     """
+    import datetime as dt
     from ml.features import compute_opening_hours_for_row, _DAY_NAMES
     opening_hours = pool.get("opening_hours")
     if not opening_hours:
-        return {"is_open": True, "next_open": None}
+        return {"is_open": True, "next_open": None, "opens_seasonal": None}
 
+    today = now_zurich.date()
+
+    # ── Seasonal window check (before daily schedule) ───────────────────────
+    seasonal_open_str = opening_hours.get("seasonal_open")
+    seasonal_close_str = opening_hours.get("seasonal_close")
+    if seasonal_open_str and seasonal_close_str:
+        try:
+            season_open = dt.date.fromisoformat(seasonal_open_str)
+            season_close = dt.date.fromisoformat(seasonal_close_str)
+            if not (season_open <= today <= season_close):
+                # Off-season — show the opening date, not a daily time
+                label = f"ab {season_open.day}. {_DE_MONTHS[season_open.month - 1]}"
+                return {"is_open": False, "next_open": None, "opens_seasonal": label}
+        except (ValueError, TypeError):
+            pass  # malformed date — fall through to daily schedule
+
+    # ── In-season: check daily opening hours ────────────────────────────────
     day_of_week = now_zurich.weekday()  # 0=Mon
     hour = now_zurich.hour
-    is_open, _, _ = compute_opening_hours_for_row(hour, day_of_week, opening_hours, date=now_zurich.date())
+    is_open, _, _ = compute_opening_hours_for_row(hour, day_of_week, opening_hours, date=today)
 
     next_open = None
     if not is_open:
-        # Find next opening time (look ahead up to 7 days)
-        schedule = opening_hours.get("schedule", {})
-        for offset in range(1, 8):
-            check_dow = (day_of_week + offset) % 7
-            day_name = _DAY_NAMES[check_dow]
-            day_sched = schedule.get(day_name)
-            if day_sched:
-                next_open = day_sched.get("open")
-                break
-        # Also check if still today and opens later
+        # Check if still today and opens later
         day_name = _DAY_NAMES[day_of_week]
-        today_sched = schedule.get(day_name)
+        today_sched = opening_hours.get("schedule", {}).get(day_name)
         if today_sched:
             open_h, open_m = map(int, today_sched["open"].split(":"))
             if hour < open_h or (hour == open_h and now_zurich.minute < open_m):
                 next_open = today_sched["open"]
 
-    return {"is_open": bool(is_open), "next_open": next_open}
+        # Otherwise find next day with an opening
+        if not next_open:
+            schedule = opening_hours.get("schedule", {})
+            for offset in range(1, 8):
+                check_dow = (day_of_week + offset) % 7
+                day_sched = schedule.get(_DAY_NAMES[check_dow])
+                if day_sched:
+                    next_open = day_sched.get("open")
+                    break
+
+    return {"is_open": bool(is_open), "next_open": next_open, "opens_seasonal": None}
 
 
 @app.get("/api/current", tags=["dashboard"])
@@ -411,6 +439,7 @@ async def current_occupancy(request: Request):
             status = _compute_pool_is_open(pool, now_zurich)
             item["is_open"] = status["is_open"]
             item["next_open"] = status["next_open"]
+            item["opens_seasonal"] = status["opens_seasonal"]
             result.append(item)
         return result
     except Exception:

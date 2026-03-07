@@ -320,7 +320,12 @@
           if (item.is_open) {
             badge.innerHTML = '<span class="status-dot open"></span>';
           } else {
-            const hint = item.next_open ? ` · Öffnet ${item.next_open}` : '';
+            let hint = '';
+            if (item.opens_seasonal) {
+              hint = ` · ${item.opens_seasonal}`;
+            } else if (item.next_open) {
+              hint = ` · Öffnet ${item.next_open}`;
+            }
             badge.innerHTML = `<span class="status-dot closed"></span><span class="status-text">Geschlossen${hint}</span>`;
           }
         }
