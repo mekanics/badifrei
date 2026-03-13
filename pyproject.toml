@@ -34,7 +34,7 @@ asyncio_mode = "auto"
 markers = ["integration: marks tests as integration tests (deselect with -m 'not integration')"]
 
 [tool.setuptools.packages.find]
-include = ["collector*", "ml*", "api*"]
+include = ["collector*", "ml*", "api*", "scripts*"]
 
 [tool.ruff]
 line-length = 88

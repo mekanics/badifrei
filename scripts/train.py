@@ -18,15 +18,16 @@ async def main():
     df = await load_data(start, end, min_records=min_rec)
     print(f"Loaded {len(df)} records for {df['pool_uid'].nunique()} pools")
 
-    # Fetch weather for all dates in the training set so the model learns
-    # the relationship between temperature/rain and pool occupancy.
-    print("Fetching weather data for training dates...")
+    # Fetch per-city weather for all (city, date) pairs in the training set.
+    print("Fetching weather data for training dates (city-aware)...")
     try:
-        import pandas as _pd
-        from ml.weather import fetch_weather_batch
-        unique_dates = _pd.to_datetime(df["time"]).dt.date.unique()
-        weather_df = await fetch_weather_batch(unique_dates)
-        print(f"  Weather fetched for {len(unique_dates)} dates ({len(weather_df)} rows)")
+        from ml.retrain import _fetch_weather_for_df
+        weather_df = await _fetch_weather_for_df(df)
+        if weather_df is not None:
+            n_cities = weather_df["city"].nunique() if "city" in weather_df.columns else 1
+            print(f"  Weather fetched: {len(weather_df)} rows across {n_cities} city/cities")
+        else:
+            print("  Weather fetch failed; training without weather features")
     except Exception as exc:
         print(f"  Weather fetch failed ({exc}); training without weather features")
         weather_df = None

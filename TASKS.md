@@ -524,6 +524,139 @@ Write `README.md` with quickstart, architecture diagram (ASCII), env vars refere
 
 ---
 
+### TASK-023: Persist weather data to TimescaleDB
+
+**Phase:** 4  
+**Status:** DONE  
+**Dependencies:** TASK-002, TASK-019
+
+**Description:**
+Replace the in-memory-only weather cache in `ml/weather.py` with a persistent `hourly_weather` TimescaleDB table.
+Currently every training run re-fetches all historical dates from Open-Meteo, which becomes expensive as the dataset grows across years.
+`fetch_weather_batch()` should check the DB first, fetch only missing dates from Open-Meteo, then persist the new rows.
+
+**TDD — Write These Tests First:**
+- `test_hourly_weather_table_exists`: queries `timescaledb_information.hypertables` and asserts `hourly_weather` is present
+- `test_hourly_weather_schema`: verifies columns `date DATE`, `hour SMALLINT`, `temperature_c FLOAT`, `precipitation_mm FLOAT`, `weathercode SMALLINT` exist with correct types; primary key `(date, hour)` prevents duplicates
+- `test_fetch_weather_batch_writes_to_db`: after calling `fetch_weather_batch([some_date])` with an empty DB, the rows are present in `hourly_weather`
+- `test_fetch_weather_batch_reads_from_db`: seed `hourly_weather` with data for a date; assert `fetch_weather_batch([that_date])` returns those rows and makes **zero** HTTP requests to Open-Meteo (mock `aiohttp.ClientSession`)
+- `test_fetch_weather_batch_partial_cache_hit`: seed DB with dates A and C; request dates A, B, C; assert Open-Meteo is called **only** for date B, and all three dates are present in the returned DataFrame
+- `test_nan_rows_not_persisted`: when Open-Meteo returns an error (HTTP 500) for a date, the NaN fallback rows are returned to the caller but **not** written to `hourly_weather` (don't poison the cache)
+
+**Acceptance Criteria:**
+- [ ] New SQL migration/init script: `docker/init-weather.sql` (or appended to existing init SQL) creates `hourly_weather` table as a TimescaleDB hypertable, partitioned on `date`, with a unique index on `(date, hour)`
+- [ ] `fetch_weather_batch()` in `ml/weather.py` updated: check DB → fetch missing from Open-Meteo → persist new rows → return combined DataFrame
+- [ ] DB pool/connection reuses the existing `asyncpg` infrastructure (no second connection string)
+- [ ] In-memory `_cache` dict retained as a hot layer in front of the DB (avoids DB round-trips for dates already loaded in the current process)
+- [ ] All 6 tests pass against a live test DB fixture
+- [ ] `clear_cache()` utility extended to also truncate `hourly_weather` in test environments (guarded by an env flag, e.g. `WEATHER_CACHE_DB_TRUNCATE_ON_CLEAR=true`)
+
+**Implementation Notes:**
+Use `INSERT … ON CONFLICT (date, hour) DO NOTHING` for upserts so concurrent retrains don't race. Keep the write path async — bulk insert with `asyncpg.executemany`. The DB check should query `SELECT date FROM hourly_weather WHERE date = ANY($1)` to find which requested dates are already fully cached before deciding what to fetch.
+
+---
+
+### TASK-024: Fix automated retrainer to pass weather features
+
+**Phase:** 4  
+**Status:** DONE  
+**Dependencies:** TASK-018, TASK-019, TASK-023
+
+**Description:**
+`ml/retrain.py` calls `train(df)` without fetching or passing `weather_df`, so weather features are silently absent from every automated retrain.
+This produces an inferior model compared to the manual `scripts/train.py` run which correctly fetches weather.
+Fix `retrain_job()` to mirror the weather-fetch pattern from `scripts/train.py`, with graceful degradation if the fetch fails.
+
+**TDD — Write These Tests First:**
+- `test_retrain_job_calls_fetch_weather_batch`: mock `fetch_weather_batch` and `train`; run `retrain_job()`; assert `fetch_weather_batch` is called with the unique dates extracted from the loaded DataFrame
+- `test_retrain_job_passes_weather_df_to_train`: assert `train()` is called with a `weather_df` kwarg equal to the DataFrame returned by the mock `fetch_weather_batch`
+- `test_retrain_job_continues_without_weather_on_fetch_failure`: make `fetch_weather_batch` raise an `Exception`; assert `retrain_job()` does **not** raise, logs a warning containing "weather", and calls `train(df, weather_df=None)` (or no `weather_df` kwarg)
+- `test_retrain_job_continues_without_weather_on_partial_nan`: make `fetch_weather_batch` return a DataFrame where all weather columns are NaN; assert `train()` is still called (NaN weather is handled downstream by feature engineering, not by crashing the retrainer)
+- `test_retrain_job_weather_dates_match_training_set`: the dates passed to `fetch_weather_batch` are exactly `pd.to_datetime(df["time"]).dt.date.unique()` — no more, no less
+
+**Acceptance Criteria:**
+- [ ] `retrain_job()` in `ml/retrain.py` fetches weather for the loaded training set using `fetch_weather_batch(unique_dates)` before calling `train()`
+- [ ] Weather fetch wrapped in `try/except`; on any failure: log `WARNING` with the exception message, set `weather_df = None`, continue to `train(df, weather_df=None)`
+- [ ] `train()` call updated to `train(df, weather_df=weather_df)` (matching the signature already used in `scripts/train.py`)
+- [ ] Training log output includes a line confirming weather fetch success (e.g. `"Weather fetched for N dates"`) or degraded mode (e.g. `"Training without weather features (fetch failed)"`)
+- [ ] All 5 tests pass using mocked DB/weather/train dependencies (no live DB required for unit tests)
+- [ ] `scripts/train.py` and `ml/retrain.py` are now in parity on the weather-fetch pattern — consider extracting a shared `_fetch_weather_for_df(df)` helper to `ml/weather.py` or a new `ml/training_utils.py` to avoid future drift
+
+**Implementation Notes:**
+The fix is small (~10 lines) but the test coverage is important — the bug was silent for as long as it existed because `train()` accepts `weather_df=None` without error. Extract the pattern into a shared helper so the two callers can't diverge again.
+
+---
+
+### TASK-025: Lightweight DB migration runner
+
+**Phase:** 4  
+**Status:** ✅ DONE  
+**Dependencies:** TASK-002, TASK-023
+
+**Description:**
+The project runs on Coolify with an existing live database. `init.sql` only fires on a fresh container (via `/docker-entrypoint-initdb.d/`), so schema changes introduced after initial deploy — such as the `hourly_weather` hypertable from TASK-023 — are silently skipped on existing deployments. This task introduces a proper, dependency-free migration runner so schema evolution is safe, reproducible, and applied automatically on every deploy.
+
+**TDD — Write These Tests First:**
+- `test_schema_migrations_table_created`: running the migrator on an empty DB creates the `schema_migrations` table with columns `filename TEXT PRIMARY KEY`, `applied_at TIMESTAMPTZ NOT NULL`
+- `test_migrations_applied_in_order`: place three migration files named `001_`, `002_`, `003_` in the migrations dir; assert they are executed in lexicographic filename order and all appear in `schema_migrations`
+- `test_idempotent_on_rerun`: run migrator twice against the same DB; assert each migration is applied exactly once (`SELECT COUNT(*)` per filename returns 1, no duplicate-key errors)
+- `test_skips_already_applied`: seed `schema_migrations` with `001_init.sql`; run migrator; assert only `002_hourly_weather.sql` is executed (mock/capture SQL calls to verify `001` is never re-run)
+- `test_failed_migration_halts_runner`: make `002_` contain invalid SQL; assert migrator exits non-zero, `003_` is never executed, and `002_` is **not** recorded in `schema_migrations` (transaction rollback)
+- `test_empty_migrations_dir_is_safe`: point migrator at an empty directory; assert it exits zero with no errors
+
+**Acceptance Criteria:**
+- [ ] `scripts/migrate.py` implemented — scans `docker/migrations/` in filename order, creates `schema_migrations` table if absent, applies only unaprecorded migrations, records each in `schema_migrations` on success
+- [ ] Existing SQL files moved/renamed to versioned migration files: `docker/migrations/001_init.sql` (from `docker/init.sql`) and `docker/migrations/002_hourly_weather.sql` (from `docker/init-weather.sql`)
+- [ ] `docker-compose.yml` gains a `migrator` one-shot service that builds from the project image, runs `python scripts/migrate.py`, and exits; all other services (`collector`, `api`, `retrainer`) declare `depends_on: migrator: condition: service_completed_successfully`
+- [ ] Each migration file is executed inside a single transaction; on SQL error the transaction rolls back, the filename is not written to `schema_migrations`, and the runner exits with a non-zero code
+- [ ] `COOLIFY.md` (or a section in `README.md`) documents the Coolify pre-deploy step: set the deploy command to `python scripts/migrate.py` so migrations run before the new image goes live
+- [ ] No new Python dependencies — uses only `asyncpg` (already in `pyproject.toml`) and the stdlib
+- [ ] All 6 tests pass with a live test-DB pytest fixture (same pattern as TASK-002/TASK-003); tests are isolated — each creates a fresh schema and tears down after
+
+**Implementation Notes:**
+`schema_migrations` creation should itself be idempotent (`CREATE TABLE IF NOT EXISTS`). Scan with `sorted(Path("docker/migrations").glob("*.sql"))` to guarantee lexicographic order regardless of filesystem. The migrator should accept an optional `--migrations-dir` CLI argument so tests can point it at a temp directory with fixture SQL files. For the Coolify pre-deploy command: Coolify supports a "Pre-deploy Command" field in the service settings — document the exact field name and value (`python scripts/migrate.py`). Consider logging each applied migration name to stdout so deploy logs are self-documenting.
+
+---
+
+### TASK-026: Per-city weather fetching
+
+**Phase:** 4  
+**Status:** ✅ DONE  
+**Dependencies:** TASK-023, TASK-024, TASK-025
+
+**Description:**
+`ml/weather.py` currently hardcodes a single Zürich coordinate (`lat=47.3769, lon=8.5417`) for all weather fetches. However, `ml/pool_metadata.json` contains pools from 8 distinct cities (zurich, bern, adliswil, luzern, entfelden, hunenberg, rotkreuz, wengen). Pools in Bern, Luzern, and other cities are silently receiving incorrect Zürich weather data, degrading prediction accuracy for those pools. This task introduces city-level weather granularity: one weather record per (city, date, hour) instead of one global record per (date, hour).
+
+The `hourly_weather` table has **not** been deployed to production yet, so `docker/migrations/002_hourly_weather.sql` may be updated in place — no new migration file is needed.
+
+**TDD — Write These Tests First:**
+- `test_city_coords_all_cities_present`: assert `CITY_COORDS` in `weather.py` contains keys for all 8 city slugs (`zurich`, `bern`, `adliswil`, `luzern`, `entfelden`, `hunenberg`, `rotkreuz`, `wengen`) and each value is a `(float, float)` tuple
+- `test_fetch_weather_batch_uses_city_coords`: mock the Open-Meteo HTTP call; call `fetch_weather_batch(dates, city="bern")`; assert the request URL contains Bern's lat/lon, not Zürich's
+- `test_fetch_weather_batch_default_city_is_zurich`: call `fetch_weather_batch(dates)` without a `city` argument; assert it uses `CITY_COORDS["zurich"]` (backward-compat default)
+- `test_persist_weather_includes_city`: mock `asyncpg`; call `persist_weather(df, city="luzern")`; assert the INSERT statement includes `city` and the rows contain `"luzern"`
+- `test_load_cached_dates_filters_by_city`: seed `hourly_weather` with rows for `city="zurich"` on date `2025-06-01`; call `load_cached_dates(["2025-06-01"], city="bern")`; assert the date is **not** returned as cached (different city)
+- `test_load_cached_dates_hits_cache_for_matching_city`: seed rows for `city="bern"` on `2025-06-01`; assert `load_cached_dates(["2025-06-01"], city="bern")` returns that date as cached
+- `test_fetch_weather_for_df_multi_city`: build a mock DataFrame with pools from `zurich` and `bern`; assert `_fetch_weather_for_df(df)` calls `fetch_weather_batch` once per city (2 calls), with the correct city slug each time
+- `test_training_join_uses_city_and_date_hour`: verify that after `_fetch_weather_for_df`, weather is joined to the training DataFrame on `(city, date, hour)` — pools from `bern` receive `bern` weather rows, not `zurich` rows
+
+**Acceptance Criteria:**
+- [ ] `CITY_COORDS` dict added to `ml/weather.py` mapping all 8 city slugs to `(lat, lon)` — hardcoded is fine; coordinates should be city-centre approximations accurate to ~1 km
+- [ ] `docker/migrations/002_hourly_weather.sql` updated: `hourly_weather` schema adds `city VARCHAR(64) NOT NULL`; primary key changed from `(date, hour)` to `(city, date, hour)`
+- [ ] `fetch_weather_batch(dates, city="zurich")` accepts a `city` parameter; fetches from `CITY_COORDS[city]`; raises `ValueError` for unknown city slugs
+- [ ] `persist_weather(df, city)` includes `city` in all INSERT rows and the `ON CONFLICT` clause targets `(city, date, hour)`
+- [ ] `load_cached_dates(dates, city="zurich")` filters by `city` so cache misses are correctly detected per city
+- [ ] Shared helper `_fetch_weather_for_df(df)` (in `ml/weather.py` or `ml/training_utils.py`) derives city per pool from `pool_metadata.json`, fetches weather per unique `(city, date)` pair (not per pool), and returns a combined DataFrame with a `city` column
+- [ ] `scripts/train.py` and `ml/retrain.py` updated to call `_fetch_weather_for_df(df)` (or equivalent) so both use city-aware weather automatically
+- [ ] Weather join in `ml/features.py` (and any other join sites) updated from `(date, hour)` to `(city, date, hour)` — pools without a known city fall back gracefully (log warning, drop weather columns for those rows rather than crashing)
+- [ ] All existing weather-related tests updated to supply a `city` argument where required; no test may use `city="zurich"` as an implicit default to mask a missing city propagation
+- [ ] All 8 new tests pass; no regression in existing test suite
+- [ ] Manual smoke test: retrain with `python scripts/train.py`; verify DB contains `hourly_weather` rows for at least 2 distinct cities; verify training DataFrame has non-null weather features for a Bern pool
+
+**Implementation Notes:**
+Derive city from `pool_metadata.json` using the `city` field already present on each pool entry — no API changes needed. The `_fetch_weather_for_df` helper should group the training DataFrame by city, collect the union of dates per city, and issue one `fetch_weather_batch` call per city. Concatenate results into a single weather DataFrame with a `city` column before joining. The join key becomes `["city", "date", "hour"]`. For the `features.py` join, add `city` to the merge keys; pools with an unrecognised city slug should emit a warning and be trained without weather features (not dropped from training entirely). Keep `fetch_weather_batch` and its DB helpers fully backward-compatible via the `city="zurich"` default — any call sites outside the training pipeline (e.g., ad-hoc scripts) will continue to work without modification.
+
+---
+
 ## Task Summary
 
 | ID | Title | Phase | Status |
@@ -550,3 +683,7 @@ Write `README.md` with quickstart, architecture diagram (ASCII), env vars refere
 | TASK-020 | Collector deduplication | 4 | ✅ DONE |
 | TASK-021 | Integration test suite | 4 | TODO |
 | TASK-022 | README & developer docs | 4 | ✅ DONE |
+| TASK-023 | Persist weather data to TimescaleDB | 4 | ✅ DONE |
+| TASK-024 | Fix automated retrainer to pass weather features | 4 | ✅ DONE |
+| TASK-025 | Lightweight DB migration runner | 4 | ✅ DONE |
+| TASK-026 | Per-city weather fetching | 4 | ✅ DONE |

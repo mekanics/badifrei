@@ -12,6 +12,8 @@ RUN pip install uv
 COPY pyproject.toml ./
 COPY collector/ ./collector/
 COPY ml/ ./ml/
+COPY scripts/ ./scripts/
+COPY docker/migrations/ ./docker/migrations/
 
 # Install production deps only (no dev extras)
 RUN uv pip install --system -e "."

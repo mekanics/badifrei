@@ -10,9 +10,12 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 import os
 
+import pandas as pd
+
 from ml.data_loader import load_data, InsufficientDataError
 from ml.train import train, save_model
 from ml.evaluate import evaluate
+from ml.weather import fetch_weather_batch, CITY_COORDS
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +25,66 @@ RETRAIN_INTERVAL_HOURS = int(os.getenv("RETRAIN_INTERVAL_HOURS", "168"))  # 7 da
 LOOKBACK_DAYS = int(os.getenv("LOOKBACK_DAYS", "0"))
 MIN_RECORDS = int(os.getenv("MIN_RECORDS_FOR_TRAINING", "1000"))
 MODELS_DIR = Path(__file__).parent / "models"
+
+
+async def _fetch_weather_for_df(df: pd.DataFrame) -> "pd.DataFrame | None":
+    """Fetch per-city weather for all unique (city, date) pairs in *df*.
+
+    Derives city per pool from pool_metadata.json, then calls
+    ``fetch_weather_batch(city=...)`` once per unique city — not once per pool.
+    Returns a combined DataFrame with a ``city`` column, or ``None`` on failure.
+
+    This shared helper is used by both :func:`retrain_job` and any other
+    caller that needs city-aware weather aligned to a training DataFrame.
+    Unknown pool UIDs default to "zurich" (with a warning) for backward compat.
+    """
+    try:
+        from ml.features import load_pool_metadata
+        metadata = load_pool_metadata()
+        city_for_uid = {uid: meta.get("city", "zurich") for uid, meta in metadata.items()}
+
+        dates_series = pd.to_datetime(df["time"]).dt.date
+        temp = pd.DataFrame({"pool_uid": df["pool_uid"].values, "date": dates_series.values})
+        temp["city"] = temp["pool_uid"].map(city_for_uid)
+
+        unknown_mask = temp["city"].isna()
+        if unknown_mask.any():
+            unknown_uids = temp.loc[unknown_mask, "pool_uid"].unique().tolist()
+            logger.warning(
+                "pool_uid(s) %s not found in pool_metadata; defaulting to city='zurich'",
+                unknown_uids,
+            )
+            temp["city"] = temp["city"].fillna("zurich")
+
+        # One fetch per unique city — group unique (city, date) pairs
+        city_date_pairs = temp[["city", "date"]].drop_duplicates()
+
+        frames: list[pd.DataFrame] = []
+        for city, group in city_date_pairs.groupby("city"):
+            if city not in CITY_COORDS:
+                logger.warning("City slug %r not in CITY_COORDS; skipping weather fetch", city)
+                continue
+            unique_dates = group["date"].unique()
+            weather_df = await fetch_weather_batch(unique_dates, city=city)
+            weather_df = weather_df.copy()
+            weather_df["city"] = city
+            frames.append(weather_df)
+
+        if not frames:
+            return pd.DataFrame(
+                columns=["city", "date", "hour", "temperature_c", "precipitation_mm", "weathercode"]
+            )
+
+        combined = pd.concat(frames, ignore_index=True)
+        logger.info(
+            "Weather fetched for %d (city, date) pairs across %d city/cities",
+            len(city_date_pairs),
+            city_date_pairs["city"].nunique(),
+        )
+        return combined
+    except Exception as exc:
+        logger.warning(f"Weather fetch failed ({exc}); training without weather features")
+        return None
 
 
 async def retrain_job():
@@ -40,8 +103,15 @@ async def retrain_job():
 
     logger.info(f"Loaded {len(df)} records for training")
 
+    # Fetch weather features — graceful degradation on failure
+    weather_df = await _fetch_weather_for_df(df)
+    if weather_df is None:
+        logger.warning("Training without weather features (fetch failed)")
+    else:
+        logger.info(f"Weather fetched for {len(pd.to_datetime(df['time']).dt.date.unique())} dates")
+
     from ml.train import time_based_split
-    model, metrics = train(df)
+    model, metrics = train(df, weather_df=weather_df)
 
     # Evaluate against baseline
     train_df, test_df = time_based_split(df, test_fraction=0.2)
