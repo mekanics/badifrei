@@ -9,6 +9,13 @@ logger = logging.getLogger(__name__)
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+# ---------------------------------------------------------------------------
+# Weekly insights cache configuration
+# ---------------------------------------------------------------------------
+WEEKLY_INSIGHTS_CACHE_TTL_SECONDS: int = int(
+    os.environ.get("WEEKLY_INSIGHTS_CACHE_TTL_SECONDS", "3600")
+)
+
 from dateutil.parser import parse as date_parser_raw
 
 from fastapi import FastAPI, HTTPException, Request
@@ -40,6 +47,59 @@ def get_pools() -> list[dict]:
     return _pools_cache
 
 
+# ---------------------------------------------------------------------------
+# Weekly insights cache helpers
+# ---------------------------------------------------------------------------
+
+def is_stale(computed_at: datetime, ttl: int = WEEKLY_INSIGHTS_CACHE_TTL_SECONDS) -> bool:
+    """Return True if the cache entry is at or beyond its TTL."""
+    age = (datetime.now(timezone.utc) - computed_at).total_seconds()
+    return age >= ttl
+
+
+async def _refresh_weekly_insights(pool_uid: str, db_pool) -> None:
+    """Background coroutine: compute the 168-hour weekly insights and store in cache.
+
+    Errors are logged at WARNING level; the existing cache entry is left intact
+    so stale data is still served rather than nothing.
+    """
+    from fastapi import FastAPI  # avoid circular at module level
+    app_state = app.state  # reference to running app state
+
+    try:
+        import zoneinfo
+        from datetime import date as date_type
+
+        today = datetime.now(tz=zoneinfo.ZoneInfo("Europe/Zurich")).date()
+        mon = today - timedelta(days=today.weekday())
+        flat_hours = [
+            datetime(
+                (mon + timedelta(days=d)).year,
+                (mon + timedelta(days=d)).month,
+                (mon + timedelta(days=d)).day,
+                h, 0, 0,
+                tzinfo=timezone.utc,
+            )
+            for d in range(7)
+            for h in range(24)
+        ]
+
+        flat_preds = await predictor.predict_range_batch(pool_uid, flat_hours, db_pool)
+        weekly_preds = [flat_preds[d * 24:(d + 1) * 24] for d in range(7)]
+        insights = _compute_weekly_insights(weekly_preds)
+
+        app_state.weekly_insights_cache[pool_uid] = (insights, datetime.now(timezone.utc))
+        logger.debug("Weekly insights cache refreshed for pool %s", pool_uid)
+    except Exception as exc:
+        logger.warning("Failed to refresh weekly insights for pool %s: %s", pool_uid, exc)
+    finally:
+        # Always remove from in-flight guard so future requests can retry
+        try:
+            app_state.weekly_insights_inflight.discard(pool_uid)
+        except Exception:
+            pass
+
+
 def date_parser(date_str: str):
     return date_parser_raw(date_str).date()
 
@@ -58,6 +118,18 @@ async def lifespan(app: FastAPI):
             logger.info("DB connection pool created")
         except Exception as e:
             logger.warning(f"Could not create DB pool: {e}")
+
+    # Initialise weekly insights cache
+    app.state.weekly_insights_cache = {}   # pool_uid → (insights_dict, computed_at)
+    app.state.weekly_insights_inflight = set()  # pool_uids currently being refreshed
+
+    # Optional pre-warm: kick off a background refresh for every pool
+    if predictor.is_loaded():
+        for pool in get_pools():
+            uid = pool["uid"]
+            app.state.weekly_insights_inflight.add(uid)
+            asyncio.create_task(_refresh_weekly_insights(uid, app.state.db_pool))
+        logger.info("Weekly insights pre-warm scheduled for %d pools", len(get_pools()))
 
     yield
 
@@ -178,39 +250,39 @@ async def pool_detail(request: Request, pool_uid: str):
     ]
     db_pool = getattr(request.app.state, "db_pool", None)
 
-    # Weekly predictions for "Beste Besuchszeiten" (SEO-015)
-    mon = today - timedelta(days=today.weekday())
-    flat_hours = [
-        datetime(
-            (mon + timedelta(days=d)).year,
-            (mon + timedelta(days=d)).month,
-            (mon + timedelta(days=d)).day,
-            h, 0, 0,
-            tzinfo=timezone.utc
-        )
-        for d in range(7)
-        for h in range(24)
-    ]
-
-    # Run today and weekly predictions concurrently — they are independent.
-    async def _safe_predict(pool_uid, hrs, db_pool, fallback_len):
+    # Run today's predictions (24h) — the fast path, always computed fresh.
+    async def _safe_predict(pool_uid_, hrs, db_pool_, fallback_len):
         try:
-            return await predictor.predict_range_batch(pool_uid, hrs, db_pool)
+            return await predictor.predict_range_batch(pool_uid_, hrs, db_pool_)
         except Exception:
             return [0.0] * fallback_len
 
-    today_predictions, flat_preds = await asyncio.gather(
-        _safe_predict(pool_uid, hours, db_pool, 24),
-        _safe_predict(pool_uid, flat_hours, db_pool, 168),
-    )
+    today_predictions = await _safe_predict(pool_uid, hours, db_pool, 24)
 
     # Quietest open hour for FAQPage schema (SEO-008)
     open_preds = [(i, v) for i, v in enumerate(today_predictions) if v > 0]
     quietest_hour = min(open_preds, key=lambda x: x[1])[0] if open_preds else None
 
     opening_hours_summary = _build_opening_hours_summary(pool.get("opening_hours"))
-    weekly_preds = [flat_preds[d * 24:(d + 1) * 24] for d in range(7)]
-    weekly_insights = _compute_weekly_insights(weekly_preds)
+
+    # Weekly "Beste Besuchszeiten" — served from in-memory cache (stale-while-revalidate).
+    cache: dict = getattr(request.app.state, "weekly_insights_cache", {})
+    inflight: set = getattr(request.app.state, "weekly_insights_inflight", set())
+
+    cached_entry = cache.get(pool_uid)
+    if cached_entry is not None:
+        insights_dict, computed_at = cached_entry
+        weekly_insights = insights_dict  # serve immediately (fresh or stale)
+        if is_stale(computed_at) and pool_uid not in inflight:
+            # Stale — kick off background refresh, serve old value now
+            inflight.add(pool_uid)
+            asyncio.create_task(_refresh_weekly_insights(pool_uid, db_pool))
+    else:
+        # Cold cache — return None immediately, schedule background computation
+        weekly_insights = None
+        if pool_uid not in inflight:
+            inflight.add(pool_uid)
+            asyncio.create_task(_refresh_weekly_insights(pool_uid, db_pool))
 
     # SEO-016: related pools in same city (same type first, then others; max 4)
     all_pools = get_pools()
