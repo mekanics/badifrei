@@ -1,6 +1,9 @@
-"""Open-Meteo weather fetcher for Zürich with in-memory caching."""
+"""Open-Meteo weather fetcher for Zürich with in-memory caching and TimescaleDB persistence."""
+import asyncio
 import datetime
 import logging
+import os
+from collections.abc import Iterable
 from typing import Any
 
 import aiohttp
@@ -18,9 +21,98 @@ ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 
 HOURLY_FIELDS = ["temperature_2m", "precipitation", "weathercode"]
 
-# In-memory cache: date → pd.DataFrame
+# In-memory cache: date → pd.DataFrame (hot layer — avoids DB round-trips)
 _cache: dict[datetime.date, pd.DataFrame] = {}
 
+# ---------------------------------------------------------------------------
+# DB helpers (TASK-023)
+# ---------------------------------------------------------------------------
+
+_INSERT_SQL = """
+INSERT INTO hourly_weather (date, hour, temperature_c, precipitation_mm, weathercode)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (date, hour) DO NOTHING
+"""
+
+_SELECT_SQL = """
+SELECT date, hour, temperature_c, precipitation_mm, weathercode
+FROM hourly_weather
+WHERE date = ANY($1)
+ORDER BY date, hour
+"""
+
+_TRUNCATE_SQL = "TRUNCATE TABLE hourly_weather"
+
+
+async def _get_db_conn():
+    """Return an asyncpg connection using DATABASE_URL env var.
+
+    Callers are responsible for closing the connection.
+    Kept thin so tests can mock it easily.
+    """
+    import asyncpg  # type: ignore
+
+    url = os.getenv("DATABASE_URL", "postgresql://badi:badi@localhost:5432/badi")
+    return await asyncpg.connect(url)
+
+
+async def _load_dates_from_db(
+    conn, dates: list[datetime.date]
+) -> dict[datetime.date, pd.DataFrame]:
+    """Query DB for rows belonging to *dates*.
+
+    Returns a dict mapping date → DataFrame for dates that have rows in the
+    DB.  Dates with zero rows are absent from the result.
+    """
+    if not dates:
+        return {}
+
+    rows = await conn.fetch(_SELECT_SQL, dates)
+    if not rows:
+        return {}
+
+    df = pd.DataFrame(
+        list(rows),
+        columns=["date", "hour", "temperature_c", "precipitation_mm", "weathercode"],
+    )
+
+    result: dict[datetime.date, pd.DataFrame] = {}
+    for date, group in df.groupby("date"):
+        result[date] = group.reset_index(drop=True)
+
+    return result
+
+
+async def _persist_to_db(conn, df: pd.DataFrame) -> None:
+    """Write non-NaN rows from *df* to the ``hourly_weather`` table.
+
+    Rows where **all three** weather value columns are NaN are skipped so we
+    never poison the DB cache with fallback data.  Uses
+    ``INSERT … ON CONFLICT (date, hour) DO NOTHING`` for idempotent writes.
+    """
+    weather_cols = ["temperature_c", "precipitation_mm", "weathercode"]
+    # Keep rows where at least one weather column is not NaN
+    valid = df.dropna(subset=weather_cols, how="all")
+    if valid.empty:
+        return
+
+    records = [
+        (
+            row["date"] if isinstance(row["date"], datetime.date) else row["date"].date(),
+            int(row["hour"]),
+            None if pd.isna(row["temperature_c"]) else float(row["temperature_c"]),
+            None if pd.isna(row["precipitation_mm"]) else float(row["precipitation_mm"]),
+            None if pd.isna(row["weathercode"]) else int(row["weathercode"]),
+        )
+        for _, row in valid.iterrows()
+    ]
+
+    await conn.executemany(_INSERT_SQL, records)
+
+
+# ---------------------------------------------------------------------------
+# Open-Meteo helpers
+# ---------------------------------------------------------------------------
 
 def _nan_df() -> pd.DataFrame:
     """Return an empty NaN-filled DataFrame with expected columns (no date column)."""
@@ -114,28 +206,74 @@ async def fetch_weather_batch(
     dates: "Iterable[datetime.date]",
     max_concurrency: int = 10,
 ) -> pd.DataFrame:
-    """Fetch weather for multiple dates concurrently.
+    """Fetch weather for multiple dates, using DB cache first.
+
+    Layer order (fastest → slowest):
+    1. In-memory ``_cache`` dict — hot layer, no I/O.
+    2. ``hourly_weather`` TimescaleDB table — persisted across process restarts.
+    3. Open-Meteo HTTP API — only for truly missing dates.
+
+    Fetched rows are persisted to DB (NaN fallback rows are **not** written).
 
     Returns a combined DataFrame with columns:
         date, hour (0-23), temperature_c, precipitation_mm, weathercode
-
-    Useful at training time when you need weather for an entire historical dataset.
-    Dates already in the in-memory cache are served without network I/O.
-    Failed fetches are replaced with NaN rows (graceful degradation).
 
     Args:
         dates: Iterable of calendar dates to fetch.
         max_concurrency: Maximum simultaneous Open-Meteo requests.
     """
-    import asyncio
-    from collections.abc import Iterable as _Iterable
-
     unique_dates = sorted(set(dates))
     if not unique_dates:
         return pd.DataFrame(
             columns=["date", "hour", "temperature_c", "precipitation_mm", "weathercode"]
         )
 
+    frames: list[pd.DataFrame] = []
+
+    # --- Layer 1: in-memory cache ---
+    mem_dates = [d for d in unique_dates if d in _cache]
+    missing_after_mem = [d for d in unique_dates if d not in _cache]
+
+    for d in mem_dates:
+        df = _cache[d].copy()
+        df["date"] = d
+        frames.append(df)
+
+    if not missing_after_mem:
+        combined = pd.concat(frames, ignore_index=True)
+        logger.info("All %d dates served from in-memory cache", len(unique_dates))
+        return combined
+
+    # --- Layer 2: DB ---
+    db_hit: dict[datetime.date, pd.DataFrame] = {}
+    try:
+        conn = await _get_db_conn()
+        try:
+            db_hit = await _load_dates_from_db(conn, missing_after_mem)
+        finally:
+            await conn.close()
+    except Exception as exc:
+        logger.warning(
+            "DB weather read failed (%s); falling back to HTTP for all missing dates", exc
+        )
+
+    for d, df in db_hit.items():
+        # Populate in-memory cache so next call in this process is instant
+        _cache[d] = df
+        frames.append(df)
+
+    missing_after_db = [d for d in missing_after_mem if d not in db_hit]
+
+    if not missing_after_db:
+        combined = pd.concat(frames, ignore_index=True)
+        logger.info(
+            "Weather served: %d from mem cache, %d from DB; 0 from HTTP",
+            len(mem_dates),
+            len(db_hit),
+        )
+        return combined
+
+    # --- Layer 3: Open-Meteo HTTP ---
     semaphore = asyncio.Semaphore(max_concurrency)
 
     async def _fetch_one(d: datetime.date) -> pd.DataFrame:
@@ -151,14 +289,55 @@ async def fetch_weather_batch(
                 df["date"] = d
                 return df
 
-    frames = await asyncio.gather(*[_fetch_one(d) for d in unique_dates])
+    fetched_frames = await asyncio.gather(*[_fetch_one(d) for d in missing_after_db])
+
+    # Persist new rows to DB (skip NaN-only frames)
+    try:
+        conn = await _get_db_conn()
+        try:
+            for df in fetched_frames:
+                await _persist_to_db(conn, df)
+        finally:
+            await conn.close()
+    except Exception as exc:
+        logger.warning("DB weather write failed (%s); rows not cached in DB", exc)
+
+    frames.extend(fetched_frames)
     combined = pd.concat(frames, ignore_index=True)
     logger.info(
-        "Fetched weather for %d dates (%d rows total)", len(unique_dates), len(combined)
+        "Weather fetched: %d from mem, %d from DB, %d from HTTP (%d rows total)",
+        len(mem_dates),
+        len(db_hit),
+        len(missing_after_db),
+        len(combined),
     )
     return combined
 
 
 def clear_cache() -> None:
-    """Clear the in-memory weather cache (useful for testing)."""
+    """Clear the in-memory weather cache (useful for testing).
+
+    For DB cache truncation in test environments, use ``clear_cache_db()``
+    with the ``WEATHER_CACHE_DB_TRUNCATE_ON_CLEAR=true`` env var set.
+    """
     _cache.clear()
+
+
+async def clear_cache_db() -> None:
+    """Async variant: clear in-memory cache AND truncate the DB table.
+
+    DB truncation is guarded by the ``WEATHER_CACHE_DB_TRUNCATE_ON_CLEAR``
+    env flag to prevent accidental data loss in production.  Only intended
+    for test environment cleanup.
+    """
+    _cache.clear()
+    if os.getenv("WEATHER_CACHE_DB_TRUNCATE_ON_CLEAR", "").lower() == "true":
+        try:
+            conn = await _get_db_conn()
+            try:
+                await conn.execute(_TRUNCATE_SQL)
+                logger.info("Truncated hourly_weather table (test cleanup)")
+            finally:
+                await conn.close()
+        except Exception as exc:
+            logger.warning("Failed to truncate hourly_weather: %s", exc)
