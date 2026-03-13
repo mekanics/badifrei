@@ -18,4 +18,9 @@ COPY docker/migrations/ ./docker/migrations/
 # Install production deps only (no dev extras)
 RUN uv pip install --system -e "."
 
+# Run as non-root user
+RUN adduser --disabled-password --gecos "" appuser \
+    && chown -R appuser:appuser /app
+USER appuser
+
 CMD ["python", "-m", "collector.main"]
