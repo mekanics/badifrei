@@ -545,13 +545,45 @@ async def llms_txt():
 
 @app.get("/robots.txt", include_in_schema=False)
 async def robots():
-    content = """User-agent: *
+    content = """# Content Signals Policy (https://contentsignals.org)
+# search:   building a search index and returning results
+# ai-input: using content as live input for AI-generated answers (RAG, grounding)
+# ai-train: training or fine-tuning AI models
+
+User-agent: *
+Content-Signal: search=yes,ai-input=yes,ai-train=no
 Allow: /
 Disallow: /dashboard/
 Disallow: /api/
 Disallow: /predict/
 Disallow: /health
 Disallow: /pools
+
+# Block AI training crawlers (answer-generation bots are allowed above)
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: meta-externalagent
+Disallow: /
+
 Sitemap: https://badifrei.ch/sitemap.xml
 """
     return PlainTextResponse(content)
