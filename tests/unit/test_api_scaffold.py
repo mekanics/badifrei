@@ -30,8 +30,11 @@ class TestHealth:
         assert "version" in data
 
     async def test_cors_header_present(self, client):
-        response = await client.get("/health", headers={"Origin": "http://example.com"})
-        assert response.headers.get("access-control-allow-origin") == "*"
+        # CORS is now restricted to configured origins (default: https://badifrei.ch).
+        # Requests from unknown origins receive no ACAO header (browser blocks them).
+        # Requests from an allowed origin get a reflected ACAO header.
+        response = await client.get("/health", headers={"Origin": "https://badifrei.ch"})
+        assert response.headers.get("access-control-allow-origin") == "https://badifrei.ch"
 
 
 class TestOpenAPI:
@@ -53,9 +56,9 @@ class TestPools:
         response = await client.get("/pools")
         assert isinstance(response.json(), list)
 
-    async def test_pools_count_22(self, client):
+    async def test_pools_count_32(self, client):
         response = await client.get("/pools")
-        assert len(response.json()) == 22
+        assert len(response.json()) == 32
 
     async def test_pools_schema(self, client):
         response = await client.get("/pools")

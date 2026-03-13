@@ -170,7 +170,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if "text/html" in response.headers.get("content-type", ""):
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; "
-                "script-src 'self' cdn.jsdelivr.net 'unsafe-inline'; "
+                "script-src 'self' cdn.jsdelivr.net; "
                 "style-src 'self' fonts.googleapis.com 'unsafe-inline'; "
                 "font-src 'self' fonts.gstatic.com; "
                 "img-src 'self' data:; "
@@ -192,9 +192,12 @@ app = FastAPI(
 
 app.mount("/static", StaticFiles(directory=str(STATIC_PATH)), name="static")
 
+_cors_origins_raw = os.environ.get("CORS_ALLOWED_ORIGINS", "https://badifrei.ch")
+_cors_origins = [o.strip() for o in _cors_origins_raw.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_methods=["GET"],
     allow_headers=["Accept", "Content-Type"],
 )
