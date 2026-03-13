@@ -657,6 +657,46 @@ Derive city from `pool_metadata.json` using the `city` field already present on 
 
 ---
 
+### TASK-027: Cache weekly "Beste Besuchszeiten" insights
+
+**Phase:** 4  
+**Status:** ✅ DONE  
+**Dependencies:** TASK-013, TASK-015, TASK-016
+
+**Description:**
+The pool detail page (`/bad/{pool_uid}`) is slow because it computes a full 168-hour weekly prediction grid on every request to power the "Beste Besuchszeiten" (best visiting times) section. This involves 168 sequential XGBoost predictions, DB lag queries, and a weather fetch — work that produces a near-static insights dict that changes at most a few times per day.
+
+This task introduces an in-memory weekly-insights cache keyed by `pool_uid`. Cache entries are refreshed in the background via `asyncio.create_task()` without blocking the response. Stale insights are served while a refresh is in flight; cold-cache requests return `None` (the template already handles this gracefully). The heavy 168-hour grid computation is thereby removed from the hot request path, reducing page load time to only the 24-hour today prediction.
+
+**TDD — Write These Tests First:**
+- `test_cache_hit_returns_cached_value`: seed `app.state.weekly_insights_cache` with a pre-computed entry whose `computed_at` is 60 seconds ago (TTL = 3600 s); assert `pool_detail()` returns the cached `weekly_insights` dict without calling `predict_range_batch` for the 168-hour slice
+- `test_cache_miss_triggers_background_recompute`: call `pool_detail()` with an empty cache; assert `asyncio.create_task` is called once (background refresh kicked off), and the response returns `weekly_insights = None` (cold cache)
+- `test_stale_cache_serves_old_value_while_refreshing`: seed cache with an entry whose `computed_at` exceeds the TTL; assert the response immediately returns the stale insights dict (does not block), and a background task is spawned for recomputation
+- `test_ttl_expiry_logic`: unit-test the staleness check function `is_stale(computed_at, ttl)` for boundary conditions — exactly at TTL (stale), one second before TTL (fresh), far beyond TTL (stale)
+- `test_background_refresh_updates_cache`: run the async refresh coroutine directly in a test; assert `app.state.weekly_insights_cache[pool_uid]` is updated with a new `computed_at` timestamp and a non-`None` insights dict after the coroutine completes
+- `test_ttl_configurable_via_env_var`: set `WEEKLY_INSIGHTS_CACHE_TTL_SECONDS=120` in the test environment; assert the app reads this value and uses 120 s as the TTL instead of the default 3600 s
+- `test_prewarm_populates_all_pools_at_startup` *(optional)*: mock the refresh coroutine; trigger the lifespan startup event; assert the refresh was scheduled for every pool uid in `pool_metadata.json`
+
+**Acceptance Criteria:**
+- [ ] `app.state.weekly_insights_cache` initialised as `dict[str, tuple[dict, datetime]]` (pool_uid → (insights_dict, computed_at)) during the FastAPI lifespan startup event
+- [ ] `WEEKLY_INSIGHTS_CACHE_TTL_SECONDS` env var read at startup (default `3600`); surfaced in the existing app config/settings object
+- [ ] `pool_detail()` in `api/main.py` checks the cache before computing the 168-hour weekly grid:
+  - **Cache hit (fresh):** return cached `weekly_insights` directly — no 168-hour prediction call
+  - **Cache hit (stale):** return cached `weekly_insights` immediately; spawn background task to recompute
+  - **Cache miss (cold):** return `weekly_insights = None`; spawn background task to recompute
+- [ ] Background refresh coroutine `_refresh_weekly_insights(pool_uid, db_pool)` is defined as a standalone `async def`; it calls `predict_range_batch` for the 168-hour window, runs `_compute_weekly_insights()`, and writes the result to `app.state.weekly_insights_cache[pool_uid]`
+- [ ] Background task is launched with `asyncio.create_task(_refresh_weekly_insights(...))` — the request handler does **not** `await` it
+- [ ] No more than one concurrent refresh per pool at a time — use a `set` of in-flight pool UIDs on `app.state` to guard against task pile-up under concurrent requests
+- [ ] Staleness check extracted into a pure helper function `is_stale(computed_at: datetime, ttl: int) -> bool` — independently unit-testable
+- [ ] Optional: pre-warm cache for all pools at startup (lifespan event schedules one background task per pool, non-blocking)
+- [ ] All 6 required tests pass (test 7 optional); no regression in existing test suite
+- [ ] Manual smoke test: load `/bad/<pool_uid>` twice in quick succession; second request logs a cache hit and completes visibly faster; `Beste Besuchszeiten` section renders correctly on both loads
+
+**Implementation Notes:**
+Store `weekly_insights_cache` and the in-flight guard set on `app.state` (FastAPI's built-in store for app-level mutable state) to avoid global variables and keep the cache accessible from tests via the test client's `app.state`. The background task must not silently swallow exceptions — wrap the coroutine body in `try/except Exception` and log errors at `WARNING` level including the pool UID. If the refresh fails, leave the existing cache entry intact (stale is better than nothing). Keep the 24-hour today prediction path (the fast path already on every page load) completely unchanged. This task is purely additive — the 168-hour computation moves from the hot path to the background; nothing else changes.
+
+---
+
 ## Task Summary
 
 | ID | Title | Phase | Status |
@@ -687,3 +727,4 @@ Derive city from `pool_metadata.json` using the `city` field already present on 
 | TASK-024 | Fix automated retrainer to pass weather features | 4 | ✅ DONE |
 | TASK-025 | Lightweight DB migration runner | 4 | ✅ DONE |
 | TASK-026 | Per-city weather fetching | 4 | ✅ DONE |
+| TASK-027 | Cache weekly "Beste Besuchszeiten" insights | 4 | ✅ DONE |

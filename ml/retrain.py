@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 # Configurable via env
 RETRAIN_INTERVAL_HOURS = int(os.getenv("RETRAIN_INTERVAL_HOURS", "168"))  # 7 days default
 # 0 = use all available history (recommended); set to e.g. 365 to cap the window
-LOOKBACK_DAYS = int(os.getenv("LOOKBACK_DAYS", "0"))
+LOOKBACK_DAYS = int(os.getenv("LOOKBACK_DAYS", "365"))
 MIN_RECORDS = int(os.getenv("MIN_RECORDS_FOR_TRAINING", "1000"))
 MODELS_DIR = Path(__file__).parent / "models"
 
