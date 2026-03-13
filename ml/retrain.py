@@ -10,9 +10,12 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 import os
 
+import pandas as pd
+
 from ml.data_loader import load_data, InsufficientDataError
 from ml.train import train, save_model
 from ml.evaluate import evaluate
+from ml.weather import fetch_weather_batch
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +25,24 @@ RETRAIN_INTERVAL_HOURS = int(os.getenv("RETRAIN_INTERVAL_HOURS", "168"))  # 7 da
 LOOKBACK_DAYS = int(os.getenv("LOOKBACK_DAYS", "0"))
 MIN_RECORDS = int(os.getenv("MIN_RECORDS_FOR_TRAINING", "1000"))
 MODELS_DIR = Path(__file__).parent / "models"
+
+
+async def _fetch_weather_for_df(df: pd.DataFrame) -> "pd.DataFrame | None":
+    """Fetch weather for all unique dates in *df['time']*.
+
+    Returns the combined weather DataFrame, or ``None`` on any failure.
+    This shared helper is used by both :func:`retrain_job` and any other
+    caller that needs weather aligned to a training DataFrame — keeping
+    ``ml/retrain.py`` and ``scripts/train.py`` in parity.
+    """
+    try:
+        unique_dates = pd.to_datetime(df["time"]).dt.date.unique()
+        weather_df = await fetch_weather_batch(unique_dates)
+        logger.info(f"Weather fetched for {len(unique_dates)} dates")
+        return weather_df
+    except Exception as exc:
+        logger.warning(f"Weather fetch failed ({exc}); training without weather features")
+        return None
 
 
 async def retrain_job():
@@ -40,8 +61,15 @@ async def retrain_job():
 
     logger.info(f"Loaded {len(df)} records for training")
 
+    # Fetch weather features — graceful degradation on failure
+    weather_df = await _fetch_weather_for_df(df)
+    if weather_df is None:
+        logger.warning("Training without weather features (fetch failed)")
+    else:
+        logger.info(f"Weather fetched for {len(pd.to_datetime(df['time']).dt.date.unique())} dates")
+
     from ml.train import time_based_split
-    model, metrics = train(df)
+    model, metrics = train(df, weather_df=weather_df)
 
     # Evaluate against baseline
     train_df, test_df = time_based_split(df, test_fraction=0.2)

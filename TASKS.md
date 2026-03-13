@@ -524,6 +524,69 @@ Write `README.md` with quickstart, architecture diagram (ASCII), env vars refere
 
 ---
 
+### TASK-023: Persist weather data to TimescaleDB
+
+**Phase:** 4  
+**Status:** DONE  
+**Dependencies:** TASK-002, TASK-019
+
+**Description:**
+Replace the in-memory-only weather cache in `ml/weather.py` with a persistent `hourly_weather` TimescaleDB table.
+Currently every training run re-fetches all historical dates from Open-Meteo, which becomes expensive as the dataset grows across years.
+`fetch_weather_batch()` should check the DB first, fetch only missing dates from Open-Meteo, then persist the new rows.
+
+**TDD — Write These Tests First:**
+- `test_hourly_weather_table_exists`: queries `timescaledb_information.hypertables` and asserts `hourly_weather` is present
+- `test_hourly_weather_schema`: verifies columns `date DATE`, `hour SMALLINT`, `temperature_c FLOAT`, `precipitation_mm FLOAT`, `weathercode SMALLINT` exist with correct types; primary key `(date, hour)` prevents duplicates
+- `test_fetch_weather_batch_writes_to_db`: after calling `fetch_weather_batch([some_date])` with an empty DB, the rows are present in `hourly_weather`
+- `test_fetch_weather_batch_reads_from_db`: seed `hourly_weather` with data for a date; assert `fetch_weather_batch([that_date])` returns those rows and makes **zero** HTTP requests to Open-Meteo (mock `aiohttp.ClientSession`)
+- `test_fetch_weather_batch_partial_cache_hit`: seed DB with dates A and C; request dates A, B, C; assert Open-Meteo is called **only** for date B, and all three dates are present in the returned DataFrame
+- `test_nan_rows_not_persisted`: when Open-Meteo returns an error (HTTP 500) for a date, the NaN fallback rows are returned to the caller but **not** written to `hourly_weather` (don't poison the cache)
+
+**Acceptance Criteria:**
+- [ ] New SQL migration/init script: `docker/init-weather.sql` (or appended to existing init SQL) creates `hourly_weather` table as a TimescaleDB hypertable, partitioned on `date`, with a unique index on `(date, hour)`
+- [ ] `fetch_weather_batch()` in `ml/weather.py` updated: check DB → fetch missing from Open-Meteo → persist new rows → return combined DataFrame
+- [ ] DB pool/connection reuses the existing `asyncpg` infrastructure (no second connection string)
+- [ ] In-memory `_cache` dict retained as a hot layer in front of the DB (avoids DB round-trips for dates already loaded in the current process)
+- [ ] All 6 tests pass against a live test DB fixture
+- [ ] `clear_cache()` utility extended to also truncate `hourly_weather` in test environments (guarded by an env flag, e.g. `WEATHER_CACHE_DB_TRUNCATE_ON_CLEAR=true`)
+
+**Implementation Notes:**
+Use `INSERT … ON CONFLICT (date, hour) DO NOTHING` for upserts so concurrent retrains don't race. Keep the write path async — bulk insert with `asyncpg.executemany`. The DB check should query `SELECT date FROM hourly_weather WHERE date = ANY($1)` to find which requested dates are already fully cached before deciding what to fetch.
+
+---
+
+### TASK-024: Fix automated retrainer to pass weather features
+
+**Phase:** 4  
+**Status:** DONE  
+**Dependencies:** TASK-018, TASK-019, TASK-023
+
+**Description:**
+`ml/retrain.py` calls `train(df)` without fetching or passing `weather_df`, so weather features are silently absent from every automated retrain.
+This produces an inferior model compared to the manual `scripts/train.py` run which correctly fetches weather.
+Fix `retrain_job()` to mirror the weather-fetch pattern from `scripts/train.py`, with graceful degradation if the fetch fails.
+
+**TDD — Write These Tests First:**
+- `test_retrain_job_calls_fetch_weather_batch`: mock `fetch_weather_batch` and `train`; run `retrain_job()`; assert `fetch_weather_batch` is called with the unique dates extracted from the loaded DataFrame
+- `test_retrain_job_passes_weather_df_to_train`: assert `train()` is called with a `weather_df` kwarg equal to the DataFrame returned by the mock `fetch_weather_batch`
+- `test_retrain_job_continues_without_weather_on_fetch_failure`: make `fetch_weather_batch` raise an `Exception`; assert `retrain_job()` does **not** raise, logs a warning containing "weather", and calls `train(df, weather_df=None)` (or no `weather_df` kwarg)
+- `test_retrain_job_continues_without_weather_on_partial_nan`: make `fetch_weather_batch` return a DataFrame where all weather columns are NaN; assert `train()` is still called (NaN weather is handled downstream by feature engineering, not by crashing the retrainer)
+- `test_retrain_job_weather_dates_match_training_set`: the dates passed to `fetch_weather_batch` are exactly `pd.to_datetime(df["time"]).dt.date.unique()` — no more, no less
+
+**Acceptance Criteria:**
+- [ ] `retrain_job()` in `ml/retrain.py` fetches weather for the loaded training set using `fetch_weather_batch(unique_dates)` before calling `train()`
+- [ ] Weather fetch wrapped in `try/except`; on any failure: log `WARNING` with the exception message, set `weather_df = None`, continue to `train(df, weather_df=None)`
+- [ ] `train()` call updated to `train(df, weather_df=weather_df)` (matching the signature already used in `scripts/train.py`)
+- [ ] Training log output includes a line confirming weather fetch success (e.g. `"Weather fetched for N dates"`) or degraded mode (e.g. `"Training without weather features (fetch failed)"`)
+- [ ] All 5 tests pass using mocked DB/weather/train dependencies (no live DB required for unit tests)
+- [ ] `scripts/train.py` and `ml/retrain.py` are now in parity on the weather-fetch pattern — consider extracting a shared `_fetch_weather_for_df(df)` helper to `ml/weather.py` or a new `ml/training_utils.py` to avoid future drift
+
+**Implementation Notes:**
+The fix is small (~10 lines) but the test coverage is important — the bug was silent for as long as it existed because `train()` accepts `weather_df=None` without error. Extract the pattern into a shared helper so the two callers can't diverge again.
+
+---
+
 ## Task Summary
 
 | ID | Title | Phase | Status |
@@ -550,3 +613,5 @@ Write `README.md` with quickstart, architecture diagram (ASCII), env vars refere
 | TASK-020 | Collector deduplication | 4 | ✅ DONE |
 | TASK-021 | Integration test suite | 4 | TODO |
 | TASK-022 | README & developer docs | 4 | ✅ DONE |
+| TASK-023 | Persist weather data to TimescaleDB | 4 | ✅ DONE |
+| TASK-024 | Fix automated retrainer to pass weather features | 4 | ✅ DONE |
