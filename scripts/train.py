@@ -3,7 +3,7 @@ import asyncio
 import os
 from datetime import datetime, timezone, timedelta
 
-from ml.data_loader import load_data
+from ml.data_loader import load_data, DEFAULT_BUCKET_INTERVAL
 from ml.train import train, save_model, time_based_split
 from ml.evaluate import evaluate
 
@@ -14,8 +14,9 @@ async def main():
     end = datetime.now(timezone.utc)
     start = end - timedelta(days=days)
 
-    print(f"Loading data ({days}d lookback, min {min_rec} records)...")
-    df = await load_data(start, end, min_records=min_rec)
+    bucket_interval = os.getenv("TRAINING_BUCKET_INTERVAL", DEFAULT_BUCKET_INTERVAL)
+    print(f"Loading data ({days}d lookback, min {min_rec} records, bucket={bucket_interval!r})...")
+    df = await load_data(start, end, min_records=min_rec, bucket_interval=bucket_interval)
     print(f"Loaded {len(df)} records for {df['pool_uid'].nunique()} pools")
 
     # Fetch per-city weather for all (city, date) pairs in the training set.

@@ -697,6 +697,36 @@ Store `weekly_insights_cache` and the in-flight guard set on `app.state` (FastAP
 
 ---
 
+### TASK-028: Configurable time-bucket downsampling in data loader
+
+**Phase:** 4  
+**Status:** DONE  
+**Dependencies:** TASK-009
+
+**Description:**
+The WebSocket collector records data at ~15–30 second granularity, producing ~2.5M rows for just 2 weeks of data across 31 pools. XGBoost training on the full dataset OOMs on the production server (Hetzner CX22, 4 GB RAM). Add configurable time-bucket downsampling to `load_data()` using TimescaleDB's `time_bucket()` function so training can target 5–10 minute averages (~50–100k rows), dramatically reducing memory pressure without meaningful loss of signal. Raw-query behaviour is preserved for backward compatibility.
+
+**TDD — Write These Tests First:**
+- `test_bucketed_query_uses_time_bucket`: mock/inspect the SQL generated when `bucket_interval="10 minutes"` — assert it contains `time_bucket` and `AVG(` substrings
+- `test_raw_query_unchanged`: call `load_data(bucket_interval=None)` and assert the SQL does NOT contain `time_bucket`
+- `test_empty_bucket_interval_falls_back_to_raw`: call `load_data(bucket_interval="")` and assert raw query path is used
+- `test_env_var_picked_up`: set `TRAINING_BUCKET_INTERVAL="5 minutes"` in env before import; assert the default passed from `retrain.py` / `scripts/train.py` equals `"5 minutes"`
+- `test_bucketed_record_count_plausible`: integration test against a seeded test DB — insert synthetic rows at 15-second intervals for 1 hour; after `load_data(bucket_interval="10 minutes")` assert row count ≤ 10 (6 buckets × 1 pool ± rounding) and > 0
+
+**Acceptance Criteria:**
+- [ ] `load_data()` in `ml/data_loader.py` accepts a new keyword argument `bucket_interval: str | None = "10 minutes"`
+- [ ] When `bucket_interval` is a non-empty string: SQL uses `time_bucket($interval, time)` to group rows; selects `AVG(occupancy_pct)`, `AVG(current_fill)`, `AVG(free_space)`, and passthrough columns `pool_uid`, `pool_name`, `max_space`
+- [ ] When `bucket_interval` is `None` or `""`: existing raw `SELECT *` query is used unchanged (no regression)
+- [ ] `TRAINING_BUCKET_INTERVAL` env var is read by both `retrain.py` and `scripts/train.py`; its value (default `"10 minutes"`) is forwarded as the `bucket_interval` argument to `load_data()`
+- [ ] Default of `"10 minutes"` is defined in one place (e.g. a constant in `ml/data_loader.py` or `ml/config.py`) — not duplicated across callers
+- [ ] All 5 tests above pass; no regression in existing test suite
+- [ ] A manual smoke test on the production server shows training completes without OOM with the default `"10 minutes"` bucket
+
+**Implementation Notes:**
+Use `psycopg2` / `asyncpg` parameter binding for the interval value to avoid SQL injection — `time_bucket(%s::interval, time)` with the interval passed as a query parameter, not f-string interpolation. The bucketed query should `ORDER BY pool_uid, bucket` for deterministic output. Returned column `time` (or `bucket`) must align with whatever the feature-engineering step (`ml/features.py`) expects as the timestamp column — rename `bucket` → `time` in the SELECT alias if needed. Consider adding a `--bucket-interval` CLI flag to `scripts/train.py` as an optional override over the env var (nice-to-have, not required for acceptance).
+
+---
+
 ## Task Summary
 
 | ID | Title | Phase | Status |
@@ -728,3 +758,4 @@ Store `weekly_insights_cache` and the in-flight guard set on `app.state` (FastAP
 | TASK-025 | Lightweight DB migration runner | 4 | ✅ DONE |
 | TASK-026 | Per-city weather fetching | 4 | ✅ DONE |
 | TASK-027 | Cache weekly "Beste Besuchszeiten" insights | 4 | ✅ DONE |
+| TASK-028 | Configurable time-bucket downsampling in data loader | 4 | ✅ DONE |

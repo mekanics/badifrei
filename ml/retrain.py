@@ -12,7 +12,7 @@ import os
 
 import pandas as pd
 
-from ml.data_loader import load_data, InsufficientDataError
+from ml.data_loader import load_data, InsufficientDataError, DEFAULT_BUCKET_INTERVAL
 from ml.train import train, save_model
 from ml.evaluate import evaluate
 from ml.weather import fetch_weather_batch, CITY_COORDS
@@ -95,8 +95,9 @@ async def retrain_job():
     end = datetime.now(timezone.utc)
     start = end - timedelta(days=LOOKBACK_DAYS) if LOOKBACK_DAYS > 0 else None
 
+    bucket_interval = os.getenv("TRAINING_BUCKET_INTERVAL", DEFAULT_BUCKET_INTERVAL)
     try:
-        df = await load_data(start, end, min_records=MIN_RECORDS)
+        df = await load_data(start, end, min_records=MIN_RECORDS, bucket_interval=bucket_interval)
     except InsufficientDataError as e:
         logger.warning(f"Skipping retrain: {e}")
         return
