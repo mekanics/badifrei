@@ -1,0 +1,291 @@
+/* index.js — Pool overview dashboard logic
+ *
+ * Extracted from inline script to comply with Content-Security-Policy
+ * (no 'unsafe-inline' in script-src).
+ */
+
+/* ── Filter state ─────────────────────────────────────────────── */
+const filters = { open: false, types: new Set(), city: '' };
+
+const TYPE_LABELS = {
+  freibad: 'Freibad', hallenbad: 'Hallenbad',
+  strandbad: 'Strandbad', seebad: 'Seebad',
+  flussbad: 'Flussbad', kombibad: 'Kombibad',
+};
+
+function buildFilterBar() {
+  const types = new Set(), cities = new Set(), cityLabels = {};
+
+  document.querySelectorAll('.pool-card').forEach(card => {
+    if (card.dataset.type) types.add(card.dataset.type);
+    if (card.dataset.city) {
+      cities.add(card.dataset.city);
+      const section = card.closest('.section-block');
+      if (section) {
+        const h2 = section.querySelector('.section-title');
+        if (h2) cityLabels[card.dataset.city] = h2.textContent.replace('Schwimmbäder', '').trim();
+      }
+      if (!cityLabels[card.dataset.city])
+        cityLabels[card.dataset.city] = card.dataset.city.charAt(0).toUpperCase() + card.dataset.city.slice(1);
+    }
+  });
+
+  // Type toggle buttons
+  const typeGroup = document.getElementById('type-filter-group');
+  [...types].sort().forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = `filter-btn filter-btn-type filter-type-${t}`;
+    btn.dataset.value = t;
+    btn.textContent = TYPE_LABELS[t] || t;
+    btn.setAttribute('aria-pressed', 'false');
+    btn.addEventListener('click', () => {
+      const active = filters.types.has(t);
+      active ? filters.types.delete(t) : filters.types.add(t);
+      btn.setAttribute('aria-pressed', active ? 'false' : 'true');
+      applyFilters();
+    });
+    typeGroup.appendChild(btn);
+  });
+
+  // City dropdown — only show if more than one city
+  const cityGroup = document.getElementById('city-filter-group');
+  if (cities.size <= 1) {
+    cityGroup.style.display = 'none';
+    return;
+  }
+  const sel = document.getElementById('city-select');
+  [...cities].sort((a, b) => (cityLabels[a] || a).localeCompare(cityLabels[b] || b)).forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = cityLabels[c] || c;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', () => {
+    filters.city = sel.value;
+    applyFilters();
+  });
+}
+
+function applyFilters() {
+  let shown = 0, total = 0;
+  document.querySelectorAll('.pool-card').forEach(card => {
+    total++;
+    const typeOk = filters.types.size === 0 || filters.types.has(card.dataset.type);
+    const cityOk = !filters.city || card.dataset.city === filters.city;
+    const openOk = !filters.open || card.dataset.open === 'true';
+    const visible = typeOk && cityOk && openOk;
+    card.style.display = visible ? '' : 'none';
+    if (visible) shown++;
+  });
+
+  document.querySelectorAll('.section-block:not(#favorites-section)').forEach(section => {
+    const anyVisible = [...section.querySelectorAll('.pool-card')].some(c => c.style.display !== 'none');
+    section.style.display = anyVisible ? '' : 'none';
+  });
+
+  // Favorites: filter cloned cards; show section only if favorites exist AND at least one passes filters
+  const favSection = document.getElementById('favorites-section');
+  if (favSection && getFavorites().length > 0) {
+    let anyFavVisible = false;
+    favSection.querySelectorAll('.pool-card').forEach(card => {
+      const typeOk = filters.types.size === 0 || filters.types.has(card.dataset.type);
+      const cityOk = !filters.city || card.dataset.city === filters.city;
+      const openOk = !filters.open || card.dataset.open === 'true';
+      const vis = typeOk && cityOk && openOk;
+      card.style.display = vis ? '' : 'none';
+      if (vis) anyFavVisible = true;
+    });
+    favSection.style.display = anyFavVisible ? '' : 'none';
+  }
+
+  const hasFilters = filters.open || filters.types.size > 0 || filters.city !== '';
+  const countEl = document.getElementById('filter-count');
+  if (countEl) countEl.textContent = hasFilters ? `${shown} von ${total}` : '';
+  const resetBtn = document.getElementById('filter-reset');
+  if (resetBtn) resetBtn.style.display = hasFilters ? '' : 'none';
+
+  syncToUrl();
+}
+
+function syncToUrl() {
+  const params = new URLSearchParams();
+  if (filters.open) params.set('open', '1');
+  if (filters.types.size > 0) params.set('type', [...filters.types].sort().join(','));
+  if (filters.city) params.set('city', filters.city);
+  const qs = params.toString();
+  history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+}
+
+function readFromUrl() {
+  const params = new URLSearchParams(location.search);
+
+  // open: only accept literal '1'
+  if (params.get('open') === '1') {
+    filters.open = true;
+    document.getElementById('btn-open').setAttribute('aria-pressed', 'true');
+  }
+
+  // type: only accept values that have a matching button on the page
+  const typeParam = params.get('type');
+  if (typeParam) {
+    typeParam.split(',').filter(Boolean).forEach(t => {
+      const btn = document.querySelector(`.filter-btn-type[data-value="${CSS.escape(t)}"]`);
+      if (btn) {
+        filters.types.add(t);
+        btn.setAttribute('aria-pressed', 'true');
+      }
+    });
+  }
+
+  // city: only accept values that exist as an <option> in the select
+  const cityParam = params.get('city');
+  if (cityParam) {
+    const sel = document.getElementById('city-select');
+    const valid = sel && [...sel.options].some(o => o.value === cityParam);
+    if (valid) {
+      filters.city = cityParam;
+      sel.value = cityParam;
+    }
+  }
+}
+
+function resetFilters() {
+  filters.open = false;
+  filters.types.clear();
+  filters.city = '';
+  document.getElementById('btn-open').setAttribute('aria-pressed', 'false');
+  document.querySelectorAll('.filter-btn-type[aria-pressed="true"]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  const sel = document.getElementById('city-select');
+  if (sel) sel.value = '';
+  applyFilters();
+}
+
+document.getElementById('btn-open').addEventListener('click', () => {
+  filters.open = !filters.open;
+  document.getElementById('btn-open').setAttribute('aria-pressed', filters.open ? 'true' : 'false');
+  applyFilters();
+});
+document.getElementById('filter-reset').addEventListener('click', resetFilters);
+
+/* ── Favorites ─────────────────────────────────────────────────── */
+const FAVORITES_KEY = 'badi_favorites';
+
+function getFavorites() {
+  try { return JSON.parse(localStorage.getItem(FAVORITES_KEY)) || []; }
+  catch (e) { return []; }
+}
+function setFavorites(favs) { localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs)); }
+function isFavorite(uid) { return getFavorites().includes(uid); }
+
+function toggleFavorite(uid) {
+  let favs = getFavorites();
+  favs = favs.includes(uid) ? favs.filter(f => f !== uid) : [...favs, uid];
+  setFavorites(favs);
+  renderSections();
+}
+
+function applyStarState() {
+  document.querySelectorAll('.star-btn').forEach(btn => {
+    const fav = isFavorite(btn.dataset.uid);
+    btn.classList.toggle('starred', fav);
+    btn.setAttribute('aria-label', fav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen');
+  });
+}
+
+function cloneCardForFavorites(uid) {
+  const original = document.querySelector(`.pool-card[data-uid="${uid}"]`);
+  if (!original) return null;
+  const clone = original.cloneNode(true);
+  clone.querySelector('.star-btn').addEventListener('click', e => {
+    e.preventDefault(); e.stopPropagation(); toggleFavorite(uid);
+  });
+  return clone;
+}
+
+function renderSections() {
+  applyStarState();
+  const favs = getFavorites();
+  const favSection = document.getElementById('favorites-section');
+  const favGrid = document.getElementById('favorites-grid');
+  favGrid.innerHTML = '';
+  if (!favs.length) { favSection.style.display = 'none'; return; }
+  favSection.style.display = '';
+  for (const uid of favs) {
+    const card = cloneCardForFavorites(uid);
+    if (card) favGrid.appendChild(card);
+  }
+}
+
+document.querySelectorAll('.pool-card .star-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.preventDefault(); e.stopPropagation(); toggleFavorite(btn.dataset.uid);
+  });
+});
+
+renderSections();
+
+async function fetchOccupancy() {
+  try {
+    const res = await fetch('/api/current');
+    if (!res.ok) return;
+    const data = await res.json();
+    const map = {};
+    for (const item of data) map[item.pool_uid] = item;
+
+    document.querySelectorAll('.pool-card').forEach(card => {
+      const uid = card.dataset.uid;
+      const item = map[uid];
+      const label = card.querySelector('.occupancy-label');
+      const guestCount = card.querySelector('.guest-count');
+      const bar = card.querySelector('.occupancy-bar');
+      const badge = card.querySelector('.status-badge');
+
+      if (item && item.occupancy_pct !== null) {
+        const pct = Math.round(item.occupancy_pct);
+        label.textContent = pct + '%';
+        if (guestCount) {
+          const capacity = card.dataset.capacity;
+          const cap = capacity && capacity !== '0' ? ` / ${capacity}` : '';
+          guestCount.textContent = item.current_fill != null ? `${item.current_fill}${cap} Gäste` : '';
+        }
+        bar.style.width = Math.min(pct, 100) + '%';
+        bar.className = 'occupancy-bar ' + (pct <= 50 ? 'green' : pct <= 80 ? 'yellow' : 'red');
+      } else {
+        label.textContent = 'Keine Daten';
+        if (guestCount) guestCount.textContent = '';
+        bar.style.width = '0%';
+        bar.className = 'occupancy-bar grey';
+      }
+
+      if (badge && item) {
+        if (item.is_open) {
+          badge.innerHTML = '<span class="status-dot open"></span>';
+        } else {
+          let hint = '';
+          if (item.opens_seasonal) {
+            hint = ` · ${item.opens_seasonal}`;
+          } else if (item.next_open) {
+            hint = ` · Öffnet ${item.next_open}`;
+          }
+          badge.innerHTML = `<span class="status-dot closed"></span><span class="status-text">Geschlossen${hint}</span>`;
+        }
+      }
+
+      // Set data-open for filter logic
+      if (item) card.dataset.open = item.is_open ? 'true' : 'false';
+    });
+
+    // Re-apply filters after open status is known
+    applyFilters();
+  } catch (e) {
+    console.warn('Auslastung konnte nicht geladen werden', e);
+  }
+}
+
+fetchOccupancy();
+setInterval(fetchOccupancy, 60000);
+
+// Build filter bar, then restore state from URL
+buildFilterBar();
+readFromUrl();
+applyFilters();
