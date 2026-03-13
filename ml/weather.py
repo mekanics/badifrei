@@ -68,7 +68,12 @@ async def _get_db_conn():
     """
     import asyncpg  # type: ignore
 
-    url = os.getenv("DATABASE_URL", "postgresql://badi:badi@localhost:5432/badi")
+    url = os.environ.get("DATABASE_URL")
+    if not url:
+        raise RuntimeError(
+            "DATABASE_URL environment variable is not set. "
+            "Set it to a valid PostgreSQL connection string before running the ML pipeline."
+        )
     return await asyncpg.connect(url)
 
 

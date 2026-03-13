@@ -18,6 +18,11 @@ async def get_pool() -> asyncpg.Pool:
     """Get or create the connection pool (singleton)."""
     global _pool
     if _pool is None:
+        if not settings.database_url:
+            raise RuntimeError(
+                "DATABASE_URL environment variable is not set. "
+                "Set it to a valid PostgreSQL connection string before starting the collector."
+            )
         _pool = await asyncpg.create_pool(
             settings.database_url,
             min_size=1,
