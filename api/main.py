@@ -536,6 +536,13 @@ async def health():
     return {"status": "ok", "version": "0.1.0"}
 
 
+@app.get("/llms.txt", include_in_schema=False)
+async def llms_txt():
+    llms_path = STATIC_PATH / "llms.txt"
+    content = llms_path.read_text(encoding="utf-8")
+    return PlainTextResponse(content, media_type="text/plain; charset=utf-8")
+
+
 @app.get("/robots.txt", include_in_schema=False)
 async def robots():
     content = """User-agent: *

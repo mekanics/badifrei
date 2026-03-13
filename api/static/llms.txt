@@ -1,0 +1,52 @@
+# badifrei.ch
+
+> **badifrei.ch** zeigt die aktuelle Auslastung und KI-Prognosen für Schwimmbäder in der Schweiz.
+> The site tells you how crowded a swimming pool is right now, and forecasts occupancy for the next several hours.
+>
+> **Data source:** CrowdMonitor occupancy sensors by ASE (Switzerland), updated in near-real-time.
+> **ML model:** XGBoost, trained per pool, retrained weekly. Predicts percentage occupancy up to ~8 hours ahead.
+> **Coverage:** 32 pools across 8 Swiss cities — Zürich, Bern, Luzern, Zug (Rotkreuz, Hünenberg), Adliswil, Entfelden, Wengen.
+> **Language:** German (de-CH). Operated independently; not affiliated with city authorities or pool operators.
+> **Limitations:** Coverage depends on sensor availability. Seasonal outdoor pools (Freibäder, Strandbäder) are closed in winter (approx. Oct–Apr). Sensor outages may cause temporary data gaps. Predictions are probabilistic and not a guarantee.
+
+badifrei.ch is a public, free-to-use tool for residents and visitors in Switzerland. The homepage shows all monitored pools grouped by city, with live occupancy levels. Each pool detail page includes: current occupancy percentage, a day-ahead forecast chart, opening hours, and (where available) historical occupancy patterns by weekday and hour.
+
+## Hauptseiten / Key Pages
+
+- [Startseite — Alle Schwimmbäder](https://badifrei.ch/): Overview of all 32 monitored pools with live occupancy, grouped by city.
+- [Sitemap](https://badifrei.ch/sitemap.xml): Full index of all pool pages and the homepage.
+
+## Schwimmbäder Zürich / Zürich Pools
+
+Zürich has the largest concentration of monitored pools. These are the most visited:
+
+- [Strandbad Mythenquai](https://badifrei.ch/bad/seb6946): Zürichsee lakeside lido, max 4,500 visitors — the most popular outdoor pool in the city.
+- [Freibad Letzigraben](https://badifrei.ch/bad/LETZI-1): Largest Freibad in Zürich, max 3,800 visitors. Seasonal (May–Sep).
+- [Strandbad Tiefenbrunnen](https://badifrei.ch/bad/seb6947): Lake swimming, max 3,500. Seasonal.
+- [Freibad Heuried](https://badifrei.ch/bad/fb012): Kreis 3, max 2,600. Family-friendly. Seasonal.
+- [Freibad Allenmoos](https://badifrei.ch/bad/fb006): Zürich Nord / Unterstrass, max 2,500. Beach volleyball, grill areas. Seasonal.
+- [Freibad Auhof](https://badifrei.ch/bad/fb008): Zürich Ost, naturnahe Lage, max 2,001. Seasonal (closes late Sep).
+- [Freibad Seebach](https://badifrei.ch/bad/SSD-11): Zürich Nord, max 2,000. Seasonal.
+- [Freibad Zwischen den Hölzern](https://badifrei.ch/bad/fb018): Zürich West, max 2,000. Seasonal.
+- [Flussbad Oberer Letten](https://badifrei.ch/bad/flb6939): Iconic river swimming in the Limmat, max 1,000. Seasonal — very popular on hot days.
+- [Flussbad Unterer Letten](https://badifrei.ch/bad/flb6940): Limmat river swim, max 800. Seasonal. Mixed with Oberer Letten for flow-through swimming.
+- [Seebad Utoquai](https://badifrei.ch/bad/SSD-10): Zürichsee, max 800. Seasonal, historic lakeside bath.
+- [Hallenbad City](https://badifrei.ch/bad/SSD-4): Indoor pool, city centre. Year-round, max 220.
+- [Hallenbad Oerlikon](https://badifrei.ch/bad/SSD-7): Indoor pool, Oerlikon. Year-round, max 200.
+
+## Schwimmbäder andere Städte / Other Cities
+
+- [Bern Marzili](https://badifrei.ch/bad/MARZILI-1): Flussbad an der Aare, max 14,999 — the largest and most-used outdoor pool in Switzerland. Seasonal.
+- [Bern Weyermannshaus](https://badifrei.ch/bad/WEYERMANNSHAUS-1): Bern, indoor + outdoor. Year-round, max 3,500.
+- [Bern Wylerbad](https://badifrei.ch/bad/WYLERBAD-1): Bern, indoor. Year-round, max 2,500.
+- [Lido Luzern](https://badifrei.ch/bad/LIDO-1): Luzern lakeside lido, max 3,500. Seasonal.
+- [Adliswil](https://badifrei.ch/bad/IMBAD-1): Freibad Adliswil, max 2,000. Seasonal.
+- [Strandbad Hünenberg](https://badifrei.ch/bad/HUENENBERG-1): Zugersee, max 1,000. Seasonal.
+- [Schwimmbad Rotkreuz](https://badifrei.ch/bad/RISCH-1): Rotkreuz / Zug, max 600. Seasonal.
+- [Entfelden](https://badifrei.ch/bad/FREIBAD-1): Freibad Entfelden (Aargau), max 1,300. Seasonal.
+
+## Über die Daten / About the Data
+
+Occupancy data is sourced from **CrowdMonitor** infrared/radar sensors installed at pool entrances by ASE AG (Switzerland). The sensor counts entries and exits to derive live occupancy. badifrei.ch reads this data via API and trains individual XGBoost regression models per pool using historical occupancy, time features, and weather. Models are retrained weekly. Forecast horizon is approximately 8 hours. Prediction accuracy varies by pool and weather conditions.
+
+badifrei.ch does **not** publish real-time admission prices, water temperature, or lane availability. For official pool details, visit the respective city sports department websites.
