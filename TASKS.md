@@ -587,6 +587,37 @@ The fix is small (~10 lines) but the test coverage is important — the bug was 
 
 ---
 
+### TASK-025: Lightweight DB migration runner
+
+**Phase:** 4  
+**Status:** ✅ DONE  
+**Dependencies:** TASK-002, TASK-023
+
+**Description:**
+The project runs on Coolify with an existing live database. `init.sql` only fires on a fresh container (via `/docker-entrypoint-initdb.d/`), so schema changes introduced after initial deploy — such as the `hourly_weather` hypertable from TASK-023 — are silently skipped on existing deployments. This task introduces a proper, dependency-free migration runner so schema evolution is safe, reproducible, and applied automatically on every deploy.
+
+**TDD — Write These Tests First:**
+- `test_schema_migrations_table_created`: running the migrator on an empty DB creates the `schema_migrations` table with columns `filename TEXT PRIMARY KEY`, `applied_at TIMESTAMPTZ NOT NULL`
+- `test_migrations_applied_in_order`: place three migration files named `001_`, `002_`, `003_` in the migrations dir; assert they are executed in lexicographic filename order and all appear in `schema_migrations`
+- `test_idempotent_on_rerun`: run migrator twice against the same DB; assert each migration is applied exactly once (`SELECT COUNT(*)` per filename returns 1, no duplicate-key errors)
+- `test_skips_already_applied`: seed `schema_migrations` with `001_init.sql`; run migrator; assert only `002_hourly_weather.sql` is executed (mock/capture SQL calls to verify `001` is never re-run)
+- `test_failed_migration_halts_runner`: make `002_` contain invalid SQL; assert migrator exits non-zero, `003_` is never executed, and `002_` is **not** recorded in `schema_migrations` (transaction rollback)
+- `test_empty_migrations_dir_is_safe`: point migrator at an empty directory; assert it exits zero with no errors
+
+**Acceptance Criteria:**
+- [ ] `scripts/migrate.py` implemented — scans `docker/migrations/` in filename order, creates `schema_migrations` table if absent, applies only unaprecorded migrations, records each in `schema_migrations` on success
+- [ ] Existing SQL files moved/renamed to versioned migration files: `docker/migrations/001_init.sql` (from `docker/init.sql`) and `docker/migrations/002_hourly_weather.sql` (from `docker/init-weather.sql`)
+- [ ] `docker-compose.yml` gains a `migrator` one-shot service that builds from the project image, runs `python scripts/migrate.py`, and exits; all other services (`collector`, `api`, `retrainer`) declare `depends_on: migrator: condition: service_completed_successfully`
+- [ ] Each migration file is executed inside a single transaction; on SQL error the transaction rolls back, the filename is not written to `schema_migrations`, and the runner exits with a non-zero code
+- [ ] `COOLIFY.md` (or a section in `README.md`) documents the Coolify pre-deploy step: set the deploy command to `python scripts/migrate.py` so migrations run before the new image goes live
+- [ ] No new Python dependencies — uses only `asyncpg` (already in `pyproject.toml`) and the stdlib
+- [ ] All 6 tests pass with a live test-DB pytest fixture (same pattern as TASK-002/TASK-003); tests are isolated — each creates a fresh schema and tears down after
+
+**Implementation Notes:**
+`schema_migrations` creation should itself be idempotent (`CREATE TABLE IF NOT EXISTS`). Scan with `sorted(Path("docker/migrations").glob("*.sql"))` to guarantee lexicographic order regardless of filesystem. The migrator should accept an optional `--migrations-dir` CLI argument so tests can point it at a temp directory with fixture SQL files. For the Coolify pre-deploy command: Coolify supports a "Pre-deploy Command" field in the service settings — document the exact field name and value (`python scripts/migrate.py`). Consider logging each applied migration name to stdout so deploy logs are self-documenting.
+
+---
+
 ## Task Summary
 
 | ID | Title | Phase | Status |
@@ -615,3 +646,4 @@ The fix is small (~10 lines) but the test coverage is important — the bug was 
 | TASK-022 | README & developer docs | 4 | ✅ DONE |
 | TASK-023 | Persist weather data to TimescaleDB | 4 | ✅ DONE |
 | TASK-024 | Fix automated retrainer to pass weather features | 4 | ✅ DONE |
+| TASK-025 | Lightweight DB migration runner | 4 | ✅ DONE |
