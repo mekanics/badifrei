@@ -75,7 +75,7 @@ class TestWeatherDbLoad:
             for h in range(24)
         ])
 
-        result = await _load_dates_from_db(mock_conn, [SAMPLE_DATE_A, SAMPLE_DATE_B])
+        result = await _load_dates_from_db(mock_conn, [SAMPLE_DATE_A, SAMPLE_DATE_B], city="zurich")
 
         assert SAMPLE_DATE_A in result
         assert SAMPLE_DATE_B not in result  # not in DB
@@ -85,7 +85,7 @@ class TestWeatherDbLoad:
         from ml.weather import _load_dates_from_db
 
         mock_conn = AsyncMock()
-        result = await _load_dates_from_db(mock_conn, [])
+        result = await _load_dates_from_db(mock_conn, [], city="zurich")
         assert result == {}
         mock_conn.fetch.assert_not_called()
 
@@ -103,7 +103,7 @@ class TestWeatherDbPersist:
 
         mock_conn = AsyncMock()
         df = make_weather_df(SAMPLE_DATE_A)
-        await _persist_to_db(mock_conn, df)
+        await _persist_to_db(mock_conn, df, city="zurich")
         mock_conn.executemany.assert_called_once()
 
     async def test_persist_skips_nan_rows(self):
@@ -112,7 +112,7 @@ class TestWeatherDbPersist:
 
         mock_conn = AsyncMock()
         df = make_nan_df(SAMPLE_DATE_A)
-        await _persist_to_db(mock_conn, df)
+        await _persist_to_db(mock_conn, df, city="zurich")
         # executemany should NOT be called for NaN-only data
         mock_conn.executemany.assert_not_called()
 
@@ -127,7 +127,7 @@ class TestWeatherDbPersist:
         df.loc[0:3, "precipitation_mm"] = np.nan
         df.loc[0:3, "weathercode"] = np.nan
 
-        await _persist_to_db(mock_conn, df)
+        await _persist_to_db(mock_conn, df, city="zurich")
 
         # Should still be called (some valid rows remain)
         mock_conn.executemany.assert_called_once()
@@ -142,7 +142,7 @@ class TestWeatherDbPersist:
 
         mock_conn = AsyncMock()
         df = make_weather_df(SAMPLE_DATE_A)
-        await _persist_to_db(mock_conn, df)
+        await _persist_to_db(mock_conn, df, city="zurich")
 
         sql = mock_conn.executemany.call_args[0][0]
         assert "ON CONFLICT" in sql.upper()
@@ -256,8 +256,8 @@ class TestFetchWeatherBatchDb:
         """Dates already in _cache skip both DB and HTTP."""
         from ml.weather import fetch_weather_batch, _cache
 
-        # Seed in-memory cache directly
-        _cache[SAMPLE_DATE_A] = make_weather_df(SAMPLE_DATE_A)
+        # Seed in-memory cache directly (key is now (city, date))
+        _cache[("zurich", SAMPLE_DATE_A)] = make_weather_df(SAMPLE_DATE_A)
 
         mock_conn = AsyncMock()
 

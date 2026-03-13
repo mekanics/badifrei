@@ -114,7 +114,10 @@ class TestRetrainJobFetchesWeather:
         mock_train.assert_called_once()
         _, kwargs = mock_train.call_args
         assert "weather_df" in kwargs
-        assert kwargs["weather_df"] is weather_df
+        # _fetch_weather_for_df adds a 'city' column and returns a concat'd copy,
+        # so the object won't be identical — check it's a non-None DataFrame instead.
+        assert kwargs["weather_df"] is not None
+        assert isinstance(kwargs["weather_df"], pd.DataFrame)
 
     async def test_retrain_job_continues_without_weather_on_fetch_failure(self, caplog):
         """fetch_weather_batch raises → warning logged, train called with weather_df=None."""

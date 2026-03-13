@@ -134,24 +134,61 @@ def add_rolling_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def add_weather_features(df: pd.DataFrame, weather_df: pd.DataFrame) -> pd.DataFrame:
+def add_weather_features(
+    df: pd.DataFrame,
+    weather_df: pd.DataFrame,
+    metadata: "dict[str, dict] | None" = None,
+) -> pd.DataFrame:
     """
     Merge weather data into the feature DataFrame.
 
-    Expects df to have an 'hour_of_day' column (from add_time_features).
+    Expects df to have 'hour_of_day' and 'date' columns (from add_time_features).
     Adds: temperature_c, precipitation_mm, is_rainy, temp_x_outdoor.
+
+    When *weather_df* contains a ``city`` column, the join uses
+    ``(city, date, hour_of_day)`` so each pool receives weather for its own
+    city.  The ``city`` column is derived from pool_uid via *metadata*
+    (pool_metadata.json).  Pools with an unrecognised uid emit a warning and
+    receive NaN weather values (filled with sensible defaults below).
+
+    Falls back to the legacy ``(date, hour_of_day)`` join when ``city`` is
+    absent from *weather_df* — preserving backward compatibility with callers
+    that pass non-city-aware weather DataFrames.
     """
     df = df.copy()
-    # weather_df may or may not have a 'date' column — support both
-    w_cols = ["hour", "temperature_c", "precipitation_mm", "weathercode"]
-    if "date" in weather_df.columns:
-        w_cols = ["date"] + w_cols
-    weather_cols = weather_df[w_cols].copy()
-    weather_cols = weather_cols.rename(columns={"hour": "hour_of_day"})
 
-    # Merge on date+hour if date is available, otherwise hour only
-    merge_on = ["date", "hour_of_day"] if "date" in weather_cols.columns else ["hour_of_day"]
-    df = df.merge(weather_cols, on=merge_on, how="left")
+    if "city" in weather_df.columns:
+        # --- City-aware path ---
+        if metadata is None:
+            metadata = load_pool_metadata()
+
+        city_map = {uid: meta.get("city") for uid, meta in metadata.items()}
+        df["_city"] = df["pool_uid"].map(city_map)
+
+        unknown_mask = df["_city"].isna()
+        if unknown_mask.any():
+            unknown_uids = df.loc[unknown_mask, "pool_uid"].unique().tolist()
+            logger.warning(
+                "Unknown city for pool_uid(s) %s; weather features will use defaults for those rows",
+                unknown_uids,
+            )
+
+        w_cols = ["city", "date", "hour", "temperature_c", "precipitation_mm", "weathercode"]
+        weather_cols = weather_df[[c for c in w_cols if c in weather_df.columns]].copy()
+        weather_cols = weather_cols.rename(columns={"hour": "hour_of_day", "city": "_city"})
+
+        df = df.merge(weather_cols, on=["_city", "date", "hour_of_day"], how="left")
+        df = df.drop(columns=["_city"], errors="ignore")
+    else:
+        # --- Legacy path: no city column in weather_df ---
+        w_cols = ["hour", "temperature_c", "precipitation_mm", "weathercode"]
+        if "date" in weather_df.columns:
+            w_cols = ["date"] + w_cols
+        weather_cols = weather_df[w_cols].copy()
+        weather_cols = weather_cols.rename(columns={"hour": "hour_of_day"})
+
+        merge_on = ["date", "hour_of_day"] if "date" in weather_cols.columns else ["hour_of_day"]
+        df = df.merge(weather_cols, on=merge_on, how="left")
 
     # Fill NaN weather with sensible defaults
     df["temperature_c"] = df["temperature_c"].fillna(15.0)
@@ -208,7 +245,7 @@ def build_features(
     if lag_1w_override is not None:
         df["lag_1w"] = lag_1w_override
     if weather_df is not None:
-        df = add_weather_features(df, weather_df)
+        df = add_weather_features(df, weather_df, metadata=metadata)
     else:
         # Always populate weather columns so FEATURE_COLUMNS is fully resolvable.
         # When weather is unavailable, use sensible defaults rather than relying

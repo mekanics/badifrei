@@ -1,4 +1,4 @@
-"""Open-Meteo weather fetcher for Zürich with in-memory caching and TimescaleDB persistence."""
+"""Open-Meteo weather fetcher with per-city support and TimescaleDB persistence."""
 import asyncio
 import datetime
 import logging
@@ -12,32 +12,48 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-# Zürich coordinates
-LAT = 47.3769
-LON = 8.5417
+# ---------------------------------------------------------------------------
+# City coordinates (TASK-026)
+# ---------------------------------------------------------------------------
+
+# Maps city slug → (latitude, longitude) — city-centre approximations.
+CITY_COORDS: dict[str, tuple[float, float]] = {
+    "zurich":    (47.3769, 8.5417),
+    "bern":      (46.9480, 7.4474),
+    "adliswil":  (47.3090, 8.5245),
+    "luzern":    (47.0502, 8.3093),
+    "entfelden": (47.3916, 8.0541),
+    "hunenberg": (47.1720, 8.4139),
+    "rotkreuz":  (47.1410, 8.4314),
+    "wengen":    (46.6058, 7.9238),
+}
+
+# Backward-compat aliases kept for callers that reference the old module-level names.
+LAT = CITY_COORDS["zurich"][0]
+LON = CITY_COORDS["zurich"][1]
 
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 
 HOURLY_FIELDS = ["temperature_2m", "precipitation", "weathercode"]
 
-# In-memory cache: date → pd.DataFrame (hot layer — avoids DB round-trips)
-_cache: dict[datetime.date, pd.DataFrame] = {}
+# In-memory cache: (city, date) → pd.DataFrame (hot layer — avoids DB round-trips)
+_cache: dict[tuple[str, datetime.date], pd.DataFrame] = {}
 
 # ---------------------------------------------------------------------------
-# DB helpers (TASK-023)
+# DB helpers (TASK-023 / TASK-026)
 # ---------------------------------------------------------------------------
 
 _INSERT_SQL = """
-INSERT INTO hourly_weather (date, hour, temperature_c, precipitation_mm, weathercode)
-VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (date, hour) DO NOTHING
+INSERT INTO hourly_weather (city, date, hour, temperature_c, precipitation_mm, weathercode)
+VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (city, date, hour) DO NOTHING
 """
 
 _SELECT_SQL = """
 SELECT date, hour, temperature_c, precipitation_mm, weathercode
 FROM hourly_weather
-WHERE date = ANY($1)
+WHERE date = ANY($1) AND city = $2
 ORDER BY date, hour
 """
 
@@ -57,17 +73,17 @@ async def _get_db_conn():
 
 
 async def _load_dates_from_db(
-    conn, dates: list[datetime.date]
+    conn, dates: list[datetime.date], city: str = "zurich"
 ) -> dict[datetime.date, pd.DataFrame]:
-    """Query DB for rows belonging to *dates*.
+    """Query DB for rows belonging to *dates* and *city*.
 
     Returns a dict mapping date → DataFrame for dates that have rows in the
-    DB.  Dates with zero rows are absent from the result.
+    DB for the given city.  Dates with zero rows are absent from the result.
     """
     if not dates:
         return {}
 
-    rows = await conn.fetch(_SELECT_SQL, dates)
+    rows = await conn.fetch(_SELECT_SQL, dates, city)
     if not rows:
         return {}
 
@@ -83,12 +99,12 @@ async def _load_dates_from_db(
     return result
 
 
-async def _persist_to_db(conn, df: pd.DataFrame) -> None:
+async def _persist_to_db(conn, df: pd.DataFrame, city: str = "zurich") -> None:
     """Write non-NaN rows from *df* to the ``hourly_weather`` table.
 
     Rows where **all three** weather value columns are NaN are skipped so we
     never poison the DB cache with fallback data.  Uses
-    ``INSERT … ON CONFLICT (date, hour) DO NOTHING`` for idempotent writes.
+    ``INSERT … ON CONFLICT (city, date, hour) DO NOTHING`` for idempotent writes.
     """
     weather_cols = ["temperature_c", "precipitation_mm", "weathercode"]
     # Keep rows where at least one weather column is not NaN
@@ -98,6 +114,7 @@ async def _persist_to_db(conn, df: pd.DataFrame) -> None:
 
     records = [
         (
+            city,
             row["date"] if isinstance(row["date"], datetime.date) else row["date"].date(),
             int(row["hour"]),
             None if pd.isna(row["temperature_c"]) else float(row["temperature_c"]),
@@ -161,24 +178,30 @@ def _parse_response(data: dict[str, Any], date: datetime.date) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values("hour").reset_index(drop=True)
 
 
-async def fetch_weather(date: datetime.date) -> pd.DataFrame:
+async def fetch_weather(date: datetime.date, city: str = "zurich") -> pd.DataFrame:
     """
-    Fetch hourly weather data for Zürich on the given date.
+    Fetch hourly weather data for the given city on the given date.
 
     Returns a DataFrame with columns:
         hour (0-23), temperature_c, precipitation_mm, weathercode
 
-    Uses in-memory cache so repeated calls for the same date don't re-fetch.
-    Returns a NaN-filled DataFrame on any error.
+    Uses in-memory cache keyed by (city, date) so repeated calls don't re-fetch.
+    Returns a NaN-filled DataFrame on any error or unknown city slug.
     """
-    if date in _cache:
-        logger.debug("Cache hit for weather date %s", date)
-        return _cache[date]
+    if city not in CITY_COORDS:
+        logger.warning("Unknown city slug %r — returning NaN DataFrame", city)
+        return _nan_df()
 
+    cache_key = (city, date)
+    if cache_key in _cache:
+        logger.debug("Cache hit for weather city=%s date=%s", city, date)
+        return _cache[cache_key]
+
+    lat, lon = CITY_COORDS[city]
     url = _select_url(date)
     params = {
-        "latitude": LAT,
-        "longitude": LON,
+        "latitude": lat,
+        "longitude": lon,
         "hourly": ",".join(HOURLY_FIELDS),
         "start_date": date.isoformat(),
         "end_date": date.isoformat(),
@@ -189,29 +212,30 @@ async def fetch_weather(date: datetime.date) -> pd.DataFrame:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
                 if resp.status != 200:
-                    logger.error("Open-Meteo returned HTTP %s for date %s", resp.status, date)
+                    logger.error("Open-Meteo returned HTTP %s for city=%s date=%s", resp.status, city, date)
                     return _nan_df()
                 data = await resp.json()
     except Exception as exc:
-        logger.error("Failed to fetch weather for %s: %s", date, exc)
+        logger.error("Failed to fetch weather for city=%s date=%s: %s", city, date, exc)
         return _nan_df()
 
     df = _parse_response(data, date)
-    _cache[date] = df
-    logger.info("Fetched weather for %s (%d rows)", date, len(df))
+    _cache[cache_key] = df
+    logger.info("Fetched weather for city=%s date=%s (%d rows)", city, date, len(df))
     return df.drop(columns=["date"], errors="ignore")
 
 
 async def fetch_weather_batch(
     dates: "Iterable[datetime.date]",
+    city: str = "zurich",
     max_concurrency: int = 10,
 ) -> pd.DataFrame:
-    """Fetch weather for multiple dates, using DB cache first.
+    """Fetch weather for multiple dates and a specific city, using DB cache first.
 
     Layer order (fastest → slowest):
-    1. In-memory ``_cache`` dict — hot layer, no I/O.
+    1. In-memory ``_cache`` dict keyed by ``(city, date)`` — hot layer, no I/O.
     2. ``hourly_weather`` TimescaleDB table — persisted across process restarts.
-    3. Open-Meteo HTTP API — only for truly missing dates.
+    3. Open-Meteo HTTP API — only for truly missing (city, date) pairs.
 
     Fetched rows are persisted to DB (NaN fallback rows are **not** written).
 
@@ -220,8 +244,16 @@ async def fetch_weather_batch(
 
     Args:
         dates: Iterable of calendar dates to fetch.
+        city: City slug; must be a key in CITY_COORDS.  Defaults to "zurich"
+            for backward compatibility.
         max_concurrency: Maximum simultaneous Open-Meteo requests.
     """
+    if city not in CITY_COORDS:
+        logger.warning("Unknown city slug %r — returning empty NaN DataFrame", city)
+        return pd.DataFrame(
+            columns=["date", "hour", "temperature_c", "precipitation_mm", "weathercode"]
+        )
+
     unique_dates = sorted(set(dates))
     if not unique_dates:
         return pd.DataFrame(
@@ -231,17 +263,17 @@ async def fetch_weather_batch(
     frames: list[pd.DataFrame] = []
 
     # --- Layer 1: in-memory cache ---
-    mem_dates = [d for d in unique_dates if d in _cache]
-    missing_after_mem = [d for d in unique_dates if d not in _cache]
+    mem_dates = [d for d in unique_dates if (city, d) in _cache]
+    missing_after_mem = [d for d in unique_dates if (city, d) not in _cache]
 
     for d in mem_dates:
-        df = _cache[d].copy()
+        df = _cache[(city, d)].copy()
         df["date"] = d
         frames.append(df)
 
     if not missing_after_mem:
         combined = pd.concat(frames, ignore_index=True)
-        logger.info("All %d dates served from in-memory cache", len(unique_dates))
+        logger.info("All %d dates served from in-memory cache for city=%s", len(unique_dates), city)
         return combined
 
     # --- Layer 2: DB ---
@@ -249,7 +281,7 @@ async def fetch_weather_batch(
     try:
         conn = await _get_db_conn()
         try:
-            db_hit = await _load_dates_from_db(conn, missing_after_mem)
+            db_hit = await _load_dates_from_db(conn, missing_after_mem, city=city)
         finally:
             await conn.close()
     except Exception as exc:
@@ -259,7 +291,7 @@ async def fetch_weather_batch(
 
     for d, df in db_hit.items():
         # Populate in-memory cache so next call in this process is instant
-        _cache[d] = df
+        _cache[(city, d)] = df
         frames.append(df)
 
     missing_after_db = [d for d in missing_after_mem if d not in db_hit]
@@ -267,7 +299,8 @@ async def fetch_weather_batch(
     if not missing_after_db:
         combined = pd.concat(frames, ignore_index=True)
         logger.info(
-            "Weather served: %d from mem cache, %d from DB; 0 from HTTP",
+            "Weather served for city=%s: %d from mem cache, %d from DB; 0 from HTTP",
+            city,
             len(mem_dates),
             len(db_hit),
         )
@@ -279,12 +312,12 @@ async def fetch_weather_batch(
     async def _fetch_one(d: datetime.date) -> pd.DataFrame:
         async with semaphore:
             try:
-                df = await fetch_weather(d)
+                df = await fetch_weather(d, city=city)
                 df = df.copy()
                 df["date"] = d
                 return df
             except Exception as exc:
-                logger.warning("Weather batch fetch failed for %s: %s", d, exc)
+                logger.warning("Weather batch fetch failed for city=%s date=%s: %s", city, d, exc)
                 df = _nan_df()
                 df["date"] = d
                 return df
@@ -296,7 +329,7 @@ async def fetch_weather_batch(
         conn = await _get_db_conn()
         try:
             for df in fetched_frames:
-                await _persist_to_db(conn, df)
+                await _persist_to_db(conn, df, city=city)
         finally:
             await conn.close()
     except Exception as exc:
@@ -305,7 +338,8 @@ async def fetch_weather_batch(
     frames.extend(fetched_frames)
     combined = pd.concat(frames, ignore_index=True)
     logger.info(
-        "Weather fetched: %d from mem, %d from DB, %d from HTTP (%d rows total)",
+        "Weather fetched for city=%s: %d from mem, %d from DB, %d from HTTP (%d rows total)",
+        city,
         len(mem_dates),
         len(db_hit),
         len(missing_after_db),

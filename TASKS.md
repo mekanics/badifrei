@@ -618,6 +618,45 @@ The project runs on Coolify with an existing live database. `init.sql` only fire
 
 ---
 
+### TASK-026: Per-city weather fetching
+
+**Phase:** 4  
+**Status:** ✅ DONE  
+**Dependencies:** TASK-023, TASK-024, TASK-025
+
+**Description:**
+`ml/weather.py` currently hardcodes a single Zürich coordinate (`lat=47.3769, lon=8.5417`) for all weather fetches. However, `ml/pool_metadata.json` contains pools from 8 distinct cities (zurich, bern, adliswil, luzern, entfelden, hunenberg, rotkreuz, wengen). Pools in Bern, Luzern, and other cities are silently receiving incorrect Zürich weather data, degrading prediction accuracy for those pools. This task introduces city-level weather granularity: one weather record per (city, date, hour) instead of one global record per (date, hour).
+
+The `hourly_weather` table has **not** been deployed to production yet, so `docker/migrations/002_hourly_weather.sql` may be updated in place — no new migration file is needed.
+
+**TDD — Write These Tests First:**
+- `test_city_coords_all_cities_present`: assert `CITY_COORDS` in `weather.py` contains keys for all 8 city slugs (`zurich`, `bern`, `adliswil`, `luzern`, `entfelden`, `hunenberg`, `rotkreuz`, `wengen`) and each value is a `(float, float)` tuple
+- `test_fetch_weather_batch_uses_city_coords`: mock the Open-Meteo HTTP call; call `fetch_weather_batch(dates, city="bern")`; assert the request URL contains Bern's lat/lon, not Zürich's
+- `test_fetch_weather_batch_default_city_is_zurich`: call `fetch_weather_batch(dates)` without a `city` argument; assert it uses `CITY_COORDS["zurich"]` (backward-compat default)
+- `test_persist_weather_includes_city`: mock `asyncpg`; call `persist_weather(df, city="luzern")`; assert the INSERT statement includes `city` and the rows contain `"luzern"`
+- `test_load_cached_dates_filters_by_city`: seed `hourly_weather` with rows for `city="zurich"` on date `2025-06-01`; call `load_cached_dates(["2025-06-01"], city="bern")`; assert the date is **not** returned as cached (different city)
+- `test_load_cached_dates_hits_cache_for_matching_city`: seed rows for `city="bern"` on `2025-06-01`; assert `load_cached_dates(["2025-06-01"], city="bern")` returns that date as cached
+- `test_fetch_weather_for_df_multi_city`: build a mock DataFrame with pools from `zurich` and `bern`; assert `_fetch_weather_for_df(df)` calls `fetch_weather_batch` once per city (2 calls), with the correct city slug each time
+- `test_training_join_uses_city_and_date_hour`: verify that after `_fetch_weather_for_df`, weather is joined to the training DataFrame on `(city, date, hour)` — pools from `bern` receive `bern` weather rows, not `zurich` rows
+
+**Acceptance Criteria:**
+- [ ] `CITY_COORDS` dict added to `ml/weather.py` mapping all 8 city slugs to `(lat, lon)` — hardcoded is fine; coordinates should be city-centre approximations accurate to ~1 km
+- [ ] `docker/migrations/002_hourly_weather.sql` updated: `hourly_weather` schema adds `city VARCHAR(64) NOT NULL`; primary key changed from `(date, hour)` to `(city, date, hour)`
+- [ ] `fetch_weather_batch(dates, city="zurich")` accepts a `city` parameter; fetches from `CITY_COORDS[city]`; raises `ValueError` for unknown city slugs
+- [ ] `persist_weather(df, city)` includes `city` in all INSERT rows and the `ON CONFLICT` clause targets `(city, date, hour)`
+- [ ] `load_cached_dates(dates, city="zurich")` filters by `city` so cache misses are correctly detected per city
+- [ ] Shared helper `_fetch_weather_for_df(df)` (in `ml/weather.py` or `ml/training_utils.py`) derives city per pool from `pool_metadata.json`, fetches weather per unique `(city, date)` pair (not per pool), and returns a combined DataFrame with a `city` column
+- [ ] `scripts/train.py` and `ml/retrain.py` updated to call `_fetch_weather_for_df(df)` (or equivalent) so both use city-aware weather automatically
+- [ ] Weather join in `ml/features.py` (and any other join sites) updated from `(date, hour)` to `(city, date, hour)` — pools without a known city fall back gracefully (log warning, drop weather columns for those rows rather than crashing)
+- [ ] All existing weather-related tests updated to supply a `city` argument where required; no test may use `city="zurich"` as an implicit default to mask a missing city propagation
+- [ ] All 8 new tests pass; no regression in existing test suite
+- [ ] Manual smoke test: retrain with `python scripts/train.py`; verify DB contains `hourly_weather` rows for at least 2 distinct cities; verify training DataFrame has non-null weather features for a Bern pool
+
+**Implementation Notes:**
+Derive city from `pool_metadata.json` using the `city` field already present on each pool entry — no API changes needed. The `_fetch_weather_for_df` helper should group the training DataFrame by city, collect the union of dates per city, and issue one `fetch_weather_batch` call per city. Concatenate results into a single weather DataFrame with a `city` column before joining. The join key becomes `["city", "date", "hour"]`. For the `features.py` join, add `city` to the merge keys; pools with an unrecognised city slug should emit a warning and be trained without weather features (not dropped from training entirely). Keep `fetch_weather_batch` and its DB helpers fully backward-compatible via the `city="zurich"` default — any call sites outside the training pipeline (e.g., ad-hoc scripts) will continue to work without modification.
+
+---
+
 ## Task Summary
 
 | ID | Title | Phase | Status |
@@ -647,3 +686,4 @@ The project runs on Coolify with an existing live database. `init.sql` only fire
 | TASK-023 | Persist weather data to TimescaleDB | 4 | ✅ DONE |
 | TASK-024 | Fix automated retrainer to pass weather features | 4 | ✅ DONE |
 | TASK-025 | Lightweight DB migration runner | 4 | ✅ DONE |
+| TASK-026 | Per-city weather fetching | 4 | ✅ DONE |
