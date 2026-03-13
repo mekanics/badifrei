@@ -1,4 +1,5 @@
 """Badi Predictor API — FastAPI application."""
+import asyncio
 import json
 import logging
 import os
@@ -176,16 +177,6 @@ async def pool_detail(request: Request, pool_uid: str):
         for h in range(24)
     ]
     db_pool = getattr(request.app.state, "db_pool", None)
-    try:
-        today_predictions = await predictor.predict_range_batch(pool_uid, hours, db_pool)
-    except Exception:
-        today_predictions = [0.0] * 24
-
-    # Quietest open hour for FAQPage schema (SEO-008)
-    open_preds = [(i, v) for i, v in enumerate(today_predictions) if v > 0]
-    quietest_hour = min(open_preds, key=lambda x: x[1])[0] if open_preds else None
-
-    opening_hours_summary = _build_opening_hours_summary(pool.get("opening_hours"))
 
     # Weekly predictions for "Beste Besuchszeiten" (SEO-015)
     mon = today - timedelta(days=today.weekday())
@@ -200,10 +191,24 @@ async def pool_detail(request: Request, pool_uid: str):
         for d in range(7)
         for h in range(24)
     ]
-    try:
-        flat_preds = await predictor.predict_range_batch(pool_uid, flat_hours, db_pool)
-    except Exception:
-        flat_preds = [0.0] * 168
+
+    # Run today and weekly predictions concurrently — they are independent.
+    async def _safe_predict(pool_uid, hrs, db_pool, fallback_len):
+        try:
+            return await predictor.predict_range_batch(pool_uid, hrs, db_pool)
+        except Exception:
+            return [0.0] * fallback_len
+
+    today_predictions, flat_preds = await asyncio.gather(
+        _safe_predict(pool_uid, hours, db_pool, 24),
+        _safe_predict(pool_uid, flat_hours, db_pool, 168),
+    )
+
+    # Quietest open hour for FAQPage schema (SEO-008)
+    open_preds = [(i, v) for i, v in enumerate(today_predictions) if v > 0]
+    quietest_hour = min(open_preds, key=lambda x: x[1])[0] if open_preds else None
+
+    opening_hours_summary = _build_opening_hours_summary(pool.get("opening_hours"))
     weekly_preds = [flat_preds[d * 24:(d + 1) * 24] for d in range(7)]
     weekly_insights = _compute_weekly_insights(weekly_preds)
 

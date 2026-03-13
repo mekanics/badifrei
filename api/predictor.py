@@ -369,6 +369,31 @@ class Predictor:
             logger.warning(f"Weather fetch failed for {date}: {e}")
             return None
 
+    async def _fetch_weather_multi_date_safe(
+        self,
+        dates: "list[datetime.date]",
+        city: str,
+    ) -> "pd.DataFrame | None":
+        """Fetch weather for all unique *dates* for the given *city*.
+
+        Uses fetch_weather_batch for efficient multi-date retrieval (DB cache → HTTP).
+        Adds a ``city`` column so build_features can use the city-aware join path.
+        Returns None on any failure or if *dates* is empty.
+        """
+        if not dates:
+            return None
+        try:
+            from ml.weather import fetch_weather_batch
+            df = await fetch_weather_batch(dates, city=city)
+            if df.empty:
+                return None
+            df = df.copy()
+            df["city"] = city
+            return df
+        except Exception as e:
+            logger.warning(f"Weather batch fetch failed for city={city} dates={dates}: {e}")
+            return None
+
     async def predict_range_batch(
         self,
         pool_uid: str,
@@ -386,14 +411,16 @@ class Predictor:
         # Check for model staleness once (not once per hour)
         await self._reload_if_stale()
 
-        # Derive date for weather fetch from the first requested hour
-        target_date = hours[0].date() if hours else None
+        # Collect all unique dates across the requested hours and the pool's city
+        unique_dates = sorted({h.date() for h in hours}) if hours else []
+        pool_meta = self._get_metadata().get(pool_uid, {})
+        city_slug = pool_meta.get("city", "zurich")
 
-        # Fetch lag features, rolling mean, and weather concurrently
+        # Fetch lag features, rolling mean, and weather (all dates) concurrently
         (lag_1h_list, lag_1w_list), rolling_mean_7d, weather_df = await asyncio.gather(
             self._fetch_lag_features_batch(db_pool, pool_uid, hours),
             self._fetch_rolling_mean_7d(db_pool, pool_uid, hours[0] if hours else None),
-            self._fetch_weather_safe(target_date),
+            self._fetch_weather_multi_date_safe(unique_dates, city_slug),
         )
 
         # Build 24-row DataFrame for vectorised feature engineering

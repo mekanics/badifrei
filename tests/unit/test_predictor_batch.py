@@ -60,24 +60,32 @@ async def test_predict_range_batch_reloads_once():
     mock_reload.assert_called_once()
 
 
-# --- Test: model.predict called exactly once (batch, not 24×) ---
+# --- Test: model.predict called once per hour (recursive forecasting loop) ---
 async def test_predict_range_batch_single_model_call():
-    """model.predict must be called once with a 24-row matrix, not 24 times."""
+    """model.predict is called once per hour (recursive forecasting — each hour feeds into the next).
+
+    Note: predict is called 24× (one per row) rather than once with a batch matrix
+    because lag_1h for future hours must use the *previous* prediction, making
+    fully-batched inference impossible.
+    """
     predictor = Predictor()
     predictor.model = MagicMock()
-    predictor.model.predict = MagicMock(return_value=[50.0] * 24)
+    predictor.model.predict = MagicMock(return_value=[50.0])
     predictor._encoding_map = {}
 
     hours = [datetime(2026, 3, 3, h, 0, 0, tzinfo=timezone.utc) for h in range(24)]
 
     with patch.object(predictor, '_reload_if_stale'):
         with patch.object(predictor, '_fetch_lag_features_batch', new_callable=AsyncMock) as mock_lag:
-            mock_lag.return_value = ([None] * 24, [None] * 24)
-            await predictor.predict_range_batch("fb001", hours, db_pool=None)
+            with patch.object(predictor, '_fetch_rolling_mean_7d', new_callable=AsyncMock) as mock_rmean:
+                with patch.object(predictor, '_fetch_weather_multi_date_safe', new_callable=AsyncMock) as mock_wx:
+                    mock_lag.return_value = ([None] * 24, [None] * 24)
+                    mock_rmean.return_value = None
+                    mock_wx.return_value = None
+                    await predictor.predict_range_batch("fb001", hours, db_pool=None)
 
-    assert predictor.model.predict.call_count == 1
-    call_args = predictor.model.predict.call_args[0][0]
-    assert call_args.shape[0] == 24, f"Expected 24 rows, got {call_args.shape[0]}"
+    # One predict call per hour (recursive forecasting — each hour feeds the next)
+    assert predictor.model.predict.call_count == 24
 
 
 # --- Test: when model not loaded, returns zeros ---
@@ -97,16 +105,20 @@ async def test_fetch_lag_features_batch_called_once():
     """Lag features must be fetched in one batch call, not 24 separate calls."""
     predictor = Predictor()
     predictor.model = MagicMock()
-    predictor.model.predict = MagicMock(return_value=[50.0] * 24)
+    predictor.model.predict = MagicMock(return_value=[50.0])
     predictor._encoding_map = {}
 
     hours = [datetime(2026, 3, 3, h, 0, 0, tzinfo=timezone.utc) for h in range(24)]
-    mock_pool = MagicMock()
+    mock_pool = AsyncMock()
 
     with patch.object(predictor, '_reload_if_stale'):
         with patch.object(predictor, '_fetch_lag_features_batch', new_callable=AsyncMock) as mock_lag:
-            mock_lag.return_value = ([None] * 24, [None] * 24)
-            await predictor.predict_range_batch("fb001", hours, db_pool=mock_pool)
+            with patch.object(predictor, '_fetch_rolling_mean_7d', new_callable=AsyncMock) as mock_rmean:
+                with patch.object(predictor, '_fetch_weather_multi_date_safe', new_callable=AsyncMock) as mock_wx:
+                    mock_lag.return_value = ([None] * 24, [None] * 24)
+                    mock_rmean.return_value = None
+                    mock_wx.return_value = None
+                    await predictor.predict_range_batch("fb001", hours, db_pool=mock_pool)
 
     mock_lag.assert_called_once_with(mock_pool, "fb001", hours)
 
@@ -159,3 +171,131 @@ async def test_fetch_lag_features_batch_no_pool_returns_nones():
     lag_1h, lag_1w = await predictor._fetch_lag_features_batch(None, "fb001", hours)
     assert lag_1h == [None] * 24
     assert lag_1w == [None] * 24
+
+
+# =============================================================================
+# Fix 2: Multi-date weather fetch tests
+# =============================================================================
+
+# --- Test: predict_range_batch collects all unique dates for weather fetch ---
+async def test_predict_range_batch_passes_all_unique_dates_to_weather():
+    """For a 168-hour (7-day) call, weather must be fetched for all 7 dates, not just day 1.
+
+    Regression for: predict_range_batch only fetching first-date weather, causing
+    days 2–7 to silently use Monday's weather for all predictions.
+    """
+    from datetime import date as date_type
+
+    predictor = Predictor()
+    predictor.model = MagicMock()
+    predictor.model.predict = MagicMock(return_value=[50.0])
+    predictor._encoding_map = {}
+
+    # 7 days × 24 hours starting on Monday 2026-03-09
+    from datetime import timedelta as td
+    mon_date = datetime(2026, 3, 9, 0, 0, 0, tzinfo=timezone.utc)
+    flat_hours = [
+        datetime(
+            (mon_date + td(days=d)).year,
+            (mon_date + td(days=d)).month,
+            (mon_date + td(days=d)).day,
+            h, 0, 0, tzinfo=timezone.utc,
+        )
+        for d in range(7)
+        for h in range(24)
+    ]
+    assert len(flat_hours) == 168
+
+    with patch.object(predictor, '_reload_if_stale'):
+        with patch.object(predictor, '_fetch_lag_features_batch', new_callable=AsyncMock) as mock_lag:
+            with patch.object(predictor, '_fetch_rolling_mean_7d', new_callable=AsyncMock) as mock_rmean:
+                with patch.object(predictor, '_fetch_weather_multi_date_safe', new_callable=AsyncMock) as mock_wx:
+                    mock_lag.return_value = ([None] * 168, [None] * 168)
+                    mock_rmean.return_value = None
+                    mock_wx.return_value = None
+                    await predictor.predict_range_batch("fb001", flat_hours, db_pool=None)
+
+    # Must be called with all 7 unique dates, not just the first one
+    call_args = mock_wx.call_args
+    called_dates, called_city = call_args[0]
+    assert len(called_dates) == 7, (
+        f"Expected 7 unique dates, got {len(called_dates)}. "
+        "predict_range_batch is likely only fetching the first date."
+    )
+    expected_dates = sorted({h.date() for h in flat_hours})
+    assert sorted(called_dates) == expected_dates
+
+
+# --- Test: predict_range_batch uses pool's city when fetching weather ---
+async def test_predict_range_batch_uses_pool_city_for_weather():
+    """Weather must be fetched for the pool's own city slug, not always 'zurich'."""
+    predictor = Predictor()
+    predictor.model = MagicMock()
+    predictor.model.predict = MagicMock(return_value=[50.0])
+    predictor._encoding_map = {}
+    # Inject metadata with a non-default city
+    predictor._metadata = {"luzern001": {"uid": "luzern001", "city": "luzern", "name": "Test Pool"}}
+
+    hours = [datetime(2026, 3, 9, h, 0, 0, tzinfo=timezone.utc) for h in range(24)]
+
+    with patch.object(predictor, '_reload_if_stale'):
+        with patch.object(predictor, '_fetch_lag_features_batch', new_callable=AsyncMock) as mock_lag:
+            with patch.object(predictor, '_fetch_rolling_mean_7d', new_callable=AsyncMock) as mock_rmean:
+                with patch.object(predictor, '_fetch_weather_multi_date_safe', new_callable=AsyncMock) as mock_wx:
+                    mock_lag.return_value = ([None] * 24, [None] * 24)
+                    mock_rmean.return_value = None
+                    mock_wx.return_value = None
+                    await predictor.predict_range_batch("luzern001", hours, db_pool=None)
+
+    called_dates, called_city = mock_wx.call_args[0]
+    assert called_city == "luzern", (
+        f"Expected city='luzern', got '{called_city}'. "
+        "predict_range_batch must look up the pool's city from metadata."
+    )
+
+
+# --- Test: _fetch_weather_multi_date_safe adds city column ---
+async def test_fetch_weather_multi_date_safe_adds_city_column():
+    """The returned DataFrame must include a 'city' column for the city-aware join path."""
+    import pandas as pd
+    from datetime import date
+
+    predictor = Predictor()
+
+    mock_df = pd.DataFrame({
+        "date": [date(2026, 3, 9)] * 24,
+        "hour": list(range(24)),
+        "temperature_c": [15.0] * 24,
+        "precipitation_mm": [0.0] * 24,
+        "weathercode": [0] * 24,
+    })
+
+    with patch("ml.weather.fetch_weather_batch", new_callable=AsyncMock) as mock_batch:
+        mock_batch.return_value = mock_df
+        result = await predictor._fetch_weather_multi_date_safe([date(2026, 3, 9)], "zurich")
+
+    assert result is not None
+    assert "city" in result.columns, "weather DataFrame must have a 'city' column"
+    assert (result["city"] == "zurich").all()
+
+
+# --- Test: _fetch_weather_multi_date_safe returns None for empty date list ---
+async def test_fetch_weather_multi_date_safe_empty_dates_returns_none():
+    """Should return None immediately when no dates are provided."""
+    predictor = Predictor()
+    result = await predictor._fetch_weather_multi_date_safe([], "zurich")
+    assert result is None
+
+
+# --- Test: _fetch_weather_multi_date_safe returns None on exception ---
+async def test_fetch_weather_multi_date_safe_handles_exception():
+    """Should catch exceptions from fetch_weather_batch and return None gracefully."""
+    from datetime import date
+
+    predictor = Predictor()
+
+    with patch("ml.weather.fetch_weather_batch", new_callable=AsyncMock) as mock_batch:
+        mock_batch.side_effect = RuntimeError("network error")
+        result = await predictor._fetch_weather_multi_date_safe([date(2026, 3, 9)], "zurich")
+
+    assert result is None
