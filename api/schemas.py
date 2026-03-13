@@ -1,6 +1,7 @@
 """Pydantic schemas for the API."""
 from datetime import datetime
-from pydantic import BaseModel
+from typing import Annotated
+from pydantic import BaseModel, field_validator
 
 
 class HealthResponse(BaseModel):
@@ -24,11 +25,21 @@ class PredictionResponse(BaseModel):
     predicted_occupancy_pct: float
     model_version: str
 
+    @field_validator("predicted_occupancy_pct")
+    @classmethod
+    def round_pct(cls, v: float) -> float:
+        return round(v, 1)
+
 
 class RangePredictionItem(BaseModel):
     hour: int
     predicted_at: datetime
     predicted_occupancy_pct: float
+
+    @field_validator("predicted_occupancy_pct")
+    @classmethod
+    def round_pct(cls, v: float) -> float:
+        return round(v, 1)
 
 
 class RangePredictionResponse(BaseModel):
