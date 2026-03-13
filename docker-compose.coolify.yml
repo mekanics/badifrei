@@ -19,6 +19,12 @@ services:
       retries: 10
       start_period: 30s
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1200M
+        reservations:
+          memory: 512M
 
   migrator:
     build:
@@ -31,6 +37,10 @@ services:
       db:
         condition: service_healthy
     restart: "no"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   collector:
     build:
@@ -50,6 +60,12 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
 
   api:
     build:
@@ -73,6 +89,12 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
     labels:
       # Traefik rate limiting — 60 req/min average, burst of 30
       - "traefik.http.middlewares.badi-ratelimit.ratelimit.average=60"
@@ -98,7 +120,17 @@ services:
         condition: service_healthy
       migrator:
         condition: service_completed_successfully
-    restart: unless-stopped
+    restart: on-failure
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        delay: 60s
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
 
 volumes:
   db_data:

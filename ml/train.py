@@ -81,7 +81,8 @@ def train(
         subsample=0.8,
         colsample_bytree=0.8,
         random_state=42,
-        n_jobs=-1,
+        tree_method="hist",  # histogram-based: much lower RAM, faster on large data
+        n_jobs=2,            # cap at 2 threads; don't saturate a shared VPS
     )
     model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
 
