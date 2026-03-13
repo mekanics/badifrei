@@ -10,7 +10,7 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./docker/migrations:/docker-entrypoint-initdb.d/migrations
+      - ./docker/migrations:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -29,7 +29,7 @@ services:
     tmpfs:
       - /var/lib/postgresql/data
     volumes:
-      - ./docker/migrations:/docker-entrypoint-initdb.d/migrations
+      - ./docker/migrations:/docker-entrypoint-initdb.d
 
   migrator:
     build:

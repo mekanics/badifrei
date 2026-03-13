@@ -11,7 +11,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/migrations:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U badi -d badi"]
       interval: 10s
@@ -19,6 +19,18 @@ services:
       retries: 10
       start_period: 30s
     restart: unless-stopped
+
+  migrator:
+    build:
+      context: .
+      dockerfile: collector/Dockerfile
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    command: ["python", "scripts/migrate.py"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
 
   collector:
     build:
@@ -30,6 +42,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
@@ -50,6 +64,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
@@ -80,6 +96,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
     restart: unless-stopped
 
 volumes:
