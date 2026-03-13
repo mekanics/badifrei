@@ -112,7 +112,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       RETRAIN_INTERVAL_HOURS: ${RETRAIN_INTERVAL_HOURS:-168}
       MIN_RECORDS_FOR_TRAINING: ${MIN_RECORDS_FOR_TRAINING:-1000}
-      LOOKBACK_DAYS: ${LOOKBACK_DAYS:-90}
+      LOOKBACK_DAYS: ${LOOKBACK_DAYS:-365}
     volumes:
       - model_artifacts:/app/ml/models
     depends_on:
