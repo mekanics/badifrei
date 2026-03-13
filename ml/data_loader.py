@@ -1,6 +1,7 @@
 """Load pool occupancy data from TimescaleDB into pandas DataFrames."""
 import logging
-from datetime import datetime, timezone
+import re
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import asyncpg
@@ -23,6 +24,30 @@ MIN_RECORDS = 1000  # Require at least 1000 records for training
 # the environment and fall back to this constant — it is defined here in ONE
 # place so there is no duplication.
 DEFAULT_BUCKET_INTERVAL = "10 minutes"
+
+
+def _parse_interval(interval_str: str) -> timedelta:
+    """Convert a human-readable interval string to a timedelta for asyncpg.
+
+    asyncpg requires a timedelta (not a string) for interval parameters.
+    Supported units: minutes, hours, days.
+
+    Examples: "10 minutes", "1 hour", "2 days"
+    """
+    m = re.match(r"(\d+)\s*(minute|minutes|hour|hours|day|days)", interval_str.strip().lower())
+    if not m:
+        raise ValueError(
+            f"Cannot parse interval '{interval_str}'. "
+            "Use format like '10 minutes', '1 hour', '2 days'."
+        )
+    n, unit = int(m.group(1)), m.group(2).rstrip("s")
+    if unit == "minute":
+        return timedelta(minutes=n)
+    elif unit == "hour":
+        return timedelta(hours=n)
+    elif unit == "day":
+        return timedelta(days=n)
+    raise ValueError(f"Unknown unit: {unit}")  # unreachable
 
 
 async def load_data(
@@ -66,11 +91,12 @@ async def load_data(
         use_bucket = bool(bucket_interval)
 
         if use_bucket:
+            bucket_td = _parse_interval(bucket_interval)
             if start is None:
                 rows = await conn.fetch(
                     """
                     SELECT
-                        time_bucket($1::interval, time) AS time,
+                        time_bucket($1, time) AS time,
                         pool_uid,
                         pool_name,
                         AVG(current_fill) AS current_fill,
@@ -80,17 +106,17 @@ async def load_data(
                     FROM pool_occupancy
                     WHERE time <= $2
                       AND max_space > 0
-                    GROUP BY time_bucket($1::interval, time), pool_uid, pool_name, max_space
+                    GROUP BY time_bucket($1, time), pool_uid, pool_name, max_space
                     ORDER BY pool_uid, time ASC
                     """,
-                    bucket_interval,
+                    bucket_td,
                     end,
                 )
             else:
                 rows = await conn.fetch(
                     """
                     SELECT
-                        time_bucket($1::interval, time) AS time,
+                        time_bucket($1, time) AS time,
                         pool_uid,
                         pool_name,
                         AVG(current_fill) AS current_fill,
@@ -101,10 +127,10 @@ async def load_data(
                     WHERE time >= $2
                       AND time <= $3
                       AND max_space > 0
-                    GROUP BY time_bucket($1::interval, time), pool_uid, pool_name, max_space
+                    GROUP BY time_bucket($1, time), pool_uid, pool_name, max_space
                     ORDER BY pool_uid, time ASC
                     """,
-                    bucket_interval,
+                    bucket_td,
                     start,
                     end,
                 )

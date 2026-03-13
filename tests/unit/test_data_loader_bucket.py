@@ -112,10 +112,13 @@ class TestBucketedQueryUsesTimeBucket:
             f"Interval '{interval}' must NOT be f-string interpolated into SQL "
             f"(SQL injection risk). Got:\n{sql}"
         )
-        # The interval should be in the positional params
-        assert interval in call_args_positional[1:], (
-            f"Interval '{interval}' must appear as a positional query parameter. "
-            f"Got params: {call_args_positional[1:]}"
+        # The first positional param should be a timedelta (asyncpg requires timedelta,
+        # not a raw string, for interval parameters)
+        from datetime import timedelta as _td
+        first_param = call_args_positional[1]
+        assert isinstance(first_param, _td), (
+            f"First query parameter must be a timedelta (not a string) for asyncpg. "
+            f"Got: {type(first_param)} = {first_param!r}"
         )
 
 
