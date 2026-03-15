@@ -534,51 +534,6 @@
 		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/oerlikon.html"
 	},
 	{
-		"uid": "SSD-8",
-		"name": "Josel-Areal",
-		"type": "hallenbad",
-		"seasonal": false,
-		"city": "zurich",
-		"max_capacity": 200,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "08:00",
-					"close": "22:00"
-				},
-				"Tue": {
-					"open": "08:00",
-					"close": "22:00"
-				},
-				"Wed": {
-					"open": "08:00",
-					"close": "22:00"
-				},
-				"Thu": {
-					"open": "08:00",
-					"close": "22:00"
-				},
-				"Fri": {
-					"open": "08:00",
-					"close": "22:00"
-				},
-				"Sat": {
-					"open": "08:00",
-					"close": "22:00"
-				},
-				"Sun": {
-					"open": "08:00",
-					"close": "22:00"
-				}
-			},
-			"seasonal_open": null,
-			"seasonal_close": null,
-			"notes": "Sportzentrum Josef (Josefstrasse 219). No public swimming pool on site — this is a sports and exercise facility. Hours are for the sports hall. A new 50m pool is planned for the Josef-Areal as future development."
-		},
-		"description": "Das Josel-Areal ist eine öffentliche Schwimmanlage in Zürich und bietet Schwimmmöglichkeiten für Erholung und Sport.",
-		"official_url": null
-	},
-	{
 		"uid": "LIDO-1",
 		"name": "Lido Luzern",
 		"type": "strandbad",

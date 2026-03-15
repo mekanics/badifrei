@@ -5,7 +5,7 @@
 >
 > **Data source:** CrowdMonitor occupancy sensors by ASE (Switzerland), updated in near-real-time.
 > **ML model:** XGBoost, trained per pool, retrained weekly. Predicts percentage occupancy up to ~8 hours ahead.
-> **Coverage:** 32 pools across 8 Swiss cities — Zürich, Bern, Luzern, Zug (Rotkreuz, Hünenberg), Adliswil, Entfelden, Wengen.
+> **Coverage:** 31 pools across 8 Swiss cities — Zürich, Bern, Luzern, Zug (Rotkreuz, Hünenberg), Adliswil, Entfelden, Wengen.
 > **Language:** German (de-CH). Operated independently; not affiliated with city authorities or pool operators.
 > **Limitations:** Coverage depends on sensor availability. Seasonal outdoor pools (Freibäder, Strandbäder) are closed in winter (approx. Oct–Apr). Sensor outages may cause temporary data gaps. Predictions are probabilistic and not a guarantee.
 
@@ -13,7 +13,7 @@ badifrei.ch is a public, free-to-use tool for residents and visitors in Switzerl
 
 ## Hauptseiten / Key Pages
 
-- [Startseite — Alle Schwimmbäder](https://badifrei.ch/): Overview of all 32 monitored pools with live occupancy, grouped by city.
+- [Startseite — Alle Schwimmbäder](https://badifrei.ch/): Overview of all 31 monitored pools with live occupancy, grouped by city.
 - [Sitemap](https://badifrei.ch/sitemap.xml): Full index of all pool pages and the homepage.
 
 ## Schwimmbäder Zürich / Zürich Pools
