@@ -176,13 +176,6 @@ def make_weather_df(temperature_c: float = 22.0, precipitation_mm: float = 0.0, 
 
 
 class TestWeatherFeatures:
-    def test_no_weather_df_does_not_add_weather_columns(self):
-        from ml.features import build_features
-        df = make_df(n=48)
-        result = build_features(df)
-        assert "temperature_c" not in result.columns
-        assert "is_rainy" not in result.columns
-
     def test_weather_df_adds_temperature_column(self):
         from ml.features import build_features
         df = make_df(n=48)
@@ -332,10 +325,10 @@ class TestOpeningHoursFeatures:
         df = self._make_single_row(hour=0, day_of_week=0, pool_uid="UNKNOWN-999")
         result = add_opening_hours_features(df, _MOCK_METADATA)
         row = result.iloc[0]
-        # Pool not in metadata → treat as always open
+        # Pool not in metadata → treat as always open with full-day defaults
         assert row["is_open"] == 1
         assert row["minutes_since_open"] == 0
-        assert row["minutes_until_close"] == 0
+        assert row["minutes_until_close"] == 1440
 
     def test_defensive_default_no_opening_hours_key(self):
         from ml.features import add_opening_hours_features

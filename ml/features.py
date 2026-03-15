@@ -66,13 +66,14 @@ def add_holiday_feature(df: pd.DataFrame, country: str = "CH", subdiv: str = "ZH
     """Add Swiss/Zurich public holiday flag (vectorized)."""
     df = df.copy()
     ch_holidays = _get_holidays(country=country, subdiv=subdiv)
-    # Convert holiday keys to normalized Timestamps and use vectorized isin()
-    holiday_ts = pd.to_datetime(list(ch_holidays.keys()))
-    date_only = pd.to_datetime(df["time"]).dt.normalize()
-    # Strip tz from date_only so comparison with tz-naive holiday_ts works
+    # Normalize to date and use `in` operator directly — this triggers the holidays library's
+    # lazy year-generation, ensuring dates like 2026-01-01 are correctly resolved.
+    date_only = pd.to_datetime(df["time"])
     if date_only.dt.tz is not None:
-        date_only = date_only.dt.tz_localize(None)
-    df["is_holiday"] = date_only.isin(holiday_ts).astype(int)
+        date_only = date_only.dt.tz_convert("UTC").dt.tz_localize(None)
+    df["is_holiday"] = date_only.dt.normalize().apply(
+        lambda d: 1 if d.date() in ch_holidays else 0
+    )
     return df
 
 
