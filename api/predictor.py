@@ -351,24 +351,6 @@ class Predictor:
             logger.warning(f"Could not fetch rolling mean for {pool_uid}: {e}")
             return None
 
-    async def _fetch_weather_safe(
-        self,
-        date: "datetime.date | None",
-    ) -> "pd.DataFrame | None":
-        """Fetch weather from Open-Meteo for *date*, returning None on any failure.
-
-        Uses the ml.weather module which handles forecast vs archive URL selection
-        and maintains an in-memory cache per date.
-        """
-        if date is None:
-            return None
-        try:
-            from ml.weather import fetch_weather
-            return await fetch_weather(date)
-        except Exception as e:
-            logger.warning(f"Weather fetch failed for {date}: {e}")
-            return None
-
     async def _fetch_weather_multi_date_safe(
         self,
         dates: "list[datetime.date]",

@@ -225,9 +225,10 @@ async def fetch_weather(date: datetime.date, city: str = "zurich") -> pd.DataFra
         return _nan_df()
 
     df = _parse_response(data, date)
-    _cache[cache_key] = df
+    df = df.drop(columns=["date"], errors="ignore")
+    _cache[cache_key] = df   # always WITHOUT date
     logger.info("Fetched weather for city=%s date=%s (%d rows)", city, date, len(df))
-    return df.drop(columns=["date"], errors="ignore")
+    return df
 
 
 async def fetch_weather_batch(

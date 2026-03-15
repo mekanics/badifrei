@@ -625,7 +625,7 @@ async def list_pools():
 
 
 @app.get("/predict", response_model=PredictionResponse, tags=["predictions"])
-async def predict(pool_uid: str, dt_str: str):
+async def predict(request: Request, pool_uid: str, dt_str: str):
     """Predict occupancy for a pool at a specific datetime (ISO 8601)."""
     # Validate pool exists
     pools = get_pools()
@@ -649,7 +649,12 @@ async def predict(pool_uid: str, dt_str: str):
             model_version="no-model",
         )
 
-    pct = predictor.predict(pool_uid, dt)
+    # Delegate to the async batch path so live weather is fetched via fetch_weather_batch.
+    # predict() is sync and cannot await weather; predict_range_batch handles it correctly.
+    db_pool = getattr(request.app.state, "db_pool", None)
+    pcts = await predictor.predict_range_batch(pool_uid, [dt], db_pool)
+    pct = pcts[0] if pcts else 0.0
+
     return PredictionResponse(
         pool_uid=pool_uid,
         pool_name=pool["name"],
