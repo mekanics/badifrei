@@ -116,3 +116,125 @@ def test_seasonal_open_before_close(pools):
                 f"Pool {pool['uid']}: seasonal_open={oh['seasonal_open']} "
                 f"not before seasonal_close={oh['seasonal_close']}"
             )
+
+
+# ---------------------------------------------------------------------------
+# Tests for _compute_pool_is_open() minute-accurate logic
+# ---------------------------------------------------------------------------
+
+import zoneinfo
+from datetime import datetime
+
+_TZ = zoneinfo.ZoneInfo("Europe/Zurich")
+
+
+def _make_pool(open_time: str, close_time: str, day: str = "Fri",
+               seasonal_open=None, seasonal_close=None) -> dict:
+    """Build a minimal pool dict with a fixed schedule for all seven days."""
+    schedule = {}
+    for d in DAYS:
+        schedule[d] = {"open": open_time, "close": close_time}
+    return {
+        "uid": "test-pool",
+        "name": "Test Pool",
+        "opening_hours": {
+            "seasonal_open": seasonal_open,
+            "seasonal_close": seasonal_close,
+            "schedule": schedule,
+        },
+    }
+
+
+def _zurich(year: int, month: int, day: int, hour: int, minute: int) -> datetime:
+    return datetime(year, month, day, hour, minute, tzinfo=_TZ)
+
+
+class TestComputePoolIsOpen:
+    """Unit tests for api.main._compute_pool_is_open()."""
+
+    def _call(self, pool: dict, now: datetime) -> dict:
+        from api.main import _compute_pool_is_open
+        return _compute_pool_is_open(pool, now)
+
+    # ── The exact bug case ──────────────────────────────────────────────────
+
+    def test_pool_open_at_half_past_is_open_at_34_minutes(self):
+        """Pool opens at 06:30; checked at 06:34 — must be open (was the bug)."""
+        pool = _make_pool("06:30", "20:00")
+        # 2026-03-20 is a Friday
+        result = self._call(pool, _zurich(2026, 3, 20, 6, 34))
+        assert result["is_open"] is True
+        assert result["next_open"] is None
+
+    def test_pool_open_at_half_past_is_open_at_exactly_opening_minute(self):
+        """Pool opens at 06:30; checked at 06:30 exactly — must be open."""
+        pool = _make_pool("06:30", "20:00")
+        result = self._call(pool, _zurich(2026, 3, 20, 6, 30))
+        assert result["is_open"] is True
+
+    # ── One minute before opening ───────────────────────────────────────────
+
+    def test_one_minute_before_open_shows_correct_opens_at_time(self):
+        """Pool opens at 09:00; checked at 08:59 — closed with next_open='09:00'."""
+        pool = _make_pool("09:00", "20:00")
+        result = self._call(pool, _zurich(2026, 3, 20, 8, 59))
+        assert result["is_open"] is False
+        assert result["next_open"] == "09:00"
+
+    def test_one_minute_before_half_past_open_shows_correct_opens_at(self):
+        """Pool opens at 06:30; checked at 06:29 — closed with next_open='06:30'."""
+        pool = _make_pool("06:30", "20:00")
+        result = self._call(pool, _zurich(2026, 3, 20, 6, 29))
+        assert result["is_open"] is False
+        assert result["next_open"] == "06:30"
+
+    # ── After closing ───────────────────────────────────────────────────────
+
+    def test_after_close_shows_next_day_opening(self):
+        """Pool closes at 20:00 on Friday; checked at 21:00 — should show Saturday opening."""
+        pool = _make_pool("09:00", "20:00")
+        # Friday 21:00 → tomorrow (Saturday) opens at 09:00 (time only, no day label)
+        result = self._call(pool, _zurich(2026, 3, 20, 21, 0))
+        assert result["is_open"] is False
+        assert result["next_open"] == "09:00"
+
+    def test_after_close_at_closing_minute_is_closed(self):
+        """Pool closes at 20:00; checked at exactly 20:00 — must be closed."""
+        pool = _make_pool("09:00", "20:00")
+        result = self._call(pool, _zurich(2026, 3, 20, 20, 0))
+        assert result["is_open"] is False
+
+    # ── Mid-open sanity checks ──────────────────────────────────────────────
+
+    def test_open_during_normal_hours(self):
+        """Pool is open 09:00–20:00; checked at 14:00 — must be open."""
+        pool = _make_pool("09:00", "20:00")
+        result = self._call(pool, _zurich(2026, 3, 20, 14, 0))
+        assert result["is_open"] is True
+
+    def test_open_during_normal_hours_with_minutes(self):
+        """Pool is open 09:00–20:00; checked at 14:45 — must be open."""
+        pool = _make_pool("09:00", "20:00")
+        result = self._call(pool, _zurich(2026, 3, 20, 14, 45))
+        assert result["is_open"] is True
+
+    # ── No opening hours ───────────────────────────────────────────────────
+
+    def test_no_opening_hours_defaults_to_open(self):
+        """Pool without opening_hours is treated as always open."""
+        pool = {"uid": "test", "name": "Test", "opening_hours": None}
+        result = self._call(pool, _zurich(2026, 3, 20, 14, 0))
+        assert result["is_open"] is True
+
+    # ── Seasonal window ────────────────────────────────────────────────────
+
+    def test_off_season_returns_closed_with_seasonal_label(self):
+        """Pool outside seasonal window shows opens_seasonal label, not next_open."""
+        pool = _make_pool("09:00", "20:00",
+                          seasonal_open="2026-05-01", seasonal_close="2026-09-30")
+        # March is before May — off-season
+        result = self._call(pool, _zurich(2026, 3, 20, 14, 0))
+        assert result["is_open"] is False
+        assert result["next_open"] is None
+        assert result["opens_seasonal"] is not None
+        assert "Mai" in result["opens_seasonal"]

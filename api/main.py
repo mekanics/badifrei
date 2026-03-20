@@ -441,7 +441,7 @@ def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
     next_open is a time string (e.g. "09:00") for in-season daily closures.
     """
     import datetime as dt
-    from ml.features import compute_opening_hours_for_row, _DAY_NAMES
+    from ml.features import _DAY_NAMES
     opening_hours = pool.get("opening_hours")
     if not opening_hours:
         return {"is_open": True, "next_open": None, "opens_seasonal": None}
@@ -462,14 +462,27 @@ def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
         except (ValueError, TypeError):
             pass  # malformed date — fall through to daily schedule
 
-    # ── In-season: check daily opening hours ────────────────────────────────
+    # ── In-season: check daily opening hours (minute-accurate) ──────────────
     day_of_week = now_zurich.weekday()  # 0=Mon
     hour = now_zurich.hour
-    is_open, _, _ = compute_opening_hours_for_row(hour, day_of_week, opening_hours, date=today)
+    day_name = _DAY_NAMES[day_of_week]
+    schedule = opening_hours.get("schedule", {})
+    day_sched = schedule.get(day_name)
+
+    is_open = False
+    if day_sched:
+        try:
+            open_h, open_m = map(int, day_sched["open"].split(":"))
+            close_h, close_m = map(int, day_sched["close"].split(":"))
+            open_minutes = open_h * 60 + open_m
+            close_minutes = close_h * 60 + close_m
+            current_minutes = now_zurich.hour * 60 + now_zurich.minute
+            is_open = open_minutes <= current_minutes < close_minutes
+        except (KeyError, ValueError):
+            is_open = True  # defensive: treat as open on parse error
 
     next_open = None
     if not is_open:
-        schedule = opening_hours.get("schedule", {})
 
         # Check if still today and opens later (offset=0)
         today_sched = schedule.get(_DAY_NAMES[day_of_week])
