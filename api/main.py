@@ -1,4 +1,5 @@
 """Badi Predictor API — FastAPI application."""
+
 import asyncio
 import json
 import logging
@@ -21,16 +22,28 @@ from dateutil.parser import parse as date_parser_raw
 from fastapi import FastAPI, HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse as _JSONResponse, HTMLResponse, PlainTextResponse, Response
+from fastapi.responses import (
+    JSONResponse as _JSONResponse,
+    HTMLResponse,
+    PlainTextResponse,
+    Response,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 
 class JSONResponse(_JSONResponse):
     """Force charset=utf-8 in Content-Type to prevent Safari misinterpreting the encoding."""
+
     media_type = "application/json; charset=utf-8"
 
-from api.schemas import PoolInfo, PredictionResponse, RangePredictionResponse, RangePredictionItem
+
+from api.schemas import (
+    PoolInfo,
+    PredictionResponse,
+    RangePredictionResponse,
+    RangePredictionItem,
+)
 from api.predictor import predictor
 
 POOL_METADATA_PATH = Path(__file__).parent.parent / "ml" / "pool_metadata.json"
@@ -51,7 +64,10 @@ def get_pools() -> list[dict]:
 # Weekly insights cache helpers
 # ---------------------------------------------------------------------------
 
-def is_stale(computed_at: datetime, ttl: int = WEEKLY_INSIGHTS_CACHE_TTL_SECONDS) -> bool:
+
+def is_stale(
+    computed_at: datetime, ttl: int = WEEKLY_INSIGHTS_CACHE_TTL_SECONDS
+) -> bool:
     """Return True if the cache entry is at or beyond its TTL."""
     age = (datetime.now(timezone.utc) - computed_at).total_seconds()
     return age >= ttl
@@ -64,6 +80,7 @@ async def _refresh_weekly_insights(pool_uid: str, db_pool) -> None:
     so stale data is still served rather than nothing.
     """
     from fastapi import FastAPI  # avoid circular at module level
+
     app_state = app.state  # reference to running app state
 
     try:
@@ -77,7 +94,9 @@ async def _refresh_weekly_insights(pool_uid: str, db_pool) -> None:
                 (mon + timedelta(days=d)).year,
                 (mon + timedelta(days=d)).month,
                 (mon + timedelta(days=d)).day,
-                h, 0, 0,
+                h,
+                0,
+                0,
                 tzinfo=timezone.utc,
             )
             for d in range(7)
@@ -85,13 +104,18 @@ async def _refresh_weekly_insights(pool_uid: str, db_pool) -> None:
         ]
 
         flat_preds = await predictor.predict_range_batch(pool_uid, flat_hours, db_pool)
-        weekly_preds = [flat_preds[d * 24:(d + 1) * 24] for d in range(7)]
+        weekly_preds = [flat_preds[d * 24 : (d + 1) * 24] for d in range(7)]
         insights = _compute_weekly_insights(weekly_preds)
 
-        app_state.weekly_insights_cache[pool_uid] = (insights, datetime.now(timezone.utc))
+        app_state.weekly_insights_cache[pool_uid] = (
+            insights,
+            datetime.now(timezone.utc),
+        )
         logger.debug("Weekly insights cache refreshed for pool %s", pool_uid)
     except Exception as exc:
-        logger.warning("Failed to refresh weekly insights for pool %s: %s", pool_uid, exc)
+        logger.warning(
+            "Failed to refresh weekly insights for pool %s: %s", pool_uid, exc
+        )
     finally:
         # Always remove from in-flight guard so future requests can retry
         try:
@@ -114,13 +138,16 @@ async def lifespan(app: FastAPI):
     if database_url:
         try:
             import asyncpg
-            app.state.db_pool = await asyncpg.create_pool(database_url, min_size=1, max_size=5)
+
+            app.state.db_pool = await asyncpg.create_pool(
+                database_url, min_size=1, max_size=5
+            )
             logger.info("DB connection pool created")
         except Exception as e:
             logger.warning(f"Could not create DB pool: {e}")
 
     # Initialise weekly insights cache
-    app.state.weekly_insights_cache = {}   # pool_uid → (insights_dict, computed_at)
+    app.state.weekly_insights_cache = {}  # pool_uid → (insights_dict, computed_at)
     app.state.weekly_insights_inflight = set()  # pool_uids currently being refreshed
 
     # Optional pre-warm: kick off a background refresh for every pool
@@ -141,12 +168,28 @@ templates = Jinja2Templates(directory=str(TEMPLATES_PATH))
 
 # Cache-busting hash for static assets — recomputed on every deploy/restart
 import hashlib as _hashlib
+
 _css_path = STATIC_PATH / "style.css"
-_STATIC_VER = _hashlib.md5(_css_path.read_bytes()).hexdigest()[:8] if _css_path.exists() else "0"
+_STATIC_VER = (
+    _hashlib.md5(_css_path.read_bytes()).hexdigest()[:8] if _css_path.exists() else "0"
+)
 templates.env.globals["static_ver"] = _STATIC_VER
 
-_MONTHS_DE = ["Januar","Februar","März","April","Mai","Juni",
-               "Juli","August","September","Oktober","November","Dezember"]
+_MONTHS_DE = [
+    "Januar",
+    "Februar",
+    "März",
+    "April",
+    "Mai",
+    "Juni",
+    "Juli",
+    "August",
+    "September",
+    "Oktober",
+    "November",
+    "Dezember",
+]
+
 
 def _fmt_date_de(value: str) -> str:
     """Format ISO date string (YYYY-MM-DD) as German date: '9. Mai 2026'."""
@@ -157,6 +200,7 @@ def _fmt_date_de(value: str) -> str:
     except Exception:
         return str(value)
 
+
 templates.env.filters["date_de"] = _fmt_date_de
 
 
@@ -166,7 +210,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+        response.headers["Permissions-Policy"] = (
+            "geolocation=(), camera=(), microphone=()"
+        )
         if "text/html" in response.headers.get("content-type", ""):
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; "
@@ -215,7 +261,17 @@ CITY_DISPLAY = {
     "zug": "Zug",
     "wengen": "Wengen",
 }
-CITY_ORDER = ["zurich", "luzern", "bern", "adliswil", "rotkreuz", "entfelden", "hunenberg", "zug", "wengen"]
+CITY_ORDER = [
+    "zurich",
+    "luzern",
+    "bern",
+    "adliswil",
+    "rotkreuz",
+    "entfelden",
+    "hunenberg",
+    "zug",
+    "wengen",
+]
 
 
 @app.get("/", response_class=HTMLResponse, tags=["dashboard"])
@@ -224,6 +280,7 @@ async def dashboard_index(request: Request):
     pools = get_pools()
     # Group pools by city, Zürich first then alphabetical
     from collections import defaultdict
+
     by_city: dict[str, list] = defaultdict(list)
     for p in pools:
         by_city[p.get("city", "zurich")].append(p)
@@ -232,7 +289,9 @@ async def dashboard_index(request: Request):
         {"key": k, "label": CITY_DISPLAY.get(k, k.title()), "pools": by_city[k]}
         for k in city_keys
     ]
-    return templates.TemplateResponse("index.html", {"request": request, "pools": pools, "cities": cities})
+    return templates.TemplateResponse(
+        request, "index.html", {"pools": pools, "cities": cities}
+    )
 
 
 @app.get("/bad/{pool_uid}", response_class=HTMLResponse, tags=["pools"])
@@ -245,6 +304,7 @@ async def pool_detail(request: Request, pool_uid: str):
 
     # SSR today's predictions so the chart renders on first paint (SEO-001)
     import zoneinfo
+
     now_zurich = datetime.now(tz=zoneinfo.ZoneInfo("Europe/Zurich"))
     today = now_zurich.date()
     hours = [
@@ -289,29 +349,47 @@ async def pool_detail(request: Request, pool_uid: str):
 
     # SEO-016: related pools in same city (same type first, then others; max 4)
     all_pools = get_pools()
-    same_city = [p for p in all_pools if p.get("city") == pool.get("city") and p["uid"] != pool_uid]
+    same_city = [
+        p
+        for p in all_pools
+        if p.get("city") == pool.get("city") and p["uid"] != pool_uid
+    ]
     same_type = [p for p in same_city if p.get("type") == pool.get("type")]
     other_type = [p for p in same_city if p.get("type") != pool.get("type")]
     related_pools = (same_type + other_type)[:4]
 
-    return templates.TemplateResponse("pool.html", {
-        "request": request,
-        "pool": pool,
-        "today_predictions_json": json.dumps(today_predictions),
-        "today_date": today.isoformat(),
-        "quietest_hour": quietest_hour,
-        "opening_hours_summary": opening_hours_summary,
-        "weekly_insights": weekly_insights,
-        "related_pools": related_pools,
-    })
+    return templates.TemplateResponse(
+        request,
+        "pool.html",
+        {
+            "pool": pool,
+            "today_predictions_json": json.dumps(today_predictions),
+            "today_date": today.isoformat(),
+            "quietest_hour": quietest_hour,
+            "opening_hours_summary": opening_hours_summary,
+            "weekly_insights": weekly_insights,
+            "related_pools": related_pools,
+        },
+    )
 
 
 _DAY_DE_FULL = {
-    0: "Montag", 1: "Dienstag", 2: "Mittwoch", 3: "Donnerstag",
-    4: "Freitag", 5: "Samstag", 6: "Sonntag",
+    0: "Montag",
+    1: "Dienstag",
+    2: "Mittwoch",
+    3: "Donnerstag",
+    4: "Freitag",
+    5: "Samstag",
+    6: "Sonntag",
 }
 _DAY_DE_SHORT = {
-    0: "Mo", 1: "Di", 2: "Mi", 3: "Do", 4: "Fr", 5: "Sa", 6: "So",
+    0: "Mo",
+    1: "Di",
+    2: "Mi",
+    3: "Do",
+    4: "Fr",
+    5: "Sa",
+    6: "So",
 }
 
 
@@ -332,10 +410,12 @@ def _compute_weekly_insights(weekly_preds: list[list[float]]) -> dict | None:
         has_data: bool  (False if all predictions are 0)
     """
     # Flatten to get all non-zero values
-    all_open = [(day, hour, v)
-                for day, hours in enumerate(weekly_preds)
-                for hour, v in enumerate(hours)
-                if v > 0]
+    all_open = [
+        (day, hour, v)
+        for day, hours in enumerate(weekly_preds)
+        for hour, v in enumerate(hours)
+        if v > 0
+    ]
 
     if not all_open:
         return {"has_data": False}
@@ -359,7 +439,9 @@ def _compute_weekly_insights(weekly_preds: list[list[float]]) -> dict | None:
     weekend_vals = [v for day, h, v in all_open if day >= 5]
     weekday_avg = sum(weekday_vals) / len(weekday_vals) if weekday_vals else None
     weekend_avg = sum(weekend_vals) / len(weekend_vals) if weekend_vals else None
-    weekday_quieter = (weekday_avg < weekend_avg) if (weekday_avg and weekend_avg) else None
+    weekday_quieter = (
+        (weekday_avg < weekend_avg) if (weekday_avg and weekend_avg) else None
+    )
 
     return {
         "has_data": True,
@@ -385,7 +467,15 @@ def _build_opening_hours_summary(opening_hours: dict | None) -> str | None:
         return None
 
     _DAY_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-    _DAY_DE = {"Mon": "Mo", "Tue": "Di", "Wed": "Mi", "Thu": "Do", "Fri": "Fr", "Sat": "Sa", "Sun": "So"}
+    _DAY_DE = {
+        "Mon": "Mo",
+        "Tue": "Di",
+        "Wed": "Mi",
+        "Thu": "Do",
+        "Fri": "Fr",
+        "Sat": "Sa",
+        "Sun": "So",
+    }
 
     # Build list of (day_key, open, close) for days that are open
     entries = []
@@ -406,7 +496,7 @@ def _build_opening_hours_summary(opening_hours: dict | None) -> str | None:
         j = i + 1
         while j < len(entries) and entries[j][1] == open_t and entries[j][2] == close_t:
             # Only group if consecutive in _DAY_ORDER
-            idx_prev = _DAY_ORDER.index(entries[j-1][0])
+            idx_prev = _DAY_ORDER.index(entries[j - 1][0])
             idx_curr = _DAY_ORDER.index(entries[j][0])
             if idx_curr == idx_prev + 1:
                 j += 1
@@ -414,7 +504,7 @@ def _build_opening_hours_summary(opening_hours: dict | None) -> str | None:
                 break
         # entries[i..j-1] are a group
         start_day = _DAY_DE[entries[i][0]]
-        end_day = _DAY_DE[entries[j-1][0]]
+        end_day = _DAY_DE[entries[j - 1][0]]
         if start_day == end_day:
             label = start_day
         else:
@@ -425,8 +515,20 @@ def _build_opening_hours_summary(opening_hours: dict | None) -> str | None:
     return ". ".join(groups) + "."
 
 
-_DE_MONTHS = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
-              "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+_DE_MONTHS = [
+    "Jan",
+    "Feb",
+    "Mär",
+    "Apr",
+    "Mai",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Okt",
+    "Nov",
+    "Dez",
+]
 _DE_DAYS_SHORT = ["Mo.", "Di.", "Mi.", "Do.", "Fr.", "Sa.", "So."]
 
 
@@ -442,6 +544,7 @@ def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
     """
     import datetime as dt
     from ml.features import _DAY_NAMES
+
     opening_hours = pool.get("opening_hours")
     if not opening_hours:
         return {"is_open": True, "next_open": None, "opens_seasonal": None}
@@ -499,9 +602,11 @@ def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
                 if day_sched:
                     t = day_sched.get("open", "")
                     if offset == 1:
-                        next_open = t           # tomorrow → time only
+                        next_open = t  # tomorrow → time only
                     else:
-                        next_open = f"{_DE_DAYS_SHORT[check_dow]} {t}"  # e.g. "So. 09:00"
+                        next_open = (
+                            f"{_DE_DAYS_SHORT[check_dow]} {t}"  # e.g. "So. 09:00"
+                        )
                     break
 
     return {"is_open": bool(is_open), "next_open": next_open, "opens_seasonal": None}
@@ -511,6 +616,7 @@ def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
 async def current_occupancy(request: Request):
     """Return latest occupancy reading per pool. Returns [] if DB unavailable."""
     import zoneinfo
+
     tz_zurich = zoneinfo.ZoneInfo("Europe/Zurich")
     now_zurich = datetime.now(tz_zurich)
 
@@ -650,7 +756,10 @@ async def predict(request: Request, pool_uid: str, dt_str: str):
     try:
         dt = datetime.fromisoformat(dt_str)
     except ValueError:
-        raise HTTPException(status_code=422, detail="Invalid datetime. Use ISO 8601 format (e.g. 2026-03-07T14:00:00).")
+        raise HTTPException(
+            status_code=422,
+            detail="Invalid datetime. Use ISO 8601 format (e.g. 2026-03-07T14:00:00).",
+        )
 
     if not predictor.is_loaded():
         # Return a placeholder when model isn't trained yet
@@ -719,6 +828,7 @@ async def predict_range(request: Request, pool_uid: str, date: str):
 async def history(request: Request, pool_uid: str, date: str):
     """Return hourly average occupancy from DB for a given pool and date."""
     from datetime import date as date_type, timedelta
+
     null_actuals = [{"hour": i, "occupancy_pct": None} for i in range(24)]
 
     # Validate pool exists
@@ -729,7 +839,9 @@ async def history(request: Request, pool_uid: str, date: str):
     try:
         d = date_type.fromisoformat(date)
     except ValueError:
-        raise HTTPException(status_code=422, detail="Invalid date. Use YYYY-MM-DD format.")
+        raise HTTPException(
+            status_code=422, detail="Invalid date. Use YYYY-MM-DD format."
+        )
 
     db_pool = getattr(request.app.state, "db_pool", None)
     if db_pool is None:
@@ -753,7 +865,14 @@ async def history(request: Request, pool_uid: str, date: str):
             d,
             d + timedelta(days=1),
         )
-        hour_map = {int(row["hour"]): float(row["occupancy_pct"]) if row["occupancy_pct"] is not None else None for row in rows}
+        hour_map = {
+            int(row["hour"]): (
+                float(row["occupancy_pct"])
+                if row["occupancy_pct"] is not None
+                else None
+            )
+            for row in rows
+        }
         actuals = [{"hour": i, "occupancy_pct": hour_map.get(i)} for i in range(24)]
         return {"pool_uid": pool_uid, "date": date, "actuals": actuals}
     except Exception as e:
