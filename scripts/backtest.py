@@ -23,10 +23,9 @@ PROJECT_ROOT = Path(__file__).parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import asyncpg
-
-from api.predictor import Predictor
-from ml.features import FEATURE_COLUMNS
+import asyncpg  # noqa: E402
+from api.predictor import Predictor  # noqa: E402
+from ml.features import FEATURE_COLUMNS  # noqa: E402
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────

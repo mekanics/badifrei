@@ -74,7 +74,6 @@ async def test_pool_detail_predictions_run_concurrently():
     # Both tasks started before either finished (overlap evidence)
     assert "start:today" in call_order
     assert "start:weekly" in call_order
-    today_start_idx = call_order.index("start:today")
     weekly_start_idx = call_order.index("start:weekly")
     today_end_idx = call_order.index("end:today")
 

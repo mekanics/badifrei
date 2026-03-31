@@ -152,22 +152,17 @@ class TestCacheMiss:
 
         context_captured = {}
 
-        original_response = None
-
         with patch("api.main.predictor", mock_pred):
             with patch("api.main.asyncio.create_task", side_effect=_capture_create_task):
                 # Patch template rendering to capture context
                 from fastapi.templating import Jinja2Templates
-                orig_response = Jinja2Templates.TemplateResponse
 
                 def _capture(self_, name_or_request, context_or_name=None, *args, **kwargs):
-                    # Capture weekly_insights from template context
-                    if isinstance(name_or_request, str):
-                        ctx = context_or_name or {}
-                    else:
-                        ctx = context_or_name or {}
-                    context_captured.update(ctx)
-                    # Return minimal HTML
+                    # TemplateResponse(request, "template.html", {...}) — context is args[0]
+                    if isinstance(context_or_name, dict):
+                        context_captured.update(context_or_name)
+                    elif args and isinstance(args[0], dict):
+                        context_captured.update(args[0])
                     from starlette.responses import HTMLResponse
                     return HTMLResponse("<html></html>")
 
@@ -226,8 +221,11 @@ class TestStaleCache:
                 from fastapi.templating import Jinja2Templates
 
                 def _capture(self_, name_or_request, context_or_name=None, *args, **kwargs):
+                    # TemplateResponse(request, "template.html", {...}) — context is args[0]
                     if isinstance(context_or_name, dict):
                         context_captured.update(context_or_name)
+                    elif args and isinstance(args[0], dict):
+                        context_captured.update(args[0])
                     from starlette.responses import HTMLResponse
                     return HTMLResponse("<html></html>")
 
@@ -325,11 +323,7 @@ class TestPrewarm:
         importlib.reload(api_main)
 
         pools = api_main.get_pools()
-        expected_uids = {p["uid"] for p in pools}
-
         scheduled_pool_uids: set[str] = set()
-
-        original_create_task = asyncio.create_task
 
         def _spy_create_task(coro, **kwargs):
             # Inspect the coroutine name to detect refresh calls

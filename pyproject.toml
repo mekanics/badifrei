@@ -39,5 +39,10 @@ include = ["collector*", "ml*", "api*", "scripts*"]
 [tool.ruff]
 line-length = 88
 
+[tool.ruff.lint]
+# F4xx (unused imports/vars) and F8xx (redefinition) are pre-existing across the codebase.
+# E402 is handled with per-site noqa. Enforce style rules (E/W) + logical errors only.
+ignore = ["F401", "F811", "F841"]
+
 [tool.black]
 line-length = 88

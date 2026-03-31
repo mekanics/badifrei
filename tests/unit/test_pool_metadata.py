@@ -35,11 +35,11 @@ def test_seasonal_flags_correct():
     data = load_metadata()
     by_uid = {p["uid"]: p for p in data}
     # Hallenbäder are not seasonal
-    assert by_uid["SSD-5"]["seasonal"] == False   # Wärmebad Käferberg
-    assert by_uid["SSD-4"]["seasonal"] == False   # Hallenbad City
+    assert not by_uid["SSD-5"]["seasonal"]   # Wärmebad Käferberg
+    assert not by_uid["SSD-4"]["seasonal"]   # Hallenbad City
     # Freibäder are seasonal
-    assert by_uid["fb006"]["seasonal"] == True    # Freibad Allenmoos (was fb001)
-    assert by_uid["LETZI-1"]["seasonal"] == True  # Freibad Letzigraben
+    assert by_uid["fb006"]["seasonal"]    # Freibad Allenmoos (was fb001)
+    assert by_uid["LETZI-1"]["seasonal"]  # Freibad Letzigraben
 
 def test_kaeferberg_capacity():
     data = load_metadata()

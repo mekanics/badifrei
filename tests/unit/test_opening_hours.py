@@ -122,8 +122,8 @@ def test_seasonal_open_before_close(pools):
 # Tests for _compute_pool_is_open() minute-accurate logic
 # ---------------------------------------------------------------------------
 
-import zoneinfo
-from datetime import datetime
+import zoneinfo  # noqa: E402
+from datetime import datetime  # noqa: E402
 
 _TZ = zoneinfo.ZoneInfo("Europe/Zurich")
 

@@ -100,7 +100,7 @@ class TestWriteBatch:
         mock_pool = self._make_pool_mock(mock_conn)
 
         with patch("collector.db.get_pool", AsyncMock(return_value=mock_pool)):
-            result = await write_batch([reading])
+            await write_batch([reading])
 
         records = mock_conn.executemany.call_args[0][1]
         ts = records[0][0]

@@ -7,8 +7,8 @@ import os
 from contextlib import asynccontextmanager
 
 logger = logging.getLogger(__name__)
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
+from datetime import datetime, timedelta, timezone  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Weekly insights cache configuration
@@ -17,19 +17,19 @@ WEEKLY_INSIGHTS_CACHE_TTL_SECONDS: int = int(
     os.environ.get("WEEKLY_INSIGHTS_CACHE_TTL_SECONDS", "3600")
 )
 
-from dateutil.parser import parse as date_parser_raw
+from dateutil.parser import parse as date_parser_raw  # noqa: E402
 
-from fastapi import FastAPI, HTTPException, Request
-from starlette.middleware.base import BaseHTTPMiddleware
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import (
+from fastapi import FastAPI, HTTPException, Request  # noqa: E402
+from starlette.middleware.base import BaseHTTPMiddleware  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.responses import (  # noqa: E402
     JSONResponse as _JSONResponse,
     HTMLResponse,
     PlainTextResponse,
     Response,
 )
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles  # noqa: E402
+from fastapi.templating import Jinja2Templates  # noqa: E402
 
 
 class JSONResponse(_JSONResponse):
@@ -38,13 +38,13 @@ class JSONResponse(_JSONResponse):
     media_type = "application/json; charset=utf-8"
 
 
-from api.schemas import (
+from api.schemas import (  # noqa: E402
     PoolInfo,
     PredictionResponse,
     RangePredictionResponse,
     RangePredictionItem,
 )
-from api.predictor import predictor
+from api.predictor import predictor  # noqa: E402
 
 POOL_METADATA_PATH = Path(__file__).parent.parent / "ml" / "pool_metadata.json"
 TEMPLATES_PATH = Path(__file__).parent / "templates"
@@ -84,8 +84,8 @@ async def _refresh_weekly_insights(pool_uid: str, db_pool) -> None:
     app_state = app.state  # reference to running app state
 
     try:
-        import zoneinfo
-        from datetime import date as date_type
+        import zoneinfo  # noqa: E402
+        from datetime import date as date_type  # noqa: E402
 
         today = datetime.now(tz=zoneinfo.ZoneInfo("Europe/Zurich")).date()
         mon = today - timedelta(days=today.weekday())
@@ -167,7 +167,7 @@ async def lifespan(app: FastAPI):
 templates = Jinja2Templates(directory=str(TEMPLATES_PATH))
 
 # Cache-busting hash for static assets — recomputed on every deploy/restart
-import hashlib as _hashlib
+import hashlib as _hashlib  # noqa: E402
 
 _css_path = STATIC_PATH / "style.css"
 _STATIC_VER = (
@@ -279,7 +279,7 @@ async def dashboard_index(request: Request):
     """Pool overview dashboard."""
     pools = get_pools()
     # Group pools by city, Zürich first then alphabetical
-    from collections import defaultdict
+    from collections import defaultdict  # noqa: E402
 
     by_city: dict[str, list] = defaultdict(list)
     for p in pools:
@@ -303,7 +303,7 @@ async def pool_detail(request: Request, pool_uid: str):
         raise HTTPException(status_code=404, detail=f"Pool '{pool_uid}' not found")
 
     # SSR today's predictions so the chart renders on first paint (SEO-001)
-    import zoneinfo
+    import zoneinfo  # noqa: E402
 
     now_zurich = datetime.now(tz=zoneinfo.ZoneInfo("Europe/Zurich"))
     today = now_zurich.date()
@@ -615,7 +615,7 @@ def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
 @app.get("/api/current", tags=["dashboard"])
 async def current_occupancy(request: Request):
     """Return latest occupancy reading per pool. Returns [] if DB unavailable."""
-    import zoneinfo
+    import zoneinfo  # noqa: E402
 
     tz_zurich = zoneinfo.ZoneInfo("Europe/Zurich")
     now_zurich = datetime.now(tz_zurich)

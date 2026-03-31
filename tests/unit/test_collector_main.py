@@ -40,7 +40,7 @@ class TestMetrics:
         assert m.records_written == 0
         assert m.errors == 0
         assert m.last_write is None
-        assert m.running == False
+        assert not m.running
 
     def test_metrics_increment(self):
         from collector.main import Metrics

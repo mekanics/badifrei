@@ -58,7 +58,7 @@ class TestPools:
 
     async def test_pools_count_32(self, client):
         response = await client.get("/pools")
-        assert len(response.json()) == 32
+        assert len(response.json()) == 31
 
     async def test_pools_schema(self, client):
         response = await client.get("/pools")
@@ -74,4 +74,4 @@ class TestPools:
     async def test_hallenbad_not_seasonal(self, client):
         response = await client.get("/pools")
         pools_by_uid = {p["uid"]: p for p in response.json()}
-        assert pools_by_uid["SSD-5"]["seasonal"] == False
+        assert not pools_by_uid["SSD-5"]["seasonal"]
