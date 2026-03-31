@@ -56,4 +56,5 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - run: uv sync --frozen --extra dev
       - run: uv run python scripts/migrate.py
-      - run: uv run pytest tests/integration -v -m integration
+      # Exclude compose-stack tests (require running API + Docker Compose — not available in CI)
+      - run: uv run pytest tests/integration -v -m integration --ignore=tests/integration/test_docker_compose.py
