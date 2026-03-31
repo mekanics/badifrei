@@ -158,10 +158,11 @@ class TestCacheMiss:
                 from fastapi.templating import Jinja2Templates
 
                 def _capture(self_, name_or_request, context_or_name=None, *args, **kwargs):
-                    # Capture weekly_insights from template context
+                    # TemplateResponse(request, "template.html", {...}) — context is args[0]
                     if isinstance(context_or_name, dict):
                         context_captured.update(context_or_name)
-                    # Return minimal HTML
+                    elif args and isinstance(args[0], dict):
+                        context_captured.update(args[0])
                     from starlette.responses import HTMLResponse
                     return HTMLResponse("<html></html>")
 
@@ -220,8 +221,11 @@ class TestStaleCache:
                 from fastapi.templating import Jinja2Templates
 
                 def _capture(self_, name_or_request, context_or_name=None, *args, **kwargs):
+                    # TemplateResponse(request, "template.html", {...}) — context is args[0]
                     if isinstance(context_or_name, dict):
                         context_captured.update(context_or_name)
+                    elif args and isinstance(args[0], dict):
+                        context_captured.update(args[0])
                     from starlette.responses import HTMLResponse
                     return HTMLResponse("<html></html>")
 
