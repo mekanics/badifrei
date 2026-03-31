@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync --frozen
+      - run: uv sync --frozen --extra dev
       - run: uv run ruff check .
       - run: uv run black --check .
 
@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync --frozen
+      - run: uv sync --frozen --extra dev
       - run: uv run pytest tests/unit -v --cov --cov-report=xml
       - uses: actions/upload-artifact@v4
         with:
@@ -51,6 +51,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync --frozen
+      - run: uv sync --frozen --extra dev
       - run: uv run python scripts/migrate.py
       - run: uv run pytest tests/integration -v -m integration
