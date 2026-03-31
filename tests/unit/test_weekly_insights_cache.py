@@ -159,11 +159,8 @@ class TestCacheMiss:
 
                 def _capture(self_, name_or_request, context_or_name=None, *args, **kwargs):
                     # Capture weekly_insights from template context
-                    if isinstance(name_or_request, str):
-                        ctx = context_or_name or {}
-                    else:
-                        ctx = context_or_name or {}
-                    context_captured.update(ctx)
+                    if isinstance(context_or_name, dict):
+                        context_captured.update(context_or_name)
                     # Return minimal HTML
                     from starlette.responses import HTMLResponse
                     return HTMLResponse("<html></html>")

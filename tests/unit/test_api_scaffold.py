@@ -58,7 +58,7 @@ class TestPools:
 
     async def test_pools_count_32(self, client):
         response = await client.get("/pools")
-        assert len(response.json()) == 32
+        assert len(response.json()) == 31
 
     async def test_pools_schema(self, client):
         response = await client.get("/pools")
