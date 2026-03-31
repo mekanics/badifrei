@@ -117,8 +117,6 @@ class TestFetchWeatherBatchCityCoords:
             await fetch_weather_batch([SAMPLE_DATE], city="bern")
 
         # Inspect the call params
-        call_kwargs = mock_session.get.call_args[1] if mock_session.get.call_args[1] else {}
-        call_args = mock_session.get.call_args[0] if mock_session.get.call_args[0] else ()
         # params may be in kwargs
         params = mock_session.get.call_args.kwargs.get("params") or mock_session.get.call_args[1].get("params", {})
         assert params.get("latitude") == pytest.approx(bern_lat)
@@ -315,7 +313,7 @@ class TestMultiCityTrainingHelper:
             return df
 
         with patch("ml.retrain.fetch_weather_batch", side_effect=fake_fetch_batch):
-            result = await _fetch_weather_for_df(df)
+            await _fetch_weather_for_df(df)
 
         assert len(call_cities) == 2, f"Expected 2 calls (one per city), got {len(call_cities)}: {call_cities}"
         assert set(call_cities) == {"zurich", "bern"}

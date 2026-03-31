@@ -152,13 +152,10 @@ class TestCacheMiss:
 
         context_captured = {}
 
-        original_response = None
-
         with patch("api.main.predictor", mock_pred):
             with patch("api.main.asyncio.create_task", side_effect=_capture_create_task):
                 # Patch template rendering to capture context
                 from fastapi.templating import Jinja2Templates
-                orig_response = Jinja2Templates.TemplateResponse
 
                 def _capture(self_, name_or_request, context_or_name=None, *args, **kwargs):
                     # Capture weekly_insights from template context
@@ -325,11 +322,7 @@ class TestPrewarm:
         importlib.reload(api_main)
 
         pools = api_main.get_pools()
-        expected_uids = {p["uid"] for p in pools}
-
         scheduled_pool_uids: set[str] = set()
-
-        original_create_task = asyncio.create_task
 
         def _spy_create_task(coro, **kwargs):
             # Inspect the coroutine name to detect refresh calls

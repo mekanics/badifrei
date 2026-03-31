@@ -221,8 +221,6 @@ class TestFailedMigrationHaltsRunner:
         conn = _make_conn()
 
         # Make execute raise when it encounters the bad SQL
-        original_execute = conn.execute
-
         def execute_side_effect(sql, *args, **kwargs):
             if "THIS IS NOT VALID SQL" in sql:
                 raise Exception("syntax error at or near 'THIS'")
