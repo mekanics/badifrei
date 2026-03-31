@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 
 METADATA_PATH = Path(__file__).parent / "pool_metadata.json"
 
+# Pool UIDs to exclude from the ML pipeline (not actual swimming pools)
+EXCLUDED_POOLS: set[str] = {"SSD-8"}  # SSD-8 = Josel-Areal (sports hall)
+
 # Pool type encoding (stable integer mapping)
 POOL_TYPE_ENCODING = {"hallenbad": 0, "freibad": 1, "strandbad": 2, "seebad": 3, "other": 4}
 
@@ -236,6 +239,12 @@ def build_features(
     Returns df with all features added.
     """
     df = df.copy()
+    if EXCLUDED_POOLS:
+        before = len(df)
+        df = df[~df["pool_uid"].isin(EXCLUDED_POOLS)]
+        dropped = before - len(df)
+        if dropped:
+            logger.debug("Excluded %d rows for pool_uid(s) %s", dropped, EXCLUDED_POOLS)
     df = add_time_features(df)
     df = add_holiday_feature(df)
     df = add_pool_features(df, metadata, encoding_map=encoding_map)

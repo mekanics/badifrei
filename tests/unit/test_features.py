@@ -165,6 +165,36 @@ class TestBuildFeatures:
         assert list(df.columns) == original_cols
 
 
+class TestExcludedPools:
+    def test_excluded_pool_rows_are_dropped(self):
+        from ml.features import build_features, EXCLUDED_POOLS
+        # Create df with both a normal pool and an excluded one
+        normal = make_df(n=48, pool_uid="SSD-5")
+        excluded = make_df(n=48, pool_uid="SSD-8")
+        df = pd.concat([normal, excluded], ignore_index=True)
+        result = build_features(df)
+        assert "SSD-8" not in result["pool_uid"].values
+        assert "SSD-5" in result["pool_uid"].values
+
+    def test_excluded_pool_reduces_row_count(self):
+        from ml.features import build_features
+        normal = make_df(n=48, pool_uid="SSD-5")
+        excluded = make_df(n=48, pool_uid="SSD-8")
+        df = pd.concat([normal, excluded], ignore_index=True)
+        result = build_features(df)
+        assert len(result) == 48  # only SSD-5 rows remain
+
+    def test_all_excluded_returns_empty(self):
+        from ml.features import build_features
+        df = make_df(n=48, pool_uid="SSD-8")
+        result = build_features(df)
+        assert len(result) == 0
+
+    def test_ssd8_in_excluded_pools_constant(self):
+        from ml.features import EXCLUDED_POOLS
+        assert "SSD-8" in EXCLUDED_POOLS
+
+
 def make_weather_df(temperature_c: float = 22.0, precipitation_mm: float = 0.0, weathercode: int = 0) -> pd.DataFrame:
     """Create a minimal 24-row weather DataFrame."""
     return pd.DataFrame({
