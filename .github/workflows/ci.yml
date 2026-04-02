@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
       - run: uv sync --frozen --extra dev
       - run: uv run ruff check .
       # TODO: enforce formatting once codebase is formatted — run `ruff format .` locally and commit
@@ -23,7 +23,7 @@ jobs:
       DATABASE_URL: postgresql://badi:badi@localhost:5432/badi
     steps:
       - uses: actions/checkout@v6
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
       - run: uv sync --frozen --extra dev
       - run: uv run pytest tests/unit -v --cov --cov-report=xml
       - uses: actions/upload-artifact@v7
@@ -68,7 +68,7 @@ jobs:
       DATABASE_URL: postgresql://badi:badi@localhost:5432/badi_test
     steps:
       - uses: actions/checkout@v6
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
       - run: uv sync --frozen --extra dev
       - run: uv run python scripts/migrate.py
       # Exclude compose-stack tests (require running API + Docker Compose — not available in CI)
