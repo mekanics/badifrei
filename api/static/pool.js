@@ -4,6 +4,12 @@
  * using data-* attributes to avoid unsafe-inline scripts.
  */
 
+// ── Analytics ────────────────────────────────────────────────────────────────
+
+function track(name, data) {
+  if (typeof umami !== 'undefined') umami.track(name, data);
+}
+
 // ── Live occupancy count refresh ───────────────────────────────────────────
 
 async function refreshLiveCount() {
@@ -155,4 +161,10 @@ async function loadChart(date) {
 }
 
 loadChart(picker.value);
-picker.addEventListener('change', () => loadChart(picker.value));
+picker.addEventListener('change', () => {
+  const selected = picker.value;
+  const today = todayZurich();
+  const direction = selected < today ? 'past' : selected === today ? 'today' : 'future';
+  track('date-picker-change', { pool_uid: POOL_UID, direction: direction });
+  loadChart(selected);
+});

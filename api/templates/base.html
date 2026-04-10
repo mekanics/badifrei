@@ -17,7 +17,8 @@
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{% block twitter_title %}badifrei.ch – Ist die Badi voll?{% endblock %}">
-  <meta name="twitter:description" content="{% block twitter_description %}Echtzeit-Belegung und Vorhersagen für Zürichs Schwimmbäder.{% endblock %}">
+  <meta name="twitter:description"
+    content="{% block twitter_description %}Echtzeit-Belegung und Vorhersagen für Zürichs Schwimmbäder.{% endblock %}">
   <meta name="twitter:image" content="https://badifrei.ch/static/og-preview.jpg">
   <link rel="canonical" href="https://badifrei.ch{% block canonical_path %}/{% endblock %}">
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
@@ -35,13 +36,16 @@
 }
 </script>
   {% block structured_data %}{% endblock %}
+  {% if umami_script_url and umami_website_id %}
+  <script defer src="{{ umami_script_url }}" data-website-id="{{ umami_website_id }}"></script>
+  {% endif %}
 </head>
 
 <body>
   <nav class="navbar">
-  <div class="navbar-inner">
-    <a href="/" class="nav-brand">badifrei<span>.</span>ch</a>
-  </div>
+    <div class="navbar-inner">
+      <a href="/" class="nav-brand">badifrei<span>.</span>ch</a>
+    </div>
   </nav>
   <main class="container">
     {% block content %}{% endblock %}

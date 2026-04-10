@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from contextlib import asynccontextmanager
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 from datetime import datetime, timedelta, timezone  # noqa: E402
@@ -16,6 +17,13 @@ from pathlib import Path  # noqa: E402
 WEEKLY_INSIGHTS_CACHE_TTL_SECONDS: int = int(
     os.environ.get("WEEKLY_INSIGHTS_CACHE_TTL_SECONDS", "3600")
 )
+
+UMAMI_SCRIPT_URL: str = os.environ.get("UMAMI_SCRIPT_URL", "")
+UMAMI_WEBSITE_ID: str = os.environ.get("UMAMI_WEBSITE_ID", "")
+_UMAMI_CSP_ORIGIN: str = ""
+if UMAMI_SCRIPT_URL:
+    _p = urlparse(UMAMI_SCRIPT_URL)
+    _UMAMI_CSP_ORIGIN = f"{_p.scheme}://{_p.netloc}"
 
 from dateutil.parser import parse as date_parser_raw  # noqa: E402
 
@@ -174,6 +182,8 @@ _STATIC_VER = (
     _hashlib.md5(_css_path.read_bytes()).hexdigest()[:8] if _css_path.exists() else "0"
 )
 templates.env.globals["static_ver"] = _STATIC_VER
+templates.env.globals["umami_script_url"] = UMAMI_SCRIPT_URL
+templates.env.globals["umami_website_id"] = UMAMI_WEBSITE_ID
 
 _MONTHS_DE = [
     "Januar",
@@ -214,13 +224,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "geolocation=(), camera=(), microphone=()"
         )
         if "text/html" in response.headers.get("content-type", ""):
+            _umami = f" {_UMAMI_CSP_ORIGIN}" if _UMAMI_CSP_ORIGIN else ""
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; "
-                "script-src 'self' cdn.jsdelivr.net; "
+                f"script-src 'self' cdn.jsdelivr.net{_umami}; "
                 "style-src 'self' fonts.googleapis.com 'unsafe-inline'; "
                 "font-src 'self' fonts.gstatic.com; "
                 "img-src 'self' data:; "
-                "connect-src 'self';"
+                f"connect-src 'self'{_umami};"
             )
         return response
 

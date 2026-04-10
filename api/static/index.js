@@ -4,6 +4,11 @@
  * (no 'unsafe-inline' in script-src).
  */
 
+/* ── Analytics ────────────────────────────────────────────────── */
+function track(name, data) {
+  if (typeof umami !== 'undefined') umami.track(name, data);
+}
+
 /* ── Filter state ─────────────────────────────────────────────── */
 const filters = { open: false, types: new Set(), city: '' };
 
@@ -42,6 +47,7 @@ function buildFilterBar() {
       const active = filters.types.has(t);
       active ? filters.types.delete(t) : filters.types.add(t);
       btn.setAttribute('aria-pressed', active ? 'false' : 'true');
+      track('filter-type-toggle', { type: t, action: active ? 'off' : 'on' });
       applyFilters();
     });
     typeGroup.appendChild(btn);
@@ -62,6 +68,7 @@ function buildFilterBar() {
   });
   sel.addEventListener('change', () => {
     filters.city = sel.value;
+    if (sel.value) track('filter-city-change', { city: sel.value });
     applyFilters();
   });
 }
@@ -163,6 +170,7 @@ function resetFilters() {
 document.getElementById('btn-open').addEventListener('click', () => {
   filters.open = !filters.open;
   document.getElementById('btn-open').setAttribute('aria-pressed', filters.open ? 'true' : 'false');
+  track('filter-open-toggle', { active: filters.open });
   applyFilters();
 });
 document.getElementById('filter-reset').addEventListener('click', resetFilters);
@@ -179,8 +187,10 @@ function isFavorite(uid) { return getFavorites().includes(uid); }
 
 function toggleFavorite(uid) {
   let favs = getFavorites();
-  favs = favs.includes(uid) ? favs.filter(f => f !== uid) : [...favs, uid];
+  const adding = !favs.includes(uid);
+  favs = adding ? [...favs, uid] : favs.filter(f => f !== uid);
   setFavorites(favs);
+  track('favorite-toggle', { pool_uid: uid, action: adding ? 'add' : 'remove', total_favorites: favs.length });
   renderSections();
 }
 
@@ -219,6 +229,12 @@ function renderSections() {
 document.querySelectorAll('.pool-card .star-btn').forEach(btn => {
   btn.addEventListener('click', e => {
     e.preventDefault(); e.stopPropagation(); toggleFavorite(btn.dataset.uid);
+  });
+});
+
+document.querySelectorAll('.pool-card').forEach(card => {
+  card.addEventListener('click', () => {
+    track('pool-card-click', { pool_uid: card.dataset.uid, pool_type: card.dataset.type, city: card.dataset.city });
   });
 });
 
