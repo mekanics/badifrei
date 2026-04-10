@@ -1,16 +1,24 @@
 {% extends "base.html" %}
-{% set city_map = {"zurich": "Zürich", "luzern": "Luzern", "zug": "Zug", "wengen": "Wengen", "bern": "Bern", "adliswil": "Adliswil", "rotkreuz": "Rotkreuz", "entfelden": "Entfelden", "hunenberg": "Hünenberg"} %}
+{% set city_map = {"zurich": "Zürich", "luzern": "Luzern", "zug": "Zug", "wengen": "Wengen", "bern": "Bern", "adliswil":
+"Adliswil", "rotkreuz": "Rotkreuz", "entfelden": "Entfelden", "hunenberg": "Hünenberg"} %}
 {% set city_label = city_map.get(pool.city, pool.city | title) %}
-{% block title %}{{ pool.name }}{% if city_label and city_label not in pool.name %} {{ city_label }}{% endif %} – Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
-{% block og_title %}{{ pool.name }}{% if city_label and city_label not in pool.name %} {{ city_label }}{% endif %} – Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
-{% block twitter_title %}{{ pool.name }}{% if city_label and city_label not in pool.name %} {{ city_label }}{% endif %} – Auslastung live | badifrei.ch{% endblock %}
-{% block description %}{{ pool.name }}{% if city_label and city_label not in pool.name %} {{ city_label }}{% endif %} – Auslastung live. Wann ist es am wenigsten voll? Prognose, Öffnungszeiten & Kapazität auf badifrei.ch.{% endblock %}
+{% block title %}{{ pool.name }}{% if city_label and city_label not in pool.name %} {{ city_label }}{% endif %} –
+Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
+{% block og_title %}{{ pool.name }}{% if city_label and city_label not in pool.name %} {{ city_label }}{% endif %} –
+Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
+{% block twitter_title %}{{ pool.name }}{% if city_label and city_label not in pool.name %} {{ city_label }}{% endif %}
+– Auslastung live | badifrei.ch{% endblock %}
+{% block description %}{{ pool.name }}{% if city_label and city_label not in pool.name %} {{ city_label }}{% endif %} –
+Auslastung live. Wann ist es am wenigsten voll? Prognose, Öffnungszeiten & Kapazität auf badifrei.ch.{% endblock %}
 {% block og_url_path %}/bad/{{ pool.uid }}{% endblock %}
-{% block og_description %}{{ pool.name }}{% if city_label and city_label not in pool.name %} {{ city_label }}{% endif %} – Auslastung live mit Prognose auf badifrei.ch. Finde den besten Zeitpunkt für deinen Besuch.{% endblock %}
-{% block twitter_description %}{{ pool.name }}{% if city_label and city_label not in pool.name %} {{ city_label }}{% endif %} – Auslastung live mit Prognose. Wann ist es am ruhigsten?{% endblock %}
+{% block og_description %}{{ pool.name }}{% if city_label and city_label not in pool.name %} {{ city_label }}{% endif %}
+– Auslastung live mit Prognose auf badifrei.ch. Finde den besten Zeitpunkt für deinen Besuch.{% endblock %}
+{% block twitter_description %}{{ pool.name }}{% if city_label and city_label not in pool.name %} {{ city_label }}{%
+endif %} – Auslastung live mit Prognose. Wann ist es am ruhigsten?{% endblock %}
 {% block canonical_path %}/bad/{{ pool.uid }}{% endblock %}
 {% block structured_data %}
-{% set day_schema = {"Mon": "Monday", "Tue": "Tuesday", "Wed": "Wednesday", "Thu": "Thursday", "Fri": "Friday", "Sat": "Saturday", "Sun": "Sunday"} %}
+{% set day_schema = {"Mon": "Monday", "Tue": "Tuesday", "Wed": "Wednesday", "Thu": "Thursday", "Fri": "Friday", "Sat":
+"Saturday", "Sun": "Sunday"} %}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -94,12 +102,14 @@
 </script>
 {% endblock %}
 {% block content %}
-<a href="/" class="back-link">← Alle Bäder</a>
+<a href="/" class="back-link" data-umami-event="back-to-overview" data-umami-event-from-pool="{{ pool.uid }}">← Alle
+  Bäder</a>
 <div class="pool-layout">
   <div class="pool-detail-header">
     <h1>{{ pool.name }}</h1>
     <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>
-    <span class="detail-live-count" id="detail-live-count" data-uid="{{ pool.uid }}" data-capacity="{{ pool.max_capacity }}" style="margin-left:auto"></span>
+    <span class="detail-live-count" id="detail-live-count" data-uid="{{ pool.uid }}"
+      data-capacity="{{ pool.max_capacity }}" style="margin-left:auto"></span>
   </div>
 
   <div class="pool-info-grid">
@@ -135,8 +145,8 @@
     <div class="pool-description-block">
       <p class="pool-description-text">{{ pool.description }}</p>
       {% if pool.official_url %}
-      <p class="pool-official-link"><a href="{{ pool.official_url }}" target="_blank"
-          rel="noopener noreferrer">Offizielle
+      <p class="pool-official-link"><a href="{{ pool.official_url }}" target="_blank" rel="noopener noreferrer"
+          data-umami-event="official-site-click" data-umami-event-pool-uid="{{ pool.uid }}">Offizielle
           Seite →</a></p>
       {% endif %}
     </div>
@@ -177,7 +187,8 @@
   <h2 class="related-pools-title">Weitere Bäder in {{ city_label }}</h2>
   <ul class="related-pools-list">
     {% for rp in related_pools %}
-    <li><a href="/bad/{{ rp.uid }}" class="related-pool-link">{{ rp.name }}</a></li>
+    <li><a href="/bad/{{ rp.uid }}" class="related-pool-link" data-umami-event="related-pool-click"
+        data-umami-event-from-pool="{{ pool.uid }}" data-umami-event-to-pool="{{ rp.uid }}">{{ rp.name }}</a></li>
     {% endfor %}
   </ul>
 </div>
@@ -276,9 +287,24 @@
     box-shadow: 3px 3px 0 var(--border);
     white-space: nowrap;
   }
-  .detail-live-count.count-green  { border-color: var(--green); color: var(--green); box-shadow: 3px 3px 0 var(--green); }
-  .detail-live-count.count-yellow { border-color: var(--yellow); color: var(--yellow); box-shadow: 3px 3px 0 var(--yellow); }
-  .detail-live-count.count-red    { border-color: var(--red); color: var(--red); box-shadow: 3px 3px 0 var(--red); }
+
+  .detail-live-count.count-green {
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 3px 3px 0 var(--green);
+  }
+
+  .detail-live-count.count-yellow {
+    border-color: var(--yellow);
+    color: var(--yellow);
+    box-shadow: 3px 3px 0 var(--yellow);
+  }
+
+  .detail-live-count.count-red {
+    border-color: var(--red);
+    color: var(--red);
+    box-shadow: 3px 3px 0 var(--red);
+  }
 
   .related-pools-block {
     margin-top: 2.5rem;
@@ -327,13 +353,9 @@
 </style>
 
 {# Server-side data for pool.js — passed via data-* attributes to avoid unsafe-inline scripts #}
-<div id="ssr-data"
-     data-pool-uid="{{ pool.uid }}"
-     data-today-date="{{ today_date }}"
-     data-ssr-predictions="{{ today_predictions_json }}"
-     hidden></div>
+<div id="ssr-data" data-pool-uid="{{ pool.uid }}" data-today-date="{{ today_date }}"
+  data-ssr-predictions="{{ today_predictions_json }}" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"
-  integrity="sha384-b0GXujLkk9eYYSmcSfoyZbfyElGAQnDyY0skCHSG6w3JgTMFnz11ggrTAr7seu9f"
-  crossorigin="anonymous"></script>
+  integrity="sha384-b0GXujLkk9eYYSmcSfoyZbfyElGAQnDyY0skCHSG6w3JgTMFnz11ggrTAr7seu9f" crossorigin="anonymous"></script>
 <script src="/static/pool.js?v={{ static_ver }}"></script>
 {% endblock %}

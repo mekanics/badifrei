@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Zürcher Schwimmbäder – Auslastung live & Prognose | badifrei.ch{% endblock %}
 {% block og_title %}Zürcher Schwimmbäder – Auslastung live & Prognose | badifrei.ch{% endblock %}
-{% block og_description %}Echtzeit-Auslastung und KI-Prognosen für alle Zürcher Schwimmbäder. Schau vor dem Besuch nach — jede Minute aktualisiert.{% endblock %}
+{% block og_description %}Echtzeit-Auslastung und KI-Prognosen für alle Zürcher Schwimmbäder. Schau vor dem Besuch nach
+— jede Minute aktualisiert.{% endblock %}
 {% block twitter_title %}Zürcher Schwimmbäder – Auslastung live & Prognose{% endblock %}
 {% block content %}
 <h1 class="page-title">Zürcher Schwimmbäder – Auslastung live & Prognose</h1>
@@ -21,11 +22,14 @@
     <div class="filter-sep" aria-hidden="true"></div>
     <div class="filter-group" id="city-filter-group" aria-label="Nach Stadt filtern">
       <span class="filter-label">Stadt</span>
-      <select class="filter-select" id="city-select"><option value="">Alle</option></select>
+      <select class="filter-select" id="city-select">
+        <option value="">Alle</option>
+      </select>
     </div>
     <div class="filter-meta">
       <span class="filter-count" id="filter-count"></span>
-      <button class="filter-reset" id="filter-reset" style="display:none">× Zurücksetzen</button>
+      <button class="filter-reset" id="filter-reset" style="display:none" data-umami-event="filter-reset">×
+        Zurücksetzen</button>
     </div>
   </div>
 </div>
@@ -42,7 +46,8 @@
   <h2 class="section-title">Schwimmbäder {{ city.label }}</h2>
   <div class="pool-grid" id="pool-grid-{{ city.key }}">
     {% for pool in city.pools %}
-    <a href="/bad/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}" data-capacity="{{ pool.max_capacity }}" data-type="{{ pool.type }}" data-city="{{ pool.city | default('zurich') }}">
+    <a href="/bad/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}" data-capacity="{{ pool.max_capacity }}"
+      data-type="{{ pool.type }}" data-city="{{ pool.city | default('zurich') }}">
       <button class="star-btn" data-uid="{{ pool.uid }}" aria-label="Zu Favoriten hinzufügen">⭐</button>
       <div class="pool-header">
         <span class="pool-name">{{ pool.name }}</span>
