@@ -60,9 +60,17 @@ def get_pool_uid_encoding(
 
 
 def add_time_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Add time-based features from the 'time' column."""
+    """Add time-based features from the 'time' column.
+
+    Timezone-aware timestamps are converted to Europe/Zurich before
+    extracting temporal features.  Opening hours, holidays, and user
+    behaviour patterns are all local-time phenomena, so features must
+    be expressed in local time to align with pool_metadata schedules.
+    """
     df = df.copy()
     dt = pd.to_datetime(df["time"])
+    if dt.dt.tz is not None:
+        dt = dt.dt.tz_convert("Europe/Zurich")
     df["date"] = dt.dt.date  # calendar date (for weather merge)
     df["hour_of_day"] = dt.dt.hour
     df["day_of_week"] = dt.dt.dayofweek  # 0=Monday, 6=Sunday
@@ -75,17 +83,22 @@ def add_time_features(df: pd.DataFrame) -> pd.DataFrame:
 def add_holiday_feature(
     df: pd.DataFrame, country: str = "CH", subdiv: str = "ZH"
 ) -> pd.DataFrame:
-    """Add Swiss/Zurich public holiday flag (vectorized)."""
+    """Add Swiss/Zurich public holiday flag.
+
+    Prefers the ``date`` column (Zurich-local calendar date) that
+    ``add_time_features`` already computed.  Falls back to deriving
+    the date from ``time`` when called standalone.
+    """
     df = df.copy()
     ch_holidays = _get_holidays(country=country, subdiv=subdiv)
-    # Normalize to date and use `in` operator directly — this triggers the holidays library's
-    # lazy year-generation, ensuring dates like 2026-01-01 are correctly resolved.
-    date_only = pd.to_datetime(df["time"])
-    if date_only.dt.tz is not None:
-        date_only = date_only.dt.tz_convert("UTC").dt.tz_localize(None)
-    df["is_holiday"] = date_only.dt.normalize().apply(
-        lambda d: 1 if d.date() in ch_holidays else 0
-    )
+    if "date" in df.columns:
+        dates = df["date"]
+    else:
+        dt = pd.to_datetime(df["time"])
+        if dt.dt.tz is not None:
+            dt = dt.dt.tz_convert("Europe/Zurich")
+        dates = dt.dt.date
+    df["is_holiday"] = dates.apply(lambda d: 1 if d in ch_holidays else 0)
     return df
 
 

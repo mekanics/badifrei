@@ -450,26 +450,25 @@ class Predictor:
         df_feat = df_feat.reset_index(drop=True)
 
         # Recursive forecasting: for hours where we have real lag_1h data (past/present),
-        # use it directly. For future hours where lag_1h is None, feed the previous
-        # prediction back in — this prevents the flat-line issue caused by a constant
-        # lag_1h value across all future hours.
+        # use it directly. For future hours where lag_1h is None, blend the previous
+        # prediction with the rolling mean to prevent runaway feedback amplification
+        # (e.g., three consecutive hours clamped at 100%).
         preds: list[float] = []
         last_pred: float | None = None
+        anchor = rolling_mean_7d if rolling_mean_7d is not None else 0.0
 
         for i in range(len(hours)):
             row = df_feat.iloc[[i]].copy()
 
-            # lag_1h: use real DB value if available, otherwise last prediction
+            # lag_1h: use real DB value if available, otherwise dampened recursion
             real_lag_1h = lag_1h_list[i]
             if real_lag_1h is not None:
                 row["lag_1h"] = float(real_lag_1h)
-                last_pred = float(
-                    real_lag_1h
-                )  # anchor future recursion to last known real value
+                last_pred = float(real_lag_1h)
             elif last_pred is not None:
-                row["lag_1h"] = last_pred
+                row["lag_1h"] = 0.7 * last_pred + 0.3 * anchor
             else:
-                row["lag_1h"] = 0.0
+                row["lag_1h"] = anchor
 
             # lag_1w: real DB value or 0 (week-ago data; not recursive)
             real_lag_1w = lag_1w_list[i]

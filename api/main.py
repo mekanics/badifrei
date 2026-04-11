@@ -10,6 +10,9 @@ from urllib.parse import urlparse
 logger = logging.getLogger(__name__)
 from datetime import datetime, timedelta, timezone  # noqa: E402
 from pathlib import Path  # noqa: E402
+from zoneinfo import ZoneInfo  # noqa: E402
+
+ZURICH_TZ = ZoneInfo("Europe/Zurich")
 
 # ---------------------------------------------------------------------------
 # Weekly insights cache configuration
@@ -92,10 +95,9 @@ async def _refresh_weekly_insights(pool_uid: str, db_pool) -> None:
     app_state = app.state  # reference to running app state
 
     try:
-        import zoneinfo  # noqa: E402
         from datetime import date as date_type  # noqa: E402
 
-        today = datetime.now(tz=zoneinfo.ZoneInfo("Europe/Zurich")).date()
+        today = datetime.now(tz=ZURICH_TZ).date()
         mon = today - timedelta(days=today.weekday())
         flat_hours = [
             datetime(
@@ -105,7 +107,7 @@ async def _refresh_weekly_insights(pool_uid: str, db_pool) -> None:
                 h,
                 0,
                 0,
-                tzinfo=timezone.utc,
+                tzinfo=ZURICH_TZ,
             )
             for d in range(7)
             for h in range(24)
@@ -314,12 +316,10 @@ async def pool_detail(request: Request, pool_uid: str):
         raise HTTPException(status_code=404, detail=f"Pool '{pool_uid}' not found")
 
     # SSR today's predictions so the chart renders on first paint (SEO-001)
-    import zoneinfo  # noqa: E402
-
-    now_zurich = datetime.now(tz=zoneinfo.ZoneInfo("Europe/Zurich"))
+    now_zurich = datetime.now(tz=ZURICH_TZ)
     today = now_zurich.date()
     hours = [
-        datetime(today.year, today.month, today.day, h, 0, 0, tzinfo=timezone.utc)
+        datetime(today.year, today.month, today.day, h, 0, 0, tzinfo=ZURICH_TZ)
         for h in range(24)
     ]
     db_pool = getattr(request.app.state, "db_pool", None)
@@ -626,10 +626,7 @@ def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
 @app.get("/api/current", tags=["dashboard"])
 async def current_occupancy(request: Request):
     """Return latest occupancy reading per pool. Returns [] if DB unavailable."""
-    import zoneinfo  # noqa: E402
-
-    tz_zurich = zoneinfo.ZoneInfo("Europe/Zurich")
-    now_zurich = datetime.now(tz_zurich)
+    now_zurich = datetime.now(ZURICH_TZ)
 
     pools_by_uid = {p["uid"]: p for p in get_pools()}
 
@@ -811,7 +808,7 @@ async def predict_range(request: Request, pool_uid: str, date: str):
         raise HTTPException(status_code=422, detail=f"Invalid date: '{date}'")
 
     hours = [
-        datetime(d.year, d.month, d.day, hour, 0, 0, tzinfo=timezone.utc)
+        datetime(d.year, d.month, d.day, hour, 0, 0, tzinfo=ZURICH_TZ)
         for hour in range(24)
     ]
 

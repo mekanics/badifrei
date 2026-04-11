@@ -430,10 +430,12 @@ class TestOpeningHoursFeatures:
         self, hour: int, day_of_week: int, pool_uid: str = "TEST-1"
     ) -> pd.DataFrame:
         """Make a single-row DataFrame with hour_of_day and day_of_week set."""
-        # 2026-02-02 is a Monday (day_of_week=0)
+        # 2026-02-02 is a Monday (day_of_week=0).
+        # Use Europe/Zurich so hour_of_day matches the hour parameter after
+        # add_time_features converts to local time.
         from datetime import timedelta
 
-        base = pd.Timestamp("2026-02-02 00:00:00", tz="UTC")
+        base = pd.Timestamp("2026-02-02 00:00:00", tz="Europe/Zurich")
         t = base + pd.Timedelta(days=day_of_week, hours=hour)
         df = pd.DataFrame({"time": [t], "pool_uid": pool_uid, "occupancy_pct": [50.0]})
         from ml.features import add_time_features
@@ -505,3 +507,133 @@ class TestOpeningHoursFeatures:
         result = build_features(df)
         for col in OPENING_HOURS_FEATURE_COLUMNS:
             assert col in result.columns, f"Missing column: {col}"
+
+
+class TestTimezoneConversion:
+    """Verify that UTC timestamps are converted to Europe/Zurich for features."""
+
+    def test_utc_to_zurich_winter(self):
+        """In CET (winter), UTC+1: 05:00 UTC → 06:00 Zurich."""
+        from ml.features import add_time_features
+
+        df = pd.DataFrame(
+            {
+                "time": [pd.Timestamp("2026-02-02 05:00:00", tz="UTC")],
+                "pool_uid": "SSD-5",
+                "occupancy_pct": [50.0],
+            }
+        )
+        result = add_time_features(df)
+        assert result.iloc[0]["hour_of_day"] == 6
+
+    def test_utc_to_zurich_summer(self):
+        """In CEST (summer), UTC+2: 04:00 UTC → 06:00 Zurich."""
+        from ml.features import add_time_features
+
+        df = pd.DataFrame(
+            {
+                "time": [pd.Timestamp("2026-07-15 04:00:00", tz="UTC")],
+                "pool_uid": "SSD-5",
+                "occupancy_pct": [50.0],
+            }
+        )
+        result = add_time_features(df)
+        assert result.iloc[0]["hour_of_day"] == 6
+
+    def test_utc_midnight_crosses_to_next_zurich_day(self):
+        """22:00 UTC in summer = 00:00 next day in Zurich."""
+        from ml.features import add_time_features
+
+        df = pd.DataFrame(
+            {
+                "time": [pd.Timestamp("2026-07-15 22:00:00", tz="UTC")],
+                "pool_uid": "SSD-5",
+                "occupancy_pct": [50.0],
+            }
+        )
+        result = add_time_features(df)
+        assert result.iloc[0]["hour_of_day"] == 0
+        assert result.iloc[0]["day_of_week"] == 3  # Wednesday→Thursday
+
+    def test_naive_timestamps_unchanged(self):
+        """Naive timestamps (no tz) keep their raw hour — no conversion."""
+        from ml.features import add_time_features
+
+        df = pd.DataFrame(
+            {
+                "time": ["2026-02-02 07:00:00"],
+                "pool_uid": "SSD-5",
+                "occupancy_pct": [50.0],
+            }
+        )
+        result = add_time_features(df)
+        assert result.iloc[0]["hour_of_day"] == 7
+
+    def test_is_open_aligns_with_zurich_hours(self):
+        """Pool opening at 06:00 Zurich should be open at 04:00 UTC in summer."""
+        from ml.features import add_time_features, add_opening_hours_features
+
+        metadata = {
+            "TEST-1": {
+                "uid": "TEST-1",
+                "name": "Test Pool",
+                "type": "hallenbad",
+                "opening_hours": {
+                    "schedule": {
+                        "Mon": {"open": "06:00", "close": "22:00"},
+                        "Tue": {"open": "06:00", "close": "22:00"},
+                        "Wed": {"open": "06:00", "close": "22:00"},
+                        "Thu": {"open": "06:00", "close": "22:00"},
+                        "Fri": {"open": "06:00", "close": "22:00"},
+                        "Sat": {"open": "06:00", "close": "22:00"},
+                        "Sun": None,
+                    }
+                },
+            }
+        }
+        # 04:00 UTC on Wednesday 2026-07-15 = 06:00 CEST → pool just opened
+        df = pd.DataFrame(
+            {
+                "time": [pd.Timestamp("2026-07-15 04:00:00", tz="UTC")],
+                "pool_uid": "TEST-1",
+                "occupancy_pct": [30.0],
+            }
+        )
+        df = add_time_features(df)
+        result = add_opening_hours_features(df, metadata)
+        assert result.iloc[0]["is_open"] == 1
+        assert result.iloc[0]["minutes_since_open"] == 0
+
+    def test_is_open_closing_hour_zurich(self):
+        """Pool closing at 22:00 Zurich should be closed at 20:00 UTC in summer."""
+        from ml.features import add_time_features, add_opening_hours_features
+
+        metadata = {
+            "TEST-1": {
+                "uid": "TEST-1",
+                "name": "Test Pool",
+                "type": "hallenbad",
+                "opening_hours": {
+                    "schedule": {
+                        "Mon": {"open": "06:00", "close": "22:00"},
+                        "Tue": {"open": "06:00", "close": "22:00"},
+                        "Wed": {"open": "06:00", "close": "22:00"},
+                        "Thu": {"open": "06:00", "close": "22:00"},
+                        "Fri": {"open": "06:00", "close": "22:00"},
+                        "Sat": {"open": "06:00", "close": "22:00"},
+                        "Sun": None,
+                    }
+                },
+            }
+        }
+        # 20:00 UTC on Wednesday 2026-07-15 = 22:00 CEST → pool closing
+        df = pd.DataFrame(
+            {
+                "time": [pd.Timestamp("2026-07-15 20:00:00", tz="UTC")],
+                "pool_uid": "TEST-1",
+                "occupancy_pct": [5.0],
+            }
+        )
+        df = add_time_features(df)
+        result = add_opening_hours_features(df, metadata)
+        assert result.iloc[0]["is_open"] == 0
