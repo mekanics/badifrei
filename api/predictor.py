@@ -160,11 +160,13 @@ class Predictor:
                         """
                         SELECT occupancy_pct
                         FROM pool_occupancy
-                        WHERE pool_uid = %s AND time < %s
+                        WHERE pool_uid = %s
+                          AND time < %s
+                          AND time >= %s - INTERVAL '2 hours'
                         ORDER BY time DESC
                         LIMIT 1
                         """,
-                        (pool_uid, dt),
+                        (pool_uid, dt, dt),
                     )
                     row = cur.fetchone()
                     return float(row[0]) if row else None
@@ -223,14 +225,16 @@ class Predictor:
             conn = psycopg2.connect(database_url)
             try:
                 with conn.cursor() as cur:
-                    # lag_1h: most recent before dt
+                    # lag_1h: most recent before dt, within 2h window
                     cur.execute(
                         """
                         SELECT occupancy_pct FROM pool_occupancy
-                        WHERE pool_uid = %s AND time < %s
+                        WHERE pool_uid = %s
+                          AND time < %s
+                          AND time >= %s - INTERVAL '2 hours'
                         ORDER BY time DESC LIMIT 1
                         """,
-                        (pool_uid, dt),
+                        (pool_uid, dt, dt),
                     )
                     row = cur.fetchone()
                     lag_1h = float(row[0]) if row else None
@@ -278,7 +282,9 @@ class Predictor:
                 LEFT JOIN LATERAL (
                     SELECT occupancy_pct
                     FROM pool_occupancy
-                    WHERE pool_uid = $2 AND time < h.target_time
+                    WHERE pool_uid = $2
+                      AND time < h.target_time
+                      AND time >= h.target_time - INTERVAL '2 hours'
                     ORDER BY time DESC
                     LIMIT 1
                 ) o ON true
