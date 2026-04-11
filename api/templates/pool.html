@@ -353,7 +353,7 @@ endif %} – Auslastung live mit Prognose. Wann ist es am ruhigsten?{% endblock 
 </style>
 
 {# Server-side data for pool.js — passed via data-* attributes to avoid unsafe-inline scripts #}
-<div id="ssr-data" data-pool-uid="{{ pool.uid }}" data-today-date="{{ today_date }}"
+<div id="ssr-data" data-pool-uid="{{ pool.uid }}" data-city="{{ pool.city }}" data-today-date="{{ today_date }}"
   data-ssr-predictions="{{ today_predictions_json }}" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"
   integrity="sha384-b0GXujLkk9eYYSmcSfoyZbfyElGAQnDyY0skCHSG6w3JgTMFnz11ggrTAr7seu9f" crossorigin="anonymous"></script>

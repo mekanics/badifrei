@@ -41,8 +41,11 @@ setInterval(refreshLiveCount, 60000)
 
 const appData = document.getElementById('ssr-data')
 const POOL_UID = appData.dataset.poolUid
+const POOL_CITY = appData.dataset.city || ''
 const SSR_DATE = appData.dataset.todayDate
 const SSR_PREDICTIONS = JSON.parse(appData.dataset.ssrPredictions)
+
+track('pool-view', { pool_uid: POOL_UID, city: POOL_CITY })
 
 function todayZurich() {
 	return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Zurich' })
