@@ -1,4 +1,5 @@
 """Model evaluation and baseline comparison."""
+
 from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Optional
@@ -25,7 +26,7 @@ class EvaluationReport:
     beats_baseline: bool
     per_pool: list[PoolMetrics]
     worst_pool: str  # pool_uid with highest MAE
-    best_pool: str   # pool_uid with lowest MAE
+    best_pool: str  # pool_uid with lowest MAE
     n_test: int
 
 
@@ -80,7 +81,7 @@ def evaluate(
     from ml.features import build_features, FEATURE_COLUMNS
     from ml.train import prepare_xy
 
-    # Build features for test set
+    # Build features for test set (this may drop rows, e.g. excluded pools)
     df_test_feat = build_features(df_test)
     X_test, y_test = prepare_xy(df_test_feat)
 
@@ -91,13 +92,13 @@ def evaluate(
     model_mae = float(mean_absolute_error(y_arr, model_preds))
     model_rmse = float(mean_squared_error(y_arr, model_preds) ** 0.5)
 
-    # Baseline predictions
-    baseline_preds = naive_baseline_predict(df_train, df_test)
+    # Baseline predictions — use the filtered df so lengths match y_arr
+    baseline_preds = naive_baseline_predict(df_train, df_test_feat)
     baseline_mae = float(mean_absolute_error(y_arr, baseline_preds))
     baseline_rmse = float(mean_squared_error(y_arr, baseline_preds) ** 0.5)
 
     # Per-pool metrics
-    df_test_results = df_test.copy().reset_index(drop=True)
+    df_test_results = df_test_feat.copy().reset_index(drop=True)
     df_test_results["model_pred"] = model_preds
     df_test_results["y_true"] = y_arr
 
@@ -105,12 +106,14 @@ def evaluate(
     for uid, grp in df_test_results.groupby("pool_uid"):
         pool_mae = float(mean_absolute_error(grp["y_true"], grp["model_pred"]))
         pool_rmse = float(mean_squared_error(grp["y_true"], grp["model_pred"]) ** 0.5)
-        per_pool.append(PoolMetrics(
-            pool_uid=str(uid),
-            mae=pool_mae,
-            rmse=pool_rmse,
-            n=len(grp),
-        ))
+        per_pool.append(
+            PoolMetrics(
+                pool_uid=str(uid),
+                mae=pool_mae,
+                rmse=pool_rmse,
+                n=len(grp),
+            )
+        )
 
     worst_pool = max(per_pool, key=lambda p: p.mae).pool_uid
     best_pool = min(per_pool, key=lambda p: p.mae).pool_uid
