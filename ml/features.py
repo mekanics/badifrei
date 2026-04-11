@@ -1,4 +1,5 @@
 """Feature engineering for pool occupancy prediction."""
+
 import datetime
 import json
 import logging
@@ -16,7 +17,13 @@ METADATA_PATH = Path(__file__).parent / "pool_metadata.json"
 EXCLUDED_POOLS: set[str] = {"SSD-8"}  # SSD-8 = Josel-Areal (sports hall)
 
 # Pool type encoding (stable integer mapping)
-POOL_TYPE_ENCODING = {"hallenbad": 0, "freibad": 1, "strandbad": 2, "seebad": 3, "other": 4}
+POOL_TYPE_ENCODING = {
+    "hallenbad": 0,
+    "freibad": 1,
+    "strandbad": 2,
+    "seebad": 3,
+    "other": 4,
+}
 
 # Module-level holiday cache — avoids reconstructing on every call
 _HOLIDAYS_CACHE: dict[str, "holidays.HolidayBase"] = {}
@@ -65,7 +72,9 @@ def add_time_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def add_holiday_feature(df: pd.DataFrame, country: str = "CH", subdiv: str = "ZH") -> pd.DataFrame:
+def add_holiday_feature(
+    df: pd.DataFrame, country: str = "CH", subdiv: str = "ZH"
+) -> pd.DataFrame:
     """Add Swiss/Zurich public holiday flag (vectorized)."""
     df = df.copy()
     ch_holidays = _get_holidays(country=country, subdiv=subdiv)
@@ -90,10 +99,14 @@ def add_pool_features(
     if metadata is None:
         metadata = load_pool_metadata()
 
-    uid_encoding = get_pool_uid_encoding(df["pool_uid"].tolist(), encoding_map=encoding_map)
+    uid_encoding = get_pool_uid_encoding(
+        df["pool_uid"].tolist(), encoding_map=encoding_map
+    )
     df["pool_uid_encoded"] = df["pool_uid"].map(uid_encoding).fillna(-1).astype(int)
     df["pool_type"] = df["pool_uid"].map(
-        lambda uid: POOL_TYPE_ENCODING.get(metadata.get(uid, {}).get("type", "other"), 4)
+        lambda uid: POOL_TYPE_ENCODING.get(
+            metadata.get(uid, {}).get("type", "other"), 4
+        )
     )
     df["is_seasonal"] = df["pool_uid"].map(
         lambda uid: int(metadata.get(uid, {}).get("seasonal", False))
@@ -102,39 +115,44 @@ def add_pool_features(
 
 
 def add_lag_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Add lag features per pool. Requires sorted data."""
+    """Add lag features per pool using time-based shifts.
+
+    lag_1h: occupancy 1 hour ago (not 1 row — avoids mismatch when data
+            is bucketed at sub-hourly intervals like 10 min).
+    lag_1w: occupancy 7 days ago at the same time.
+    """
     df = df.copy()
     df = df.sort_values(["pool_uid", "time"])
-
-    # Lag 1h: previous reading for same pool
-    df["lag_1h"] = df.groupby("pool_uid")["occupancy_pct"].shift(1)
-
-    # Lag 1w: same time last week (approx 7*24=168 rows if hourly — use time-based approach)
     df["time_dt"] = pd.to_datetime(df["time"])
 
-    def lag_1w_for_group(group):
-        group = group.set_index("time_dt").sort_index()
-        shifted = group["occupancy_pct"].shift(freq="7D")
-        return shifted.reindex(group.index).values
+    def _time_shift(group: pd.DataFrame, freq: str):
+        g = group.set_index("time_dt").sort_index()
+        shifted = g["occupancy_pct"].shift(freq=freq)
+        return shifted.reindex(g.index).values
 
-    lag_1w_values = []
-    for uid, group in df.groupby("pool_uid"):
-        vals = lag_1w_for_group(group)
-        lag_1w_values.extend(zip(group.index, vals))
+    lag_1h_vals: list[tuple] = []
+    lag_1w_vals: list[tuple] = []
+    for _, group in df.groupby("pool_uid"):
+        idx = group.index
+        lag_1h_vals.extend(zip(idx, _time_shift(group, "1h")))
+        lag_1w_vals.extend(zip(idx, _time_shift(group, "7D")))
 
-    lag_1w_map = dict(lag_1w_values)
-    df["lag_1w"] = df.index.map(lag_1w_map)
+    df["lag_1h"] = df.index.map(dict(lag_1h_vals))
+    df["lag_1w"] = df.index.map(dict(lag_1w_vals))
     df = df.drop(columns=["time_dt"])
     return df
 
 
 def add_rolling_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Add 7-day rolling mean of occupancy per pool."""
+    """Add 7-day rolling mean of occupancy per pool (time-based window)."""
     df = df.copy()
     df = df.sort_values(["pool_uid", "time"])
+    df["_ts"] = pd.to_datetime(df["time"])
+    df = df.set_index("_ts")
     df["rolling_mean_7d"] = df.groupby("pool_uid")["occupancy_pct"].transform(
-        lambda x: x.rolling(window=7 * 24, min_periods=1).mean()
+        lambda x: x.rolling("7D", min_periods=1).mean()
     )
+    df = df.reset_index(drop=True)
     return df
 
 
@@ -177,9 +195,18 @@ def add_weather_features(
                 unknown_uids,
             )
 
-        w_cols = ["city", "date", "hour", "temperature_c", "precipitation_mm", "weathercode"]
+        w_cols = [
+            "city",
+            "date",
+            "hour",
+            "temperature_c",
+            "precipitation_mm",
+            "weathercode",
+        ]
         weather_cols = weather_df[[c for c in w_cols if c in weather_df.columns]].copy()
-        weather_cols = weather_cols.rename(columns={"hour": "hour_of_day", "city": "_city"})
+        weather_cols = weather_cols.rename(
+            columns={"hour": "hour_of_day", "city": "_city"}
+        )
 
         df = df.merge(weather_cols, on=["_city", "date", "hour_of_day"], how="left")
         df = df.drop(columns=["_city"], errors="ignore")
@@ -191,7 +218,11 @@ def add_weather_features(
         weather_cols = weather_df[w_cols].copy()
         weather_cols = weather_cols.rename(columns={"hour": "hour_of_day"})
 
-        merge_on = ["date", "hour_of_day"] if "date" in weather_cols.columns else ["hour_of_day"]
+        merge_on = (
+            ["date", "hour_of_day"]
+            if "date" in weather_cols.columns
+            else ["hour_of_day"]
+        )
         df = df.merge(weather_cols, on=merge_on, how="left")
 
     # Fill NaN weather with sensible defaults
@@ -402,7 +433,12 @@ def add_opening_hours_features(
             # No metadata → treat as always open, no seasonal restriction
             for dow_idx in range(7):
                 schedule_rows.append(
-                    {"pool_uid": uid, "day_of_week": dow_idx, "open_min": 0, "close_min": 1440}
+                    {
+                        "pool_uid": uid,
+                        "day_of_week": dow_idx,
+                        "open_min": 0,
+                        "close_min": 1440,
+                    }
                 )
             continue
 
@@ -424,7 +460,12 @@ def add_opening_hours_features(
             day_sched = schedule.get(day_name)
             if not day_sched:
                 schedule_rows.append(
-                    {"pool_uid": uid, "day_of_week": dow_idx, "open_min": -1, "close_min": -1}
+                    {
+                        "pool_uid": uid,
+                        "day_of_week": dow_idx,
+                        "open_min": -1,
+                        "close_min": -1,
+                    }
                 )
             else:
                 try:
@@ -440,7 +481,12 @@ def add_opening_hours_features(
                     )
                 except (KeyError, ValueError):
                     schedule_rows.append(
-                        {"pool_uid": uid, "day_of_week": dow_idx, "open_min": 0, "close_min": 1440}
+                        {
+                            "pool_uid": uid,
+                            "day_of_week": dow_idx,
+                            "open_min": 0,
+                            "close_min": 1440,
+                        }
                     )
 
     schedule_lut = pd.DataFrame(schedule_rows)
@@ -458,7 +504,9 @@ def add_opening_hours_features(
     dt_series = pd.to_datetime(df["time"])
     if dt_series.dt.tz is not None:
         dt_series = dt_series.dt.tz_convert("UTC")
-    row_ordinal = (dt_series.dt.normalize().astype("int64") // (86_400 * 10**9)) + EPOCH_ORDINAL
+    row_ordinal = (
+        dt_series.dt.normalize().astype("int64") // (86_400 * 10**9)
+    ) + EPOCH_ORDINAL
 
     if seasonal_dict:
         so_map = {uid: v[0] for uid, v in seasonal_dict.items()}
@@ -466,12 +514,9 @@ def add_opening_hours_features(
         so_series = df["pool_uid"].map(so_map)
         sc_series = df["pool_uid"].map(sc_map)
         has_window = so_series.notna()
-        in_season: pd.Series = (
-            ~has_window
-            | (
-                (row_ordinal >= so_series.fillna(0).astype("int64"))
-                & (row_ordinal <= sc_series.fillna(10**8).astype("int64"))
-            )
+        in_season: pd.Series = ~has_window | (
+            (row_ordinal >= so_series.fillna(0).astype("int64"))
+            & (row_ordinal <= sc_series.fillna(10**8).astype("int64"))
         )
     else:
         in_season = pd.Series(True, index=df.index)

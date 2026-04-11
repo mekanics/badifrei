@@ -1,4 +1,5 @@
 """Model loading and inference."""
+
 import asyncio
 import json
 import logging
@@ -24,7 +25,7 @@ def _to_utc_naive(dt: datetime | None) -> datetime | None:
     """Normalize any timezone-aware datetime to UTC-naive for dict key lookups."""
     if dt is None:
         return None
-    if hasattr(dt, 'utcoffset') and dt.utcoffset() is not None:
+    if hasattr(dt, "utcoffset") and dt.utcoffset() is not None:
         dt = dt.replace(tzinfo=None) - dt.utcoffset()  # convert to UTC naive
     return dt
 
@@ -37,12 +38,15 @@ class Predictor:
         self._encoding_map: dict[str, int] | None = None
         self._model_mtime: float | None = None
         self._reload_lock = asyncio.Lock()
-        self._model_feature_names: list[str] | None = None  # derived from model at load time
+        self._model_feature_names: list[str] | None = (
+            None  # derived from model at load time
+        )
 
     def load(self, path: Path | None = None) -> bool:
         """Load model (and encoding sidecar) from disk. Returns True if successful."""
         try:
             from ml.train import load_model
+
             model_path = path or (MODELS_DIR / "model_latest.ubj")
             if not model_path.exists():
                 logger.warning(f"No model found at {model_path}")
@@ -59,7 +63,9 @@ class Predictor:
                     self._encoding_map = json.load(f)
                 logger.info(f"Encoding map loaded: {len(self._encoding_map)} pools")
             else:
-                logger.warning(f"No encoding sidecar at {encoding_path}; predictions may be wrong")
+                logger.warning(
+                    f"No encoding sidecar at {encoding_path}; predictions may be wrong"
+                )
                 self._encoding_map = None
 
             # Eagerly load metadata so _get_metadata() never does I/O at inference time
@@ -72,7 +78,9 @@ class Predictor:
                 booster_feature_names = self.model.get_booster().feature_names
                 if booster_feature_names:
                     self._model_feature_names = list(booster_feature_names)
-                    logger.info(f"Model feature names ({len(self._model_feature_names)}): {self._model_feature_names}")
+                    logger.info(
+                        f"Model feature names ({len(self._model_feature_names)}): {self._model_feature_names}"
+                    )
                 else:
                     self._model_feature_names = None
             except Exception:
@@ -144,6 +152,7 @@ class Predictor:
             return None
         try:
             import psycopg2
+
             conn = psycopg2.connect(database_url)
             try:
                 with conn.cursor() as cur:
@@ -175,6 +184,7 @@ class Predictor:
             return None
         try:
             import psycopg2
+
             target = dt - timedelta(days=7)
             conn = psycopg2.connect(database_url)
             try:
@@ -199,13 +209,16 @@ class Predictor:
             logger.debug(f"Could not fetch week-ago occupancy: {e}")
             return None
 
-    def _fetch_lag_sync(self, pool_uid: str, dt: datetime) -> tuple[float | None, float | None]:
+    def _fetch_lag_sync(
+        self, pool_uid: str, dt: datetime
+    ) -> tuple[float | None, float | None]:
         """Fetch both lag features (recent + week-ago) in a single psycopg2 connection."""
         database_url = os.environ.get("DATABASE_URL")
         if not database_url:
             return None, None
         try:
             import psycopg2
+
             target_week = dt - timedelta(days=7)
             conn = psycopg2.connect(database_url)
             try:
@@ -296,8 +309,12 @@ class Predictor:
             )
 
             # Normalize asyncpg datetimes to UTC-naive for reliable key lookup
-            recent_map = {_to_utc_naive(r["target_time"]): r["occupancy_pct"] for r in recent_rows}
-            week_map = {_to_utc_naive(r["target_time"]): r["occupancy_pct"] for r in week_rows}
+            recent_map = {
+                _to_utc_naive(r["target_time"]): r["occupancy_pct"] for r in recent_rows
+            }
+            week_map = {
+                _to_utc_naive(r["target_time"]): r["occupancy_pct"] for r in week_rows
+            }
 
             hours_naive = [_to_utc_naive(h) for h in hours]
             week_ago_naive = [_to_utc_naive(wa) for wa in week_ago_times]
@@ -312,7 +329,12 @@ class Predictor:
             ]
             return lag_1h, lag_1w
 
-        except (asyncpg.PostgresError, asyncpg.InterfaceError, OSError, asyncio.TimeoutError) as e:
+        except (
+            asyncpg.PostgresError,
+            asyncpg.InterfaceError,
+            OSError,
+            asyncio.TimeoutError,
+        ) as e:
             logger.warning(f"Batch lag fetch failed: {e}", exc_info=True)
             return [None] * len(hours), [None] * len(hours)
 
@@ -322,10 +344,10 @@ class Predictor:
         pool_uid: str,
         before_dt: datetime | None,
     ) -> float | None:
-        """Fetch 7-day rolling mean occupancy (avg of last 168 readings) from DB.
+        """Fetch 7-day rolling mean occupancy from DB using a time window.
 
-        Returns the float value, or None when DB is unavailable or has no data.
-        This replaces the always-zero dummy value computed from the placeholder df.
+        Uses ``time >= before_dt - 7 days`` to match the time-based rolling
+        window used during training (``rolling("7D")``).
         """
         if db_pool is None or before_dt is None:
             return None
@@ -333,13 +355,10 @@ class Predictor:
             row = await db_pool.fetchrow(
                 """
                 SELECT AVG(occupancy_pct) AS rolling_mean
-                FROM (
-                    SELECT occupancy_pct
-                    FROM pool_occupancy
-                    WHERE pool_uid = $1 AND time < $2
-                    ORDER BY time DESC
-                    LIMIT 168
-                ) recent
+                FROM pool_occupancy
+                WHERE pool_uid = $1
+                  AND time >= $2 - INTERVAL '7 days'
+                  AND time < $2
                 """,
                 pool_uid,
                 before_dt,
@@ -366,6 +385,7 @@ class Predictor:
             return None
         try:
             from ml.weather import fetch_weather_batch
+
             df = await fetch_weather_batch(dates, city=city)
             if df.empty:
                 return None
@@ -373,7 +393,9 @@ class Predictor:
             df["city"] = city
             return df
         except Exception as e:
-            logger.warning(f"Weather batch fetch failed for city={city} dates={dates}: {e}")
+            logger.warning(
+                f"Weather batch fetch failed for city={city} dates={dates}: {e}"
+            )
             return None
 
     async def predict_range_batch(
@@ -406,10 +428,9 @@ class Predictor:
         )
 
         # Build 24-row DataFrame for vectorised feature engineering
-        df = pd.DataFrame([
-            {"time": dt, "pool_uid": pool_uid, "occupancy_pct": 0.0}
-            for dt in hours
-        ])
+        df = pd.DataFrame(
+            [{"time": dt, "pool_uid": pool_uid, "occupancy_pct": 0.0} for dt in hours]
+        )
         df_feat = build_features(
             df,
             metadata=self._get_metadata(),
@@ -442,7 +463,9 @@ class Predictor:
             real_lag_1h = lag_1h_list[i]
             if real_lag_1h is not None:
                 row["lag_1h"] = float(real_lag_1h)
-                last_pred = float(real_lag_1h)  # anchor future recursion to last known real value
+                last_pred = float(
+                    real_lag_1h
+                )  # anchor future recursion to last known real value
             elif last_pred is not None:
                 row["lag_1h"] = last_pred
             else:
@@ -478,11 +501,15 @@ class Predictor:
         lag_1h, lag_1w = self._fetch_lag_sync(pool_uid, dt)
 
         # Build a single-row DataFrame for inference
-        df = pd.DataFrame([{
-            "time": dt,
-            "pool_uid": pool_uid,
-            "occupancy_pct": 0.0,  # placeholder target
-        }])
+        df = pd.DataFrame(
+            [
+                {
+                    "time": dt,
+                    "pool_uid": pool_uid,
+                    "occupancy_pct": 0.0,  # placeholder target
+                }
+            ]
+        )
         df_feat = build_features(
             df,
             metadata=self._get_metadata(),

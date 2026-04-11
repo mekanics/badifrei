@@ -1,4 +1,5 @@
 """Unit tests for model training module."""
+
 import json
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
@@ -18,27 +19,31 @@ def make_training_df(n_pools=3, hours_per_pool=200):
         for h in range(hours_per_pool):
             t = base + timedelta(hours=h)
             fill = int(30 + 20 * np.sin(h * 2 * np.pi / 24))  # Daily cycle
-            records.append({
-                "time": t,
-                "pool_uid": uid,
-                "pool_name": f"Pool {uid}",
-                "current_fill": fill,
-                "max_space": 100,
-                "free_space": 100 - fill,
-                "occupancy_pct": float(fill),
-            })
+            records.append(
+                {
+                    "time": t,
+                    "pool_uid": uid,
+                    "pool_name": f"Pool {uid}",
+                    "current_fill": fill,
+                    "max_space": 100,
+                    "free_space": 100 - fill,
+                    "occupancy_pct": float(fill),
+                }
+            )
     return pd.DataFrame(records)
 
 
 class TestTimeSplit:
     def test_split_maintains_order(self):
         from ml.train import time_based_split
+
         df = make_training_df(n_pools=1, hours_per_pool=100)
         train, test = time_based_split(df, test_fraction=0.2)
         assert train["time"].max() <= test["time"].min()
 
     def test_split_ratio(self):
         from ml.train import time_based_split
+
         df = make_training_df(n_pools=1, hours_per_pool=100)
         train, test = time_based_split(df, test_fraction=0.2)
         assert len(train) == 80
@@ -46,12 +51,14 @@ class TestTimeSplit:
 
     def test_no_overlap(self):
         from ml.train import time_based_split
+
         df = make_training_df(n_pools=1, hours_per_pool=100)
         train, test = time_based_split(df, test_fraction=0.2)
         assert len(train) + len(test) == len(df)
 
     def test_default_fraction(self):
         from ml.train import time_based_split
+
         df = make_training_df(n_pools=1, hours_per_pool=100)
         train, test = time_based_split(df)
         assert len(train) == 80
@@ -59,6 +66,7 @@ class TestTimeSplit:
 
     def test_custom_fraction(self):
         from ml.train import time_based_split
+
         df = make_training_df(n_pools=1, hours_per_pool=100)
         train, test = time_based_split(df, test_fraction=0.1)
         assert len(train) == 90
@@ -69,6 +77,7 @@ class TestPrepareXY:
     def test_returns_correct_feature_count(self):
         from ml.train import prepare_xy
         from ml.features import build_features, FEATURE_COLUMNS
+
         df = make_training_df(n_pools=2, hours_per_pool=50)
         df_feat = build_features(df)
         X, y = prepare_xy(df_feat)
@@ -77,6 +86,7 @@ class TestPrepareXY:
     def test_no_nan_in_X(self):
         from ml.train import prepare_xy
         from ml.features import build_features
+
         df = make_training_df(n_pools=2, hours_per_pool=50)
         df_feat = build_features(df)
         X, y = prepare_xy(df_feat)
@@ -85,6 +95,7 @@ class TestPrepareXY:
     def test_target_in_range(self):
         from ml.train import prepare_xy
         from ml.features import build_features
+
         df = make_training_df(n_pools=2, hours_per_pool=50)
         df_feat = build_features(df)
         _, y = prepare_xy(df_feat)
@@ -93,6 +104,7 @@ class TestPrepareXY:
     def test_returns_dataframe_and_series(self):
         from ml.train import prepare_xy
         from ml.features import build_features
+
         df = make_training_df(n_pools=2, hours_per_pool=50)
         df_feat = build_features(df)
         X, y = prepare_xy(df_feat)
@@ -102,15 +114,40 @@ class TestPrepareXY:
     def test_x_and_y_same_length(self):
         from ml.train import prepare_xy
         from ml.features import build_features
+
         df = make_training_df(n_pools=2, hours_per_pool=50)
         df_feat = build_features(df)
         X, y = prepare_xy(df_feat)
         assert len(X) == len(y)
 
 
+class TestPrepareXYMedians:
+    def test_explicit_medians_used_for_fillna(self):
+        from ml.train import prepare_xy
+        from ml.features import build_features, FEATURE_COLUMNS
+
+        df = make_training_df(n_pools=2, hours_per_pool=50)
+        df_feat = build_features(df)
+        # Compute train medians, then verify they're used on a separate df
+        X_train, _ = prepare_xy(df_feat)
+        train_medians = X_train.median()
+        X_with_medians, _ = prepare_xy(df_feat, medians=train_medians)
+        assert not X_with_medians.isna().any().any()
+
+    def test_medians_none_falls_back_to_self_median(self):
+        from ml.train import prepare_xy
+        from ml.features import build_features
+
+        df = make_training_df(n_pools=2, hours_per_pool=50)
+        df_feat = build_features(df)
+        X, _ = prepare_xy(df_feat, medians=None)
+        assert not X.isna().any().any()
+
+
 class TestTrain:
     def test_train_returns_model_and_metrics(self):
         from ml.train import train
+
         df = make_training_df(n_pools=3, hours_per_pool=200)
         model, metrics = train(df, test_fraction=0.2)
         assert model is not None
@@ -120,6 +157,7 @@ class TestTrain:
     def test_predictions_in_range(self):
         from ml.train import train, prepare_xy
         from ml.features import build_features
+
         df = make_training_df(n_pools=3, hours_per_pool=200)
         model, _ = train(df, test_fraction=0.2)
         df_feat = build_features(df)
@@ -130,6 +168,7 @@ class TestTrain:
 
     def test_metrics_has_per_pool(self):
         from ml.train import train
+
         df = make_training_df(n_pools=3, hours_per_pool=200)
         _, metrics = train(df)
         assert "per_pool" in metrics
@@ -138,6 +177,7 @@ class TestTrain:
     def test_metrics_has_feature_importance(self):
         from ml.train import train
         from ml.features import FEATURE_COLUMNS
+
         df = make_training_df(n_pools=3, hours_per_pool=200)
         _, metrics = train(df)
         assert "feature_importance" in metrics
@@ -145,6 +185,7 @@ class TestTrain:
 
     def test_metrics_has_counts(self):
         from ml.train import train
+
         df = make_training_df(n_pools=3, hours_per_pool=200)
         _, metrics = train(df)
         assert "n_train" in metrics
@@ -154,6 +195,7 @@ class TestTrain:
 
     def test_metrics_has_trained_at(self):
         from ml.train import train
+
         df = make_training_df(n_pools=3, hours_per_pool=200)
         _, metrics = train(df)
         assert "trained_at" in metrics
@@ -163,6 +205,7 @@ class TestTrain:
 
     def test_per_pool_has_expected_keys(self):
         from ml.train import train
+
         df = make_training_df(n_pools=3, hours_per_pool=200)
         _, metrics = train(df)
         for uid, pool_metrics in metrics["per_pool"].items():
@@ -170,11 +213,32 @@ class TestTrain:
             assert "rmse" in pool_metrics
             assert "n" in pool_metrics
 
+    def test_metrics_has_train_medians(self):
+        from ml.train import train
+        from ml.features import FEATURE_COLUMNS
+
+        df = make_training_df(n_pools=3, hours_per_pool=200)
+        _, metrics = train(df)
+        assert "train_medians" in metrics
+        assert isinstance(metrics["train_medians"], dict)
+        for col in FEATURE_COLUMNS:
+            assert col in metrics["train_medians"]
+
+    def test_metrics_has_n_estimators_best(self):
+        from ml.train import train
+
+        df = make_training_df(n_pools=3, hours_per_pool=200)
+        _, metrics = train(df)
+        assert "n_estimators_best" in metrics
+        assert isinstance(metrics["n_estimators_best"], int)
+        assert metrics["n_estimators_best"] > 0
+
 
 class TestSaveLoadModel:
     def test_save_creates_model_file(self, tmp_path):
         from ml.train import train, save_model
         import ml.train as mt
+
         df = make_training_df(n_pools=2, hours_per_pool=100)
         model, metrics = train(df)
 
@@ -186,6 +250,7 @@ class TestSaveLoadModel:
     def test_save_creates_training_report(self, tmp_path):
         from ml.train import train, save_model
         import ml.train as mt
+
         df = make_training_df(n_pools=2, hours_per_pool=100)
         model, metrics = train(df)
 
@@ -202,6 +267,7 @@ class TestSaveLoadModel:
         from ml.features import build_features
         from ml.train import prepare_xy
         import ml.train as mt
+
         df = make_training_df(n_pools=2, hours_per_pool=100)
         model, metrics = train(df)
 
@@ -219,6 +285,7 @@ class TestSaveLoadModel:
     def test_save_creates_symlink(self, tmp_path):
         from ml.train import train, save_model
         import ml.train as mt
+
         df = make_training_df(n_pools=2, hours_per_pool=100)
         model, metrics = train(df)
 
@@ -231,6 +298,7 @@ class TestSaveLoadModel:
     def test_save_twice_updates_symlink(self, tmp_path):
         from ml.train import train, save_model
         import ml.train as mt
+
         df = make_training_df(n_pools=2, hours_per_pool=100)
         model, metrics = train(df)
 

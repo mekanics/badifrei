@@ -1,7 +1,6 @@
 """Model evaluation and baseline comparison."""
 
-from dataclasses import dataclass, field
-from datetime import timedelta
+from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
@@ -25,79 +24,90 @@ class EvaluationReport:
     baseline_rmse: float
     beats_baseline: bool
     per_pool: list[PoolMetrics]
-    worst_pool: str  # pool_uid with highest MAE
-    best_pool: str  # pool_uid with lowest MAE
+    worst_pool: str
+    best_pool: str
     n_test: int
 
 
 def naive_baseline_predict(df_train: pd.DataFrame, df_test: pd.DataFrame) -> np.ndarray:
+    """Naive baseline: predict last week's occupancy at the same hour/weekday.
+
+    Vectorized implementation — builds a lookup from training data keyed on
+    (pool_uid, hour, dayofweek) then maps it onto the test set in one pass.
+    Falls back to pool mean, then global mean, for missing keys.
     """
-    Naive baseline: predict last week's occupancy at the same hour/weekday.
+    train_times = pd.to_datetime(df_train["time"])
+    train_lookup = df_train.copy()
+    train_lookup["_hour"] = train_times.dt.hour
+    train_lookup["_dow"] = train_times.dt.dayofweek
+    train_lookup = train_lookup.sort_values("time")
+    # Keep last occurrence per (pool_uid, hour, dow) — the most recent
+    lookup = train_lookup.drop_duplicates(
+        subset=["pool_uid", "_hour", "_dow"], keep="last"
+    ).set_index(["pool_uid", "_hour", "_dow"])["occupancy_pct"]
 
-    For each row in df_test, find the most recent row in df_train with the
-    same pool_uid, same hour_of_day, and same day_of_week.
-    If not found, fall back to the pool's mean occupancy in train.
-    """
-    preds = []
-
-    # Build lookup: (pool_uid, hour, weekday) -> most recent occupancy
-    train_sorted = df_train.sort_values("time")
-    lookup = {}
-    for _, row in train_sorted.iterrows():
-        key = (row["pool_uid"], row["time"].hour, row["time"].dayofweek)
-        lookup[key] = row["occupancy_pct"]
-
-    # Pool-level fallback means
-    pool_means = df_train.groupby("pool_uid")["occupancy_pct"].mean().to_dict()
+    pool_means = df_train.groupby("pool_uid")["occupancy_pct"].mean()
     global_mean = df_train["occupancy_pct"].mean()
 
-    for _, row in df_test.iterrows():
-        key = (row["pool_uid"], row["time"].hour, row["time"].dayofweek)
-        if key in lookup:
-            preds.append(lookup[key])
-        elif row["pool_uid"] in pool_means:
-            preds.append(pool_means[row["pool_uid"]])
-        else:
-            preds.append(global_mean)
+    test_times = pd.to_datetime(df_test["time"])
+    keys = pd.MultiIndex.from_arrays(
+        [df_test["pool_uid"], test_times.dt.hour, test_times.dt.dayofweek],
+        names=["pool_uid", "_hour", "_dow"],
+    )
+    preds = lookup.reindex(keys).values
 
-    return np.array(preds)
+    # Fallback 1: pool mean
+    mask_nan = np.isnan(preds)
+    if mask_nan.any():
+        pool_fallback = df_test.loc[mask_nan, "pool_uid"].map(pool_means).values
+        preds[mask_nan] = pool_fallback
+
+    # Fallback 2: global mean
+    mask_nan = np.isnan(preds)
+    if mask_nan.any():
+        preds[mask_nan] = global_mean
+
+    return preds
 
 
 def evaluate(
     model,
     df_train: pd.DataFrame,
     df_test: pd.DataFrame,
+    encoding_map: "dict[str, int] | None" = None,
+    weather_df: "pd.DataFrame | None" = None,
+    train_medians: "pd.Series | None" = None,
 ) -> EvaluationReport:
-    """
-    Evaluate model against naive baseline on test set.
+    """Evaluate model against naive baseline on test set.
 
     Args:
         model: fitted XGBRegressor
         df_train: training DataFrame (raw, with time + pool_uid + occupancy_pct)
         df_test: test DataFrame (raw)
-
-    Returns EvaluationReport with per-pool breakdown.
+        encoding_map: pool_uid -> int mapping from training (prevents re-derivation)
+        weather_df: weather DataFrame used during training (for consistent features)
+        train_medians: column medians from training set (for NaN imputation)
     """
-    from ml.features import build_features, FEATURE_COLUMNS
+    from ml.features import build_features
     from ml.train import prepare_xy
 
-    # Build features for test set (this may drop rows, e.g. excluded pools)
-    df_test_feat = build_features(df_test)
-    X_test, y_test = prepare_xy(df_test_feat)
+    df_test_feat = build_features(
+        df_test,
+        encoding_map=encoding_map,
+        weather_df=weather_df,
+    )
+    X_test, y_test = prepare_xy(df_test_feat, medians=train_medians)
 
-    # Model predictions
     model_preds = np.clip(model.predict(X_test), 0, 100)
     y_arr = y_test.values
 
     model_mae = float(mean_absolute_error(y_arr, model_preds))
     model_rmse = float(mean_squared_error(y_arr, model_preds) ** 0.5)
 
-    # Baseline predictions — use the filtered df so lengths match y_arr
     baseline_preds = naive_baseline_predict(df_train, df_test_feat)
     baseline_mae = float(mean_absolute_error(y_arr, baseline_preds))
     baseline_rmse = float(mean_squared_error(y_arr, baseline_preds) ** 0.5)
 
-    # Per-pool metrics
     df_test_results = df_test_feat.copy().reset_index(drop=True)
     df_test_results["model_pred"] = model_preds
     df_test_results["y_true"] = y_arr

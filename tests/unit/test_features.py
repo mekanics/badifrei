@@ -1,4 +1,5 @@
 """Unit tests for feature engineering module."""
+
 import json
 from datetime import datetime, timezone, timedelta
 import pandas as pd
@@ -8,16 +9,19 @@ import pytest
 def make_df(n=48, pool_uid="SSD-5", start="2026-02-01"):
     """Create a minimal test DataFrame."""
     times = pd.date_range(start=start, periods=n, freq="1h", tz="UTC")
-    return pd.DataFrame({
-        "time": times,
-        "pool_uid": pool_uid,
-        "occupancy_pct": [float(i % 100) for i in range(n)],
-    })
+    return pd.DataFrame(
+        {
+            "time": times,
+            "pool_uid": pool_uid,
+            "occupancy_pct": [float(i % 100) for i in range(n)],
+        }
+    )
 
 
 class TestTimeFeatures:
     def test_adds_hour_of_day(self):
         from ml.features import add_time_features
+
         df = make_df()
         result = add_time_features(df)
         assert "hour_of_day" in result.columns
@@ -25,6 +29,7 @@ class TestTimeFeatures:
 
     def test_adds_day_of_week(self):
         from ml.features import add_time_features
+
         df = make_df()
         result = add_time_features(df)
         assert "day_of_week" in result.columns
@@ -32,27 +37,36 @@ class TestTimeFeatures:
 
     def test_weekend_flag(self):
         from ml.features import add_time_features
+
         # 2026-02-07 is a Saturday
-        df = pd.DataFrame({"time": ["2026-02-07 10:00:00+00:00", "2026-02-09 10:00:00+00:00"],
-                           "pool_uid": "SSD-5", "occupancy_pct": [50.0, 30.0]})
+        df = pd.DataFrame(
+            {
+                "time": ["2026-02-07 10:00:00+00:00", "2026-02-09 10:00:00+00:00"],
+                "pool_uid": "SSD-5",
+                "occupancy_pct": [50.0, 30.0],
+            }
+        )
         result = add_time_features(df)
         assert result.iloc[0]["is_weekend"] == 1  # Saturday
         assert result.iloc[1]["is_weekend"] == 0  # Monday
 
     def test_adds_month(self):
         from ml.features import add_time_features
+
         df = make_df(start="2026-02-01")
         result = add_time_features(df)
         assert result["month"].iloc[0] == 2
 
     def test_adds_day_of_year(self):
         from ml.features import add_time_features
+
         df = make_df(start="2026-01-01")
         result = add_time_features(df)
         assert result["day_of_year"].iloc[0] == 1
 
     def test_does_not_mutate_input(self):
         from ml.features import add_time_features
+
         df = make_df()
         original_cols = list(df.columns)
         add_time_features(df)
@@ -62,22 +76,40 @@ class TestTimeFeatures:
 class TestHolidayFeature:
     def test_new_year_is_holiday(self):
         from ml.features import add_holiday_feature
-        df = pd.DataFrame({"time": ["2026-01-01 10:00:00+00:00"],
-                           "pool_uid": "SSD-5", "occupancy_pct": [50.0]})
+
+        df = pd.DataFrame(
+            {
+                "time": ["2026-01-01 10:00:00+00:00"],
+                "pool_uid": "SSD-5",
+                "occupancy_pct": [50.0],
+            }
+        )
         result = add_holiday_feature(df)
         assert result.iloc[0]["is_holiday"] == 1
 
     def test_regular_day_not_holiday(self):
         from ml.features import add_holiday_feature
-        df = pd.DataFrame({"time": ["2026-02-27 10:00:00+00:00"],
-                           "pool_uid": "SSD-5", "occupancy_pct": [50.0]})
+
+        df = pd.DataFrame(
+            {
+                "time": ["2026-02-27 10:00:00+00:00"],
+                "pool_uid": "SSD-5",
+                "occupancy_pct": [50.0],
+            }
+        )
         result = add_holiday_feature(df)
         assert result.iloc[0]["is_holiday"] == 0
 
     def test_returns_integer_flag(self):
         from ml.features import add_holiday_feature
-        df = pd.DataFrame({"time": ["2026-02-27 10:00:00+00:00"],
-                           "pool_uid": "SSD-5", "occupancy_pct": [50.0]})
+
+        df = pd.DataFrame(
+            {
+                "time": ["2026-02-27 10:00:00+00:00"],
+                "pool_uid": "SSD-5",
+                "occupancy_pct": [50.0],
+            }
+        )
         result = add_holiday_feature(df)
         assert result.iloc[0]["is_holiday"] in (0, 1)
 
@@ -85,6 +117,7 @@ class TestHolidayFeature:
 class TestPoolFeatures:
     def test_adds_pool_uid_encoded(self):
         from ml.features import add_pool_features
+
         df = make_df()
         result = add_pool_features(df)
         assert "pool_uid_encoded" in result.columns
@@ -92,24 +125,28 @@ class TestPoolFeatures:
 
     def test_same_uid_same_encoding(self):
         from ml.features import add_pool_features
+
         df = make_df()
         result = add_pool_features(df)
         assert result["pool_uid_encoded"].nunique() == 1
 
     def test_kaeferberg_is_hallenbad_type(self):
         from ml.features import add_pool_features, POOL_TYPE_ENCODING
+
         df = make_df(pool_uid="SSD-5")
         result = add_pool_features(df)
         assert result["pool_type"].iloc[0] == POOL_TYPE_ENCODING["hallenbad"]
 
     def test_kaeferberg_not_seasonal(self):
         from ml.features import add_pool_features
+
         df = make_df(pool_uid="SSD-5")
         result = add_pool_features(df)
         assert result["is_seasonal"].iloc[0] == 0
 
     def test_unknown_pool_gets_other_type(self):
         from ml.features import add_pool_features, POOL_TYPE_ENCODING
+
         metadata = {}  # empty metadata → unknown pool
         df = make_df(pool_uid="UNKNOWN-999")
         result = add_pool_features(df, metadata=metadata)
@@ -119,33 +156,91 @@ class TestPoolFeatures:
 class TestLagFeatures:
     def test_lag_1h_first_is_nan(self):
         from ml.features import add_lag_features
+
         df = make_df(n=10)
         result = add_lag_features(df)
-        # First value per pool should be NaN (no previous reading)
         assert pd.isna(result["lag_1h"].iloc[0])
 
-    def test_lag_1h_second_equals_first(self):
+    def test_lag_1h_second_equals_first_with_hourly_data(self):
         from ml.features import add_lag_features
-        df = make_df(n=10)
+
+        df = make_df(n=10)  # freq="1h" — shift(freq="1h") matches row shift
         result = add_lag_features(df)
         assert result["lag_1h"].iloc[1] == result["occupancy_pct"].iloc[0]
 
+    def test_lag_1h_nan_for_subhourly_buckets(self):
+        """With 10-min buckets, lag_1h should be NaN for the first 5 rows
+        (rows 0-5 are within the first hour)."""
+        from ml.features import add_lag_features
+
+        times = pd.date_range(start="2026-02-01", periods=12, freq="10min", tz="UTC")
+        df = pd.DataFrame(
+            {
+                "time": times,
+                "pool_uid": "SSD-5",
+                "occupancy_pct": [float(i * 10) for i in range(12)],
+            }
+        )
+        result = add_lag_features(df)
+        # Row at T+10min has no reading from T+10min - 1h, so lag_1h is NaN
+        assert pd.isna(result["lag_1h"].iloc[1])
+        # Row at T+60min should get the value from T+0min
+        assert result["lag_1h"].iloc[6] == result["occupancy_pct"].iloc[0]
+
     def test_lag_1w_column_exists(self):
         from ml.features import add_lag_features
+
         df = make_df(n=48)
         result = add_lag_features(df)
         assert "lag_1w" in result.columns
 
 
+class TestRollingFeatures:
+    def test_rolling_mean_7d_column_exists(self):
+        from ml.features import add_rolling_features
+
+        df = make_df(n=48)
+        result = add_rolling_features(df)
+        assert "rolling_mean_7d" in result.columns
+
+    def test_rolling_mean_uses_time_window(self):
+        """With 10-min buckets, rolling('7D') should cover 7 days of data,
+        not just 168 rows (which would be ~28h at 10-min intervals)."""
+        from ml.features import add_rolling_features
+        import numpy as np
+
+        n = 7 * 24 * 6 + 1  # 7 days of 10-min data + 1 extra
+        times = pd.date_range(start="2026-01-01", periods=n, freq="10min", tz="UTC")
+        df = pd.DataFrame(
+            {
+                "time": times,
+                "pool_uid": "SSD-5",
+                "occupancy_pct": np.ones(n) * 50.0,
+            }
+        )
+        # Set first day to 100, rest to 0 — rolling 7D should include the first day
+        df.loc[df.index[:144], "occupancy_pct"] = (
+            100.0  # first 24h at 10-min = 144 rows
+        )
+        df.loc[df.index[144:], "occupancy_pct"] = 0.0
+        result = add_rolling_features(df)
+        # The last row (day 7 + 10min) should have a rolling mean that includes
+        # day 1 data (100) — if window were only 168 rows it would miss it
+        last_mean = result["rolling_mean_7d"].iloc[-1]
+        assert last_mean > 0, "Rolling mean should include data from 7 days ago"
+
+
 class TestBuildFeatures:
     def test_build_features_returns_dataframe(self):
         from ml.features import build_features
+
         df = make_df(n=48)
         result = build_features(df)
         assert isinstance(result, pd.DataFrame)
 
     def test_build_features_has_all_columns(self):
         from ml.features import build_features, FEATURE_COLUMNS
+
         df = make_df(n=48)
         result = build_features(df)
         for col in FEATURE_COLUMNS:
@@ -153,12 +248,14 @@ class TestBuildFeatures:
 
     def test_build_features_preserves_row_count(self):
         from ml.features import build_features
+
         df = make_df(n=48)
         result = build_features(df)
         assert len(result) == len(df)
 
     def test_build_features_does_not_mutate_input(self):
         from ml.features import build_features
+
         df = make_df(n=48)
         original_cols = list(df.columns)
         build_features(df)
@@ -168,6 +265,7 @@ class TestBuildFeatures:
 class TestExcludedPools:
     def test_excluded_pool_rows_are_dropped(self):
         from ml.features import build_features, EXCLUDED_POOLS
+
         # Create df with both a normal pool and an excluded one
         normal = make_df(n=48, pool_uid="SSD-5")
         excluded = make_df(n=48, pool_uid="SSD-8")
@@ -178,6 +276,7 @@ class TestExcludedPools:
 
     def test_excluded_pool_reduces_row_count(self):
         from ml.features import build_features
+
         normal = make_df(n=48, pool_uid="SSD-5")
         excluded = make_df(n=48, pool_uid="SSD-8")
         df = pd.concat([normal, excluded], ignore_index=True)
@@ -186,28 +285,35 @@ class TestExcludedPools:
 
     def test_all_excluded_returns_empty(self):
         from ml.features import build_features
+
         df = make_df(n=48, pool_uid="SSD-8")
         result = build_features(df)
         assert len(result) == 0
 
     def test_ssd8_in_excluded_pools_constant(self):
         from ml.features import EXCLUDED_POOLS
+
         assert "SSD-8" in EXCLUDED_POOLS
 
 
-def make_weather_df(temperature_c: float = 22.0, precipitation_mm: float = 0.0, weathercode: int = 0) -> pd.DataFrame:
+def make_weather_df(
+    temperature_c: float = 22.0, precipitation_mm: float = 0.0, weathercode: int = 0
+) -> pd.DataFrame:
     """Create a minimal 24-row weather DataFrame."""
-    return pd.DataFrame({
-        "hour": list(range(24)),
-        "temperature_c": [temperature_c] * 24,
-        "precipitation_mm": [precipitation_mm] * 24,
-        "weathercode": [weathercode] * 24,
-    })
+    return pd.DataFrame(
+        {
+            "hour": list(range(24)),
+            "temperature_c": [temperature_c] * 24,
+            "precipitation_mm": [precipitation_mm] * 24,
+            "weathercode": [weathercode] * 24,
+        }
+    )
 
 
 class TestWeatherFeatures:
     def test_weather_df_adds_temperature_column(self):
         from ml.features import build_features
+
         df = make_df(n=48)
         weather = make_weather_df(temperature_c=25.0)
         result = build_features(df, weather_df=weather)
@@ -216,6 +322,7 @@ class TestWeatherFeatures:
 
     def test_weather_df_adds_precipitation_column(self):
         from ml.features import build_features
+
         df = make_df(n=48)
         weather = make_weather_df(precipitation_mm=3.5)
         result = build_features(df, weather_df=weather)
@@ -224,6 +331,7 @@ class TestWeatherFeatures:
 
     def test_is_rainy_true_when_weathercode_ge_51(self):
         from ml.features import build_features
+
         df = make_df(n=48)
         weather = make_weather_df(weathercode=61)  # moderate rain
         result = build_features(df, weather_df=weather)
@@ -232,6 +340,7 @@ class TestWeatherFeatures:
 
     def test_is_rainy_false_when_weathercode_lt_51(self):
         from ml.features import build_features
+
         df = make_df(n=48)
         weather = make_weather_df(weathercode=2)  # clear sky
         result = build_features(df, weather_df=weather)
@@ -240,21 +349,27 @@ class TestWeatherFeatures:
     def test_nan_weather_filled_with_defaults(self):
         import numpy as np
         from ml.features import build_features
+
         df = make_df(n=48)
         # Only provide 12 hours of weather — the rest should be NaN-filled
-        weather = pd.DataFrame({
-            "hour": list(range(12)),
-            "temperature_c": [np.nan] * 12,
-            "precipitation_mm": [np.nan] * 12,
-            "weathercode": [np.nan] * 12,
-        })
+        weather = pd.DataFrame(
+            {
+                "hour": list(range(12)),
+                "temperature_c": [np.nan] * 12,
+                "precipitation_mm": [np.nan] * 12,
+                "weathercode": [np.nan] * 12,
+            }
+        )
         result = build_features(df, weather_df=weather)
         assert not result["temperature_c"].isna().any(), "NaN temperature not filled"
-        assert not result["precipitation_mm"].isna().any(), "NaN precipitation not filled"
+        assert (
+            not result["precipitation_mm"].isna().any()
+        ), "NaN precipitation not filled"
         assert (result.loc[result["hour_of_day"] < 12, "temperature_c"] == 15.0).all()
 
     def test_temp_x_outdoor_zero_for_hallenbad(self):
         from ml.features import build_features
+
         # SSD-5 is a hallenbad → outdoor flag = 0 → temp_x_outdoor = 0
         df = make_df(n=48, pool_uid="SSD-5")
         weather = make_weather_df(temperature_c=30.0)
@@ -264,6 +379,7 @@ class TestWeatherFeatures:
 
     def test_temp_x_outdoor_nonzero_for_freibad(self):
         from ml.features import build_features, POOL_TYPE_ENCODING
+
         # Use a freibad pool via custom metadata
         metadata = {"FREI-1": {"type": "freibad", "seasonal": True}}
         df = make_df(n=48, pool_uid="FREI-1")
@@ -273,6 +389,7 @@ class TestWeatherFeatures:
 
     def test_weather_features_backward_compat_default_none(self):
         from ml.features import build_features, FEATURE_COLUMNS
+
         """Calling build_features without weather_df still produces all base columns."""
         df = make_df(n=48)
         result = build_features(df)
@@ -309,24 +426,30 @@ _MOCK_METADATA = {
 class TestOpeningHoursFeatures:
     """Tests for add_opening_hours_features()."""
 
-    def _make_single_row(self, hour: int, day_of_week: int, pool_uid: str = "TEST-1") -> pd.DataFrame:
+    def _make_single_row(
+        self, hour: int, day_of_week: int, pool_uid: str = "TEST-1"
+    ) -> pd.DataFrame:
         """Make a single-row DataFrame with hour_of_day and day_of_week set."""
         # 2026-02-02 is a Monday (day_of_week=0)
         from datetime import timedelta
+
         base = pd.Timestamp("2026-02-02 00:00:00", tz="UTC")
         t = base + pd.Timedelta(days=day_of_week, hours=hour)
         df = pd.DataFrame({"time": [t], "pool_uid": pool_uid, "occupancy_pct": [50.0]})
         from ml.features import add_time_features
+
         return add_time_features(df)
 
     def test_midnight_is_closed(self):
         from ml.features import add_opening_hours_features
+
         df = self._make_single_row(hour=0, day_of_week=0)  # Mon midnight
         result = add_opening_hours_features(df, _MOCK_METADATA)
         assert result.iloc[0]["is_open"] == 0
 
     def test_morning_hour_is_open(self):
         from ml.features import add_opening_hours_features
+
         # Hour 7 on Monday → open (06:00–22:00)
         # minutes_since_open = (7-6)*60 = 60
         # minutes_until_close = (22-7)*60 = 900
@@ -339,6 +462,7 @@ class TestOpeningHoursFeatures:
 
     def test_hour_22_is_closed(self):
         from ml.features import add_opening_hours_features
+
         # Hour 22 → closed (close is 22:00, condition is hour < 22:00)
         df = self._make_single_row(hour=22, day_of_week=0)
         result = add_opening_hours_features(df, _MOCK_METADATA)
@@ -346,12 +470,14 @@ class TestOpeningHoursFeatures:
 
     def test_sunday_is_closed(self):
         from ml.features import add_opening_hours_features
+
         df = self._make_single_row(hour=12, day_of_week=6)  # Sunday noon
         result = add_opening_hours_features(df, _MOCK_METADATA)
         assert result.iloc[0]["is_open"] == 0
 
     def test_defensive_default_unknown_pool(self):
         from ml.features import add_opening_hours_features
+
         df = self._make_single_row(hour=0, day_of_week=0, pool_uid="UNKNOWN-999")
         result = add_opening_hours_features(df, _MOCK_METADATA)
         row = result.iloc[0]
@@ -362,14 +488,18 @@ class TestOpeningHoursFeatures:
 
     def test_defensive_default_no_opening_hours_key(self):
         from ml.features import add_opening_hours_features
+
         # Pool exists in metadata but has no opening_hours key
-        metadata = {"TEST-2": {"uid": "TEST-2", "name": "No Hours Pool", "type": "hallenbad"}}
+        metadata = {
+            "TEST-2": {"uid": "TEST-2", "name": "No Hours Pool", "type": "hallenbad"}
+        }
         df = self._make_single_row(hour=3, day_of_week=0, pool_uid="TEST-2")
         result = add_opening_hours_features(df, metadata)
         assert result.iloc[0]["is_open"] == 1
 
     def test_build_features_includes_opening_hours(self):
         from ml.features import build_features, OPENING_HOURS_FEATURE_COLUMNS
+
         # build_features should add opening hours columns (uses real metadata — no hours data yet → defaults)
         df = make_df(n=24)
         result = build_features(df)

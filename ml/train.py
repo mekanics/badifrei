@@ -1,4 +1,5 @@
 """XGBoost model training for pool occupancy prediction."""
+
 import json
 import logging
 from datetime import datetime, timezone
@@ -8,7 +9,6 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from sklearn.model_selection import train_test_split
 
 from ml.features import build_features, get_pool_uid_encoding, FEATURE_COLUMNS
 
@@ -27,15 +27,24 @@ def time_based_split(df: pd.DataFrame, test_fraction: float = 0.2):
     return df.iloc[:split_idx].copy(), df.iloc[split_idx:].copy()
 
 
-def prepare_xy(df: pd.DataFrame):
-    """Extract feature matrix X and target y from DataFrame."""
-    # Drop rows where lag features are NaN (first readings per pool)
+def prepare_xy(
+    df: pd.DataFrame,
+    medians: "pd.Series | None" = None,
+):
+    """Extract feature matrix X and target y from DataFrame.
+
+    Args:
+        df: Feature-engineered DataFrame (must contain FEATURE_COLUMNS + occupancy_pct).
+        medians: Pre-computed column medians (from training set) used to fill NaNs.
+            When None, medians are computed from *df* itself -- only safe for training data.
+    """
     feature_df = df[FEATURE_COLUMNS].copy()
     target = df["occupancy_pct"].copy()
 
-    # Fill NaN lag features with median, then 0 as fallback
-    # (median is NaN if entire column is NaN, e.g. lag_1w with <7 days of data)
-    feature_df = feature_df.fillna(feature_df.median()).fillna(0)
+    if medians is not None:
+        feature_df = feature_df.fillna(medians).fillna(0)
+    else:
+        feature_df = feature_df.fillna(feature_df.median()).fillna(0)
 
     return feature_df, target
 
@@ -71,29 +80,28 @@ def train(
     logger.info(f"Train: {len(train_df)} rows, Test: {len(test_df)} rows")
 
     X_train, y_train = prepare_xy(train_df)
-    X_test, y_test = prepare_xy(test_df)
+    train_medians = X_train.median()
+    X_test, y_test = prepare_xy(test_df, medians=train_medians)
 
-    # Train model
     model = xgb.XGBRegressor(
-        n_estimators=200,
+        n_estimators=500,
         max_depth=6,
         learning_rate=0.05,
         subsample=0.8,
         colsample_bytree=0.8,
         random_state=42,
-        tree_method="hist",  # histogram-based: much lower RAM, faster on large data
-        n_jobs=2,            # cap at 2 threads; don't saturate a shared VPS
+        tree_method="hist",
+        n_jobs=2,
+        early_stopping_rounds=20,
     )
     model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
 
-    # Evaluate
     preds = model.predict(X_test)
     preds = np.clip(preds, 0, 100)
 
     mae = mean_absolute_error(y_test, preds)
     rmse = mean_squared_error(y_test, preds) ** 0.5
 
-    # Per-pool metrics
     test_df = test_df.copy()
     test_df["pred"] = preds
     per_pool = {}
@@ -111,15 +119,24 @@ def train(
         "rmse": float(rmse),
         "n_train": len(train_df),
         "n_test": len(test_df),
+        "n_estimators_best": (
+            int(model.best_iteration) + 1 if hasattr(model, "best_iteration") else 500
+        ),
         "per_pool": per_pool,
-        "feature_importance": dict(zip(FEATURE_COLUMNS, model.feature_importances_.tolist())),
+        "feature_importance": dict(
+            zip(FEATURE_COLUMNS, model.feature_importances_.tolist())
+        ),
         "trained_at": datetime.now(timezone.utc).isoformat(),
+        "train_medians": {
+            k: float(v) if pd.notna(v) else 0.0 for k, v in train_medians.items()
+        },
     }
 
-    # Embed encoding map in metrics so save_model() can persist it as a sidecar
     metrics["pool_uid_encoding"] = {k: encoding_map[k] for k in sorted(encoding_map)}
 
-    logger.info(f"MAE: {mae:.2f}%  RMSE: {rmse:.2f}%")
+    logger.info(
+        f"MAE: {mae:.2f}%  RMSE: {rmse:.2f}%  (best iteration: {metrics['n_estimators_best']})"
+    )
     return model, metrics
 
 

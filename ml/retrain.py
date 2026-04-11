@@ -1,4 +1,5 @@
 """Automated model retraining script with APScheduler."""
+
 import asyncio
 import logging
 import signal
@@ -20,7 +21,9 @@ from ml.weather import fetch_weather_batch, CITY_COORDS
 logger = logging.getLogger(__name__)
 
 # Configurable via env
-RETRAIN_INTERVAL_HOURS = int(os.getenv("RETRAIN_INTERVAL_HOURS", "168"))  # 7 days default
+RETRAIN_INTERVAL_HOURS = int(
+    os.getenv("RETRAIN_INTERVAL_HOURS", "168")
+)  # 7 days default
 # 0 = use all available history (recommended); set to e.g. 365 to cap the window
 LOOKBACK_DAYS = int(os.getenv("LOOKBACK_DAYS", "365"))
 MIN_RECORDS = int(os.getenv("MIN_RECORDS_FOR_TRAINING", "1000"))
@@ -40,11 +43,16 @@ async def _fetch_weather_for_df(df: pd.DataFrame) -> "pd.DataFrame | None":
     """
     try:
         from ml.features import load_pool_metadata
+
         metadata = load_pool_metadata()
-        city_for_uid = {uid: meta.get("city", "zurich") for uid, meta in metadata.items()}
+        city_for_uid = {
+            uid: meta.get("city", "zurich") for uid, meta in metadata.items()
+        }
 
         dates_series = pd.to_datetime(df["time"]).dt.date
-        temp = pd.DataFrame({"pool_uid": df["pool_uid"].values, "date": dates_series.values})
+        temp = pd.DataFrame(
+            {"pool_uid": df["pool_uid"].values, "date": dates_series.values}
+        )
         temp["city"] = temp["pool_uid"].map(city_for_uid)
 
         unknown_mask = temp["city"].isna()
@@ -62,7 +70,9 @@ async def _fetch_weather_for_df(df: pd.DataFrame) -> "pd.DataFrame | None":
         frames: list[pd.DataFrame] = []
         for city, group in city_date_pairs.groupby("city"):
             if city not in CITY_COORDS:
-                logger.warning("City slug %r not in CITY_COORDS; skipping weather fetch", city)
+                logger.warning(
+                    "City slug %r not in CITY_COORDS; skipping weather fetch", city
+                )
                 continue
             unique_dates = group["date"].unique()
             weather_df = await fetch_weather_batch(unique_dates, city=city)
@@ -72,7 +82,14 @@ async def _fetch_weather_for_df(df: pd.DataFrame) -> "pd.DataFrame | None":
 
         if not frames:
             return pd.DataFrame(
-                columns=["city", "date", "hour", "temperature_c", "precipitation_mm", "weathercode"]
+                columns=[
+                    "city",
+                    "date",
+                    "hour",
+                    "temperature_c",
+                    "precipitation_mm",
+                    "weathercode",
+                ]
             )
 
         combined = pd.concat(frames, ignore_index=True)
@@ -83,7 +100,9 @@ async def _fetch_weather_for_df(df: pd.DataFrame) -> "pd.DataFrame | None":
         )
         return combined
     except Exception as exc:
-        logger.warning(f"Weather fetch failed ({exc}); training without weather features")
+        logger.warning(
+            f"Weather fetch failed ({exc}); training without weather features"
+        )
         return None
 
 
@@ -97,7 +116,9 @@ async def retrain_job():
 
     bucket_interval = os.getenv("TRAINING_BUCKET_INTERVAL", DEFAULT_BUCKET_INTERVAL)
     try:
-        df = await load_data(start, end, min_records=MIN_RECORDS, bucket_interval=bucket_interval)
+        df = await load_data(
+            start, end, min_records=MIN_RECORDS, bucket_interval=bucket_interval
+        )
     except InsufficientDataError as e:
         logger.warning(f"Skipping retrain: {e}")
         return
@@ -109,20 +130,37 @@ async def retrain_job():
     if weather_df is None:
         logger.warning("Training without weather features (fetch failed)")
     else:
-        logger.info(f"Weather fetched for {len(pd.to_datetime(df['time']).dt.date.unique())} dates")
+        logger.info(
+            f"Weather fetched for {len(pd.to_datetime(df['time']).dt.date.unique())} dates"
+        )
 
     from ml.train import time_based_split
+
     model, metrics = train(df, weather_df=weather_df)
 
-    # Evaluate against baseline
+    encoding_map = metrics.get("pool_uid_encoding")
+    train_medians_raw = metrics.get("train_medians", {})
+    train_medians = pd.Series(train_medians_raw) if train_medians_raw else None
+
     train_df, test_df = time_based_split(df, test_fraction=0.2)
-    report = evaluate(model, train_df, test_df)
+    report = evaluate(
+        model,
+        train_df,
+        test_df,
+        encoding_map=encoding_map,
+        weather_df=weather_df,
+        train_medians=train_medians,
+    )
 
     logger.info(
         f"Model MAE: {report.model_mae:.2f}%  "
         f"Baseline MAE: {report.baseline_mae:.2f}%  "
         f"Beats baseline: {report.beats_baseline}"
     )
+
+    if not report.beats_baseline:
+        logger.error("Model worse than baseline — skipping save")
+        return
 
     path = save_model(model, metrics)
     logger.info(f"Model saved: {path}")
@@ -132,19 +170,20 @@ async def retrain_job():
 
 
 def _prune_old_models(keep_days: int = 30):
-    """Remove model files older than keep_days."""
+    """Remove model files and their JSON sidecars older than keep_days."""
     cutoff = datetime.now(timezone.utc) - timedelta(days=keep_days)
     pruned = 0
-    for f in MODELS_DIR.glob("model_202*.ubj"):
-        if f.is_symlink():
-            continue
-        mtime = datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc)
-        if mtime < cutoff:
-            f.unlink()
-            pruned += 1
-            logger.info(f"Pruned old model: {f.name}")
+    for pattern in ("model_202*.ubj", "model_202*.json"):
+        for f in MODELS_DIR.glob(pattern):
+            if f.is_symlink():
+                continue
+            mtime = datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc)
+            if mtime < cutoff:
+                f.unlink()
+                pruned += 1
+                logger.info(f"Pruned old file: {f.name}")
     if pruned:
-        logger.info(f"Pruned {pruned} old model(s)")
+        logger.info(f"Pruned {pruned} old file(s)")
 
 
 async def main():
