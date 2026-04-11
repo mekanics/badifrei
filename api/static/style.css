@@ -47,7 +47,9 @@ body {
 /* Grid children must not overflow their column */
 .navbar,
 .container,
-.site-footer { min-width: 0; }
+.site-footer {
+	min-width: 0;
+}
 
 /* Navbar */
 .navbar {
@@ -158,14 +160,46 @@ body {
 	border: 1.5px solid var(--border);
 }
 
-.badge-freibad  { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
-.badge-hallenbad { background: #eef6ff; color: #1c6bb0; border-color: #1c6bb0; }
-.badge-strandbad { background: var(--yellow-bg); color: #b45309; border-color: #b45309; }
-.badge-seebad   { background: #f5f0ff; color: #6d28d9; border-color: #6d28d9; }
-.badge-warmebad { background: #fff4ed; color: #c2410c; border-color: #c2410c; }
-.badge-kombibad { background: var(--red-bg); color: var(--red); border-color: var(--red); }
-.badge-flussbad { background: #e0fafa; color: #0e7490; border-color: #0e7490; }
-.badge-other    { background: var(--surface); color: var(--muted); border-color: var(--border-light); }
+.badge-freibad {
+	background: var(--accent-bg);
+	color: var(--accent);
+	border-color: var(--accent);
+}
+.badge-hallenbad {
+	background: #eef6ff;
+	color: #1c6bb0;
+	border-color: #1c6bb0;
+}
+.badge-strandbad {
+	background: var(--yellow-bg);
+	color: #b45309;
+	border-color: #b45309;
+}
+.badge-seebad {
+	background: #f5f0ff;
+	color: #6d28d9;
+	border-color: #6d28d9;
+}
+.badge-warmebad {
+	background: #fff4ed;
+	color: #c2410c;
+	border-color: #c2410c;
+}
+.badge-kombibad {
+	background: var(--red-bg);
+	color: var(--red);
+	border-color: var(--red);
+}
+.badge-flussbad {
+	background: #e0fafa;
+	color: #0e7490;
+	border-color: #0e7490;
+}
+.badge-other {
+	background: var(--surface);
+	color: var(--muted);
+	border-color: var(--border-light);
+}
 
 /* Occupancy bar */
 .occupancy-bar-wrap {
@@ -185,10 +219,18 @@ body {
 	background: var(--border-light);
 }
 
-.occupancy-bar.green  { background: var(--green); }
-.occupancy-bar.yellow { background: var(--yellow); }
-.occupancy-bar.red    { background: var(--red); }
-.occupancy-bar.grey   { background: var(--border-light); }
+.occupancy-bar.green {
+	background: var(--green);
+}
+.occupancy-bar.yellow {
+	background: var(--yellow);
+}
+.occupancy-bar.red {
+	background: var(--red);
+}
+.occupancy-bar.grey {
+	background: var(--border-light);
+}
 
 .occupancy-row {
 	display: flex;
@@ -209,8 +251,6 @@ body {
 	color: var(--muted);
 	margin-top: 0.2rem;
 }
-
-
 
 /* Filter bar */
 .filter-bar {
@@ -265,7 +305,10 @@ body {
 	background: var(--card);
 	color: var(--text);
 	cursor: pointer;
-	transition: background 0.1s, color 0.1s, border-color 0.1s;
+	transition:
+		background 0.1s,
+		color 0.1s,
+		border-color 0.1s;
 	white-space: nowrap;
 	display: inline-flex;
 	align-items: center;
@@ -278,12 +321,12 @@ body {
 	border-color: var(--green);
 	color: var(--green);
 }
-.filter-btn-open[aria-pressed="true"] {
+.filter-btn-open[aria-pressed='true'] {
 	background: var(--green);
 	color: #fff;
 	border-color: var(--green);
 }
-.filter-btn-open[aria-pressed="true"] .filter-open-dot {
+.filter-btn-open[aria-pressed='true'] .filter-open-dot {
 	background: #fff;
 }
 
@@ -298,20 +341,60 @@ body {
 }
 
 /* Type filter buttons — each uses the same color as its badge */
-.filter-type-freibad:hover                { background: var(--accent-bg); border-color: var(--accent);  color: var(--accent);  }
-.filter-type-freibad[aria-pressed="true"] { background: var(--accent);    border-color: var(--accent);  color: #fff; }
+.filter-type-freibad:hover {
+	background: var(--accent-bg);
+	border-color: var(--accent);
+	color: var(--accent);
+}
+.filter-type-freibad[aria-pressed='true'] {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: #fff;
+}
 
-.filter-type-hallenbad:hover                { background: #eef6ff;  border-color: #1c6bb0; color: #1c6bb0; }
-.filter-type-hallenbad[aria-pressed="true"] { background: #1c6bb0;  border-color: #1c6bb0; color: #fff; }
+.filter-type-hallenbad:hover {
+	background: #eef6ff;
+	border-color: #1c6bb0;
+	color: #1c6bb0;
+}
+.filter-type-hallenbad[aria-pressed='true'] {
+	background: #1c6bb0;
+	border-color: #1c6bb0;
+	color: #fff;
+}
 
-.filter-type-strandbad:hover                { background: var(--yellow-bg); border-color: #b45309; color: #b45309; }
-.filter-type-strandbad[aria-pressed="true"] { background: #b45309;          border-color: #b45309; color: #fff; }
+.filter-type-strandbad:hover {
+	background: var(--yellow-bg);
+	border-color: #b45309;
+	color: #b45309;
+}
+.filter-type-strandbad[aria-pressed='true'] {
+	background: #b45309;
+	border-color: #b45309;
+	color: #fff;
+}
 
-.filter-type-seebad:hover                { background: #f5f0ff;  border-color: #6d28d9; color: #6d28d9; }
-.filter-type-seebad[aria-pressed="true"] { background: #6d28d9;  border-color: #6d28d9; color: #fff; }
+.filter-type-seebad:hover {
+	background: #f5f0ff;
+	border-color: #6d28d9;
+	color: #6d28d9;
+}
+.filter-type-seebad[aria-pressed='true'] {
+	background: #6d28d9;
+	border-color: #6d28d9;
+	color: #fff;
+}
 
-.filter-type-flussbad:hover                { background: #e0fafa; border-color: #0e7490; color: #0e7490; }
-.filter-type-flussbad[aria-pressed="true"] { background: #0e7490; border-color: #0e7490; color: #fff; }
+.filter-type-flussbad:hover {
+	background: #e0fafa;
+	border-color: #0e7490;
+	color: #0e7490;
+}
+.filter-type-flussbad[aria-pressed='true'] {
+	background: #0e7490;
+	border-color: #0e7490;
+	color: #fff;
+}
 
 /* City dropdown */
 .filter-select {
@@ -365,9 +448,17 @@ body {
 }
 
 @media (max-width: 600px) {
-	.filter-bar { padding: 0.6rem 0.75rem; }
-	.filter-sep { display: none; }
-	.filter-meta { width: 100%; margin-left: 0; margin-top: 0.25rem; }
+	.filter-bar {
+		padding: 0.6rem 0.75rem;
+	}
+	.filter-sep {
+		display: none;
+	}
+	.filter-meta {
+		width: 100%;
+		margin-left: 0;
+		margin-top: 0.25rem;
+	}
 }
 
 /* Favorites / section layout */
@@ -441,8 +532,12 @@ body {
 	border-radius: 50%;
 	flex-shrink: 0;
 }
-.status-dot.open   { background: var(--green); }
-.status-dot.closed { background: var(--border-light); }
+.status-dot.open {
+	background: var(--green);
+}
+.status-dot.closed {
+	background: var(--border-light);
+}
 .status-text {
 	font-size: 0.72rem;
 	color: var(--muted);
@@ -599,13 +694,18 @@ input[type='date'] {
 		display: grid;
 		grid-template-columns: 1fr auto;
 		grid-template-areas:
-			"title title"
-			"badge counter";
+			'title title'
+			'badge counter';
 		align-items: center;
 		gap: 0.6rem;
 	}
-	.pool-detail-header h1             { grid-area: title; }
-	.pool-detail-header .badge         { grid-area: badge; justify-self: start; }
+	.pool-detail-header h1 {
+		grid-area: title;
+	}
+	.pool-detail-header .badge {
+		grid-area: badge;
+		justify-self: start;
+	}
 	.pool-detail-header .detail-live-count {
 		grid-area: counter;
 		margin-left: 0 !important;

@@ -12,6 +12,26 @@ function track(name, data) {
 
 // ── Live occupancy count refresh ───────────────────────────────────────────
 
+function updateFavicon(occupancyPct) {
+	const bg = occupancyPct <= 50 ? '#00a86b' : occupancyPct <= 80 ? '#f5a623' : '#e03131'
+	const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+		<rect fill="${bg}" width="32" height="32"/>
+		<rect x="0.75" y="0.75" width="30.5" height="30.5" fill="none" stroke="#fff" stroke-width="1.5"/>
+		<path d="M 3,10 C 9,6 14,14 17,10 S 24,14 29,10" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+		<path d="M 3,16 C 9,20 14,12 17,16 S 24,12 29,16" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+		<path d="M 3,22 C 9,18 14,26 17,22 S 24,26 29,22" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+	</svg>`
+	const url = 'data:image/svg+xml,' + encodeURIComponent(svg)
+	let link = document.querySelector('link[rel="icon"][type="image/svg+xml"]')
+	if (!link) {
+		link = document.createElement('link')
+		link.rel = 'icon'
+		link.type = 'image/svg+xml'
+		document.head.appendChild(link)
+	}
+	link.href = url
+}
+
 async function refreshLiveCount() {
 	const el = document.getElementById('detail-live-count')
 	if (!el) return
@@ -29,6 +49,7 @@ async function refreshLiveCount() {
 		el.className = 'detail-live-count'
 		const p = item.occupancy_pct ?? 0
 		el.classList.add(p <= 50 ? 'count-green' : p <= 80 ? 'count-yellow' : 'count-red')
+		updateFavicon(p)
 	} catch (e) {
 		/* silent */
 	}
