@@ -140,8 +140,18 @@ def add_lag_features(df: pd.DataFrame) -> pd.DataFrame:
 
     def _time_shift(group: pd.DataFrame, freq: str):
         g = group.set_index("time_dt").sort_index()
-        shifted = g["occupancy_pct"].shift(freq=freq)
-        return shifted.reindex(g.index).values
+        # Shift in UTC-naive space to avoid DST gaps/ambiguities (e.g. Spring
+        # Forward means 02:00 local literally doesn't exist, causing ValueError
+        # when pandas re-localizes the shifted index).
+        dt_index = pd.DatetimeIndex(g.index)
+        utc_index = (
+            dt_index.tz_convert("UTC").tz_localize(None)
+            if dt_index.tz is not None
+            else dt_index
+        )
+        s = pd.Series(g["occupancy_pct"].values, index=utc_index)
+        shifted = s.shift(freq=freq)
+        return shifted.reindex(utc_index).values
 
     lag_1h_vals: list[tuple] = []
     lag_1w_vals: list[tuple] = []
