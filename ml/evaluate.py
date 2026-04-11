@@ -1,11 +1,13 @@
 """Model evaluation and baseline comparison."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error
+
+from ml.target_policy import clip_occupancy_target
 
 
 @dataclass
@@ -27,6 +29,8 @@ class EvaluationReport:
     worst_pool: str
     best_pool: str
     n_test: int
+    # e.g. peak_hours_mae, weekday_mae, weekend_mae, off_peak_mae
+    stratified: dict[str, float] = field(default_factory=dict)
 
 
 def naive_baseline_predict(df_train: pd.DataFrame, df_test: pd.DataFrame) -> np.ndarray:
@@ -41,13 +45,16 @@ def naive_baseline_predict(df_train: pd.DataFrame, df_test: pd.DataFrame) -> np.
     train_lookup["_hour"] = train_times.dt.hour
     train_lookup["_dow"] = train_times.dt.dayofweek
     train_lookup = train_lookup.sort_values("time")
+    train_lookup["occupancy_pct"] = clip_occupancy_target(train_lookup["occupancy_pct"])
     # Keep last occurrence per (pool_uid, hour, dow) — the most recent
     lookup = train_lookup.drop_duplicates(
         subset=["pool_uid", "_hour", "_dow"], keep="last"
     ).set_index(["pool_uid", "_hour", "_dow"])["occupancy_pct"]
 
-    pool_means = df_train.groupby("pool_uid")["occupancy_pct"].mean()
-    global_mean = df_train["occupancy_pct"].mean()
+    pool_means = clip_occupancy_target(
+        df_train.groupby("pool_uid")["occupancy_pct"].mean()
+    )
+    global_mean = float(clip_occupancy_target(float(df_train["occupancy_pct"].mean())))
 
     test_times = pd.to_datetime(df_test["time"])
     keys = pd.MultiIndex.from_arrays(
@@ -104,13 +111,38 @@ def evaluate(
     model_mae = float(mean_absolute_error(y_arr, model_preds))
     model_rmse = float(mean_squared_error(y_arr, model_preds) ** 0.5)
 
-    baseline_preds = naive_baseline_predict(df_train, df_test_feat)
+    baseline_preds = np.clip(naive_baseline_predict(df_train, df_test_feat), 0.0, 100.0)
     baseline_mae = float(mean_absolute_error(y_arr, baseline_preds))
     baseline_rmse = float(mean_squared_error(y_arr, baseline_preds) ** 0.5)
 
     df_test_results = df_test_feat.copy().reset_index(drop=True)
     df_test_results["model_pred"] = model_preds
     df_test_results["y_true"] = y_arr
+
+    stratified: dict[str, float] = {}
+    hod = df_test_results["hour_of_day"].to_numpy()
+    dow = df_test_results["day_of_week"].to_numpy()
+    is_weekend = dow >= 5
+    peak = (hod >= 9) & (hod <= 17)
+    off_peak = ~peak
+    if np.any(peak):
+        stratified["peak_hours_mae"] = float(
+            mean_absolute_error(y_arr[peak], model_preds[peak])
+        )
+    if np.any(off_peak):
+        stratified["off_peak_hours_mae"] = float(
+            mean_absolute_error(y_arr[off_peak], model_preds[off_peak])
+        )
+    wd = ~is_weekend
+    we = is_weekend
+    if np.any(wd):
+        stratified["weekday_mae"] = float(
+            mean_absolute_error(y_arr[wd], model_preds[wd])
+        )
+    if np.any(we):
+        stratified["weekend_mae"] = float(
+            mean_absolute_error(y_arr[we], model_preds[we])
+        )
 
     per_pool = []
     for uid, grp in df_test_results.groupby("pool_uid"):
@@ -138,4 +170,5 @@ def evaluate(
         worst_pool=worst_pool,
         best_pool=best_pool,
         n_test=len(df_test),
+        stratified=stratified,
     )

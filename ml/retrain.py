@@ -157,10 +157,24 @@ async def retrain_job():
         f"Baseline MAE: {report.baseline_mae:.2f}%  "
         f"Beats baseline: {report.beats_baseline}"
     )
+    if report.stratified:
+        logger.info("Holdout stratified MAE: %s", report.stratified)
 
     if not report.beats_baseline:
         logger.error("Model worse than baseline — skipping save")
         return
+
+    metrics["holdout_evaluation"] = {
+        "model_mae": report.model_mae,
+        "model_rmse": report.model_rmse,
+        "baseline_mae": report.baseline_mae,
+        "baseline_rmse": report.baseline_rmse,
+        "beats_baseline": report.beats_baseline,
+        "stratified_mae": report.stratified,
+        "worst_pool": report.worst_pool,
+        "best_pool": report.best_pool,
+        "n_test": report.n_test,
+    }
 
     path = save_model(model, metrics)
     logger.info(f"Model saved: {path}")

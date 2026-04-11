@@ -11,6 +11,7 @@ import xgboost as xgb
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from ml.features import build_features, get_pool_uid_encoding, FEATURE_COLUMNS
+from ml.target_policy import clip_occupancy_target
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,8 @@ def prepare_xy(
             When None, medians are computed from *df* itself -- only safe for training data.
     """
     feature_df = df[FEATURE_COLUMNS].copy()
-    target = df["occupancy_pct"].copy()
+    # Align training target with inference clip (0–100%); see ml/target_policy.py.
+    target = clip_occupancy_target(df["occupancy_pct"].copy())
 
     if medians is not None:
         feature_df = feature_df.fillna(medians).fillna(0)

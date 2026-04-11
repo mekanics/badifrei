@@ -12,6 +12,7 @@ import asyncpg
 import numpy as np
 import pandas as pd
 from ml.features import build_features, load_pool_metadata, FEATURE_COLUMNS
+from ml.lag_policy import resolve_lag_1h_for_inference
 
 if TYPE_CHECKING:
     import datetime as _dt
@@ -455,29 +456,25 @@ class Predictor:
             )
         df_feat = df_feat.reset_index(drop=True)
 
-        # Recursive forecasting: for hours where we have real lag_1h data (past/present),
-        # use it directly. For future hours where lag_1h is None, blend the previous
-        # prediction with the rolling mean to prevent runaway feedback amplification
-        # (e.g., three consecutive hours clamped at 100%).
         preds: list[float] = []
         last_pred: float | None = None
-        anchor = rolling_mean_7d if rolling_mean_7d is not None else 0.0
 
         for i in range(len(hours)):
             row = df_feat.iloc[[i]].copy()
 
-            # lag_1h: use real DB value if available, otherwise dampened recursion
             real_lag_1h = lag_1h_list[i]
+            real_lag_1w = lag_1w_list[i]
+            lag_in = resolve_lag_1h_for_inference(
+                real_lag_1h,
+                real_lag_1w,
+                rolling_mean_7d,
+                last_pred,
+            )
+            row["lag_1h"] = float(lag_in)
             if real_lag_1h is not None:
-                row["lag_1h"] = float(real_lag_1h)
                 last_pred = float(real_lag_1h)
-            elif last_pred is not None:
-                row["lag_1h"] = 0.7 * last_pred + 0.3 * anchor
-            else:
-                row["lag_1h"] = anchor
 
             # lag_1w: real DB value or 0 (week-ago data; not recursive)
-            real_lag_1w = lag_1w_list[i]
             row["lag_1w"] = float(real_lag_1w) if real_lag_1w is not None else 0.0
 
             # Hard-zero for closed hours

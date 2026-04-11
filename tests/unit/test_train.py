@@ -101,6 +101,16 @@ class TestPrepareXY:
         _, y = prepare_xy(df_feat)
         assert y.between(0, 100).all()
 
+    def test_target_clips_over_100(self):
+        from ml.train import prepare_xy
+        from ml.features import build_features
+
+        df = make_training_df(n_pools=1, hours_per_pool=20)
+        df_feat = build_features(df)
+        df_feat.loc[df_feat.index[0], "occupancy_pct"] = 150.0
+        _, y = prepare_xy(df_feat)
+        assert float(y.iloc[0]) == 100.0
+
     def test_returns_dataframe_and_series(self):
         from ml.train import prepare_xy
         from ml.features import build_features

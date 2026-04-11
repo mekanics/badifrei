@@ -104,18 +104,23 @@ make test-integration  # Integration-Tests (braucht DB)
 
 Das Modell prognostiziert die Auslastung (0–100%) für jedes Bad, für jede Stunde des Tages.
 
+**Zielvariable (Training):** `occupancy_pct` wird auf **0–100%** gekappt (`ml/target_policy.py`), damit Training und Inferenz (`np.clip`) dieselbe Semantik haben. Rohdaten können >100% enthalten (z. B. wenn `max_space`/Kapazität nicht stimmt) — Kapazität in den Metadaten korrigieren ist die saubere Datenlösung; Clipping ist die konsistente Modell-Lösung.
+
+**Prognose vs. Öffentlichkeit:** `pool_metadata.opening_hours` beschreiben **öffentliche** Zeiten. Ausserhalb gilt `is_open=0` und die Prognose wird auf 0 gesetzt — das ist „öffentliche Erwartung“, nicht zwingend Sensoraktivität (z. B. Schulbetrieb). Optional: separates Metadaten-Feld, falls ihr Sensor-Level auch in „geschlossenen“ Stunden prognostizieren wollt.
+
+**Inferenz — `lag_1h`:** Wenn die Datenbank in den letzten 2 Stunden keine Messung liefert, setzt `ml/lag_policy.py` den Ersatz aus Wochen-Lag und 7-Tage-Mittel (statt nur rekursiv auf die letzte Prognose zu driften).
+
 **Features:**
 
-- Tageszeit (`hour_of_day`), Wochentag, Monat
+- Tageszeit (`hour_of_day`, Europe/Zurich), Wochentag, Monat
 - Öffnungsstatus (`is_open`, `minutes_since_open`, `minutes_until_close`)
 - Wetter (Temperatur, Niederschlag, Sonnenstunden via Open-Meteo)
-- Letzte bekannte Auslastung (`lag_1h`, gleitende Mittelwerte)
+- Letzte bekannte Auslastung (`lag_1h`, `lag_1w`, gleitende Mittelwerte)
 - Pool-ID (encoded)
 
-**Performance (Stand Feb 2026):**
+**Evaluation:** Zusätzlich zur globalen MAE werden stratifizierte Metriken berechnet (`peak_hours_mae`, `weekday_mae`, `weekend_mae`, …) und in `training_report.json` unter `holdout_evaluation` gespeichert. Offline-Walk-Forward: siehe `ml/walk_forward.py` / `python -m scripts.walk_forward` (optional, rechenintensiv).
 
-- 108'000+ Datenpunkte, 31 Bäder
-- MAE: **0.33%** vs. Baseline 16.38%
+**Performance:** Siehe `ml/models/training_report.json` nach einem Retrain (MAE vs. naive Baseline).
 
 ---
 

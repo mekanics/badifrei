@@ -65,6 +65,8 @@ async def main():
     print(f"MAE:  {report.model_mae:.1f}%  (baseline: {report.baseline_mae:.1f}%)")
     print(f"RMSE: {report.model_rmse:.1f}%")
     print(f"Beats baseline: {report.beats_baseline}")
+    if report.stratified:
+        print(f"Stratified MAE: {report.stratified}")
     print(f"Best iteration: {metrics.get('n_estimators_best', 'N/A')}")
     print(
         f"Worst pool: {report.worst_pool}  ({max(p.mae for p in report.per_pool):.1f}% MAE)"
