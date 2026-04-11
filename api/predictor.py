@@ -359,15 +359,17 @@ class Predictor:
         if db_pool is None or before_dt is None:
             return None
         try:
+            window_start = before_dt - timedelta(days=7)
             row = await db_pool.fetchrow(
                 """
                 SELECT AVG(occupancy_pct) AS rolling_mean
                 FROM pool_occupancy
                 WHERE pool_uid = $1
-                  AND time >= $2 - INTERVAL '7 days'
-                  AND time < $2
+                  AND time >= $2
+                  AND time < $3
                 """,
                 pool_uid,
+                window_start,
                 before_dt,
             )
             if row and row["rolling_mean"] is not None:
