@@ -6,9 +6,9 @@
 {% block twitter_title %}Zürcher Schwimmbäder – Auslastung live & Prognose{% endblock %}
 {% block structured_data %}
 {# One ItemList per city, mirroring the visual <h2>Schwimmbäder {city}</h2>
-   sections below. Helps Google map the site's pool inventory and reinforces
-   the topical clustering already signaled by the related-pools blocks on
-   each detail page. #}
+sections below. Helps Google map the site's pool inventory and reinforces
+the topical clustering already signaled by the related-pools blocks on
+each detail page. #}
 {% for city in cities %}{% if city.pools %}
 <script type="application/ld+json">
 {

@@ -380,9 +380,7 @@ async def pool_detail(request: Request, pool_uid: str):
     # city has many siblings (e.g. Zürich, 22 pools); falls back to regional
     # peers (Zürich+Adliswil, Rotkreuz+Hünenberg) and finally to same-type
     # pools across Switzerland so single-pool cities aren't crawl dead-ends.
-    related_pools, related_pools_scope = _compute_related_pools(
-        pool, pools, limit=8
-    )
+    related_pools, related_pools_scope = _compute_related_pools(pool, pools, limit=8)
     related_pools_heading = _related_pools_label(related_pools_scope, pool)
 
     return templates.TemplateResponse(
