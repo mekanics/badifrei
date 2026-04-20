@@ -358,16 +358,11 @@ async def pool_detail(request: Request, pool_uid: str):
             inflight.add(pool_uid)
             asyncio.create_task(_refresh_weekly_insights(pool_uid, db_pool))
 
-    # SEO-016: related pools in same city (same type first, then others; max 4)
-    all_pools = get_pools()
-    same_city = [
-        p
-        for p in all_pools
-        if p.get("city") == pool.get("city") and p["uid"] != pool_uid
-    ]
-    same_type = [p for p in same_city if p.get("type") == pool.get("type")]
-    other_type = [p for p in same_city if p.get("type") != pool.get("type")]
-    related_pools = (same_type + other_type)[:4]
+    # SEO-016: related pools in same city.
+    # Same-type prioritized; stable rotation per pool uid distributes inbound
+    # link equity evenly when a city has more siblings than the display limit
+    # (e.g. Zürich, 22 pools) instead of always linking the first N.
+    related_pools = _compute_related_pools(pool, pools, limit=8)
 
     return templates.TemplateResponse(
         request,
@@ -382,6 +377,55 @@ async def pool_detail(request: Request, pool_uid: str):
             "related_pools": related_pools,
         },
     )
+
+
+def _compute_related_pools(
+    current: dict, all_pools: list[dict], limit: int = 8
+) -> list[dict]:
+    """Return up to ``limit`` sibling pools to link to from the detail page.
+
+    Same-city pools only, with same-type prioritized over other-type. When the
+    sibling count is at or below ``limit``, every sibling is returned in a
+    deterministic order. When it exceeds ``limit`` (Zürich has 22 pools), a
+    stable rotation keyed off the current pool's position in the city's sorted
+    uid list slides the window across all siblings — every pool ends up with
+    roughly the same number of inbound sibling links instead of a few hubs
+    hoarding all the link equity.
+    """
+    current_uid = current.get("uid", "")
+    city = current.get("city")
+    pool_type = current.get("type")
+
+    same_city = [
+        p for p in all_pools if p.get("city") == city and p.get("uid") != current_uid
+    ]
+    if not same_city:
+        return []
+
+    same_type = sorted(
+        (p for p in same_city if p.get("type") == pool_type),
+        key=lambda p: p.get("uid", ""),
+    )
+    other_type = sorted(
+        (p for p in same_city if p.get("type") != pool_type),
+        key=lambda p: p.get("uid", ""),
+    )
+    ordered = same_type + other_type
+
+    if len(ordered) <= limit:
+        return ordered
+
+    # Sliding-window rotation: offset = current pool's index within the
+    # alphabetically sorted uids of all pools in the city. Adjacent pool
+    # pages show overlapping but shifted windows, distributing inbound
+    # links evenly across the entire city cluster.
+    city_uids_sorted = sorted(p.get("uid", "") for p in same_city + [current])
+    try:
+        offset = city_uids_sorted.index(current_uid)
+    except ValueError:
+        offset = 0
+    n = len(ordered)
+    return [ordered[(offset + i) % n] for i in range(limit)]
 
 
 _DAY_DE_FULL = {
