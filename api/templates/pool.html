@@ -100,6 +100,27 @@ endif %} – Auslastung live mit Prognose. Wann ist es am ruhigsten?{% endblock 
   ]
 }
 </script>
+{% if related_pools %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": {{ related_pools_heading | tojson }},
+  "itemListOrder": "https://schema.org/ItemListOrderAscending",
+  "numberOfItems": {{ related_pools | length }},
+  "itemListElement": [
+    {%- for rp in related_pools %}
+    {
+      "@type": "ListItem",
+      "position": {{ loop.index }},
+      "url": "https://badifrei.ch/bad/{{ rp.uid }}",
+      "name": {{ rp.name | tojson }}
+    }{% if not loop.last %},{% endif %}
+    {%- endfor %}
+  ]
+}
+</script>
+{% endif %}
 {% endblock %}
 {% block content %}
 <a href="/" class="back-link" data-umami-event="back-to-overview" data-umami-event-from-pool="{{ pool.uid }}">← Alle
