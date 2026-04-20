@@ -183,15 +183,15 @@ endif %} – Auslastung live mit Prognose. Wann ist es am ruhigsten?{% endblock 
 </div>{# end .pool-layout #}
 
 {% if related_pools %}
-<div class="related-pools-block">
-  <h2 class="related-pools-title">Weitere Bäder in {{ city_label }}</h2>
+<nav class="related-pools-block" aria-label="{{ related_pools_heading }}">
+  <h2 class="related-pools-title">{{ related_pools_heading }}</h2>
   <ul class="related-pools-list">
     {% for rp in related_pools %}
     <li><a href="/bad/{{ rp.uid }}" class="related-pool-link" data-umami-event="related-pool-click"
         data-umami-event-from-pool="{{ pool.uid }}" data-umami-event-to-pool="{{ rp.uid }}">{{ rp.name }}</a></li>
     {% endfor %}
   </ul>
-</div>
+</nav>
 {% endif %}
 
 <style>

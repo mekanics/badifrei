@@ -274,6 +274,24 @@ CITY_DISPLAY = {
     "zug": "Zug",
     "wengen": "Wengen",
 }
+
+# Geographic clusters used by the related-pools fallback. Cities not listed
+# are treated as their own region (no cross-city peers available).
+CITY_REGIONS: dict[str, set[str]] = {
+    "zurich": {"zurich", "adliswil"},
+    "adliswil": {"zurich", "adliswil"},
+    "rotkreuz": {"rotkreuz", "hunenberg"},
+    "hunenberg": {"rotkreuz", "hunenberg"},
+}
+
+# German plural labels per pool type, used as section heading when the
+# related-pools fallback can only group by type (no city or region peers).
+TYPE_LABELS_DE: dict[str, str] = {
+    "freibad": "Freibäder",
+    "hallenbad": "Hallenbäder",
+    "strandbad": "Strandbäder",
+    "seebad": "Seebäder",
+}
 CITY_ORDER = [
     "zurich",
     "luzern",
@@ -358,11 +376,14 @@ async def pool_detail(request: Request, pool_uid: str):
             inflight.add(pool_uid)
             asyncio.create_task(_refresh_weekly_insights(pool_uid, db_pool))
 
-    # SEO-016: related pools in same city.
-    # Same-type prioritized; stable rotation per pool uid distributes inbound
-    # link equity evenly when a city has more siblings than the display limit
-    # (e.g. Zürich, 22 pools) instead of always linking the first N.
-    related_pools = _compute_related_pools(pool, pools, limit=8)
+    # SEO-016: related pools. Same-city first with stable rotation when the
+    # city has many siblings (e.g. Zürich, 22 pools); falls back to regional
+    # peers (Zürich+Adliswil, Rotkreuz+Hünenberg) and finally to same-type
+    # pools across Switzerland so single-pool cities aren't crawl dead-ends.
+    related_pools, related_pools_scope = _compute_related_pools(
+        pool, pools, limit=8
+    )
+    related_pools_heading = _related_pools_label(related_pools_scope, pool)
 
     return templates.TemplateResponse(
         request,
@@ -375,22 +396,29 @@ async def pool_detail(request: Request, pool_uid: str):
             "opening_hours_summary": opening_hours_summary,
             "weekly_insights": weekly_insights,
             "related_pools": related_pools,
+            "related_pools_heading": related_pools_heading,
         },
     )
 
 
 def _compute_related_pools(
     current: dict, all_pools: list[dict], limit: int = 8
-) -> list[dict]:
-    """Return up to ``limit`` sibling pools to link to from the detail page.
+) -> tuple[list[dict], str]:
+    """Return up to ``limit`` sibling pools and the scope tag for the heading.
 
-    Same-city pools only, with same-type prioritized over other-type. When the
-    sibling count is at or below ``limit``, every sibling is returned in a
-    deterministic order. When it exceeds ``limit`` (Zürich has 22 pools), a
-    stable rotation keyed off the current pool's position in the city's sorted
-    uid list slides the window across all siblings — every pool ends up with
-    roughly the same number of inbound sibling links instead of a few hubs
-    hoarding all the link equity.
+    Scope precedence:
+
+    * ``"city"`` — at least one pool in the same city. Same-type prioritized;
+      stable rotation per pool uid distributes inbound links evenly when the
+      city has more siblings than ``limit`` (Zürich has 22 pools).
+    * ``"region"`` — empty city, but the pool belongs to a multi-city region
+      cluster (see ``CITY_REGIONS``) and other cities in the cluster have
+      pools. Same-type prioritized.
+    * ``"type"`` — single-pool city with no regional peers. Falls back to
+      same-type pools across all of Switzerland so the page still has
+      crawlable internal links instead of being a dead-end.
+    * ``"none"`` — nothing relevant found (only happens when the entire
+      dataset has a single pool of that type).
     """
     current_uid = current.get("uid", "")
     city = current.get("city")
@@ -399,26 +427,90 @@ def _compute_related_pools(
     same_city = [
         p for p in all_pools if p.get("city") == city and p.get("uid") != current_uid
     ]
-    if not same_city:
-        return []
 
+    if same_city:
+        return _city_pools_with_rotation(current, same_city, limit), "city"
+
+    region_cities = CITY_REGIONS.get(city, {city}) if city else set()
+    region_peers = [
+        p
+        for p in all_pools
+        if p.get("city") in region_cities and p.get("uid") != current_uid
+    ]
+    if region_peers:
+        picked = _by_type_first(region_peers, pool_type, limit)
+        # Top up with same-type pools from elsewhere if the region didn't
+        # fill the section (e.g. Rotkreuz/Hünenberg have only 1 regional
+        # peer each — a lone link makes the section feel like an oversight).
+        if len(picked) < limit:
+            picked = _topup_with_same_type(
+                picked, all_pools, pool_type, current_uid, limit
+            )
+        return picked, "region"
+
+    same_type = [
+        p
+        for p in all_pools
+        if p.get("type") == pool_type and p.get("uid") != current_uid
+    ]
+    if same_type:
+        ordered = sorted(same_type, key=lambda p: p.get("uid", ""))
+        return ordered[:limit], "type"
+
+    return [], "none"
+
+
+def _topup_with_same_type(
+    picked: list[dict],
+    all_pools: list[dict],
+    pool_type: str | None,
+    current_uid: str,
+    limit: int,
+) -> list[dict]:
+    """Append same-type pools from anywhere until ``limit`` is reached, no dupes."""
+    already = {p.get("uid") for p in picked}
+    extras = sorted(
+        (
+            p
+            for p in all_pools
+            if p.get("type") == pool_type
+            and p.get("uid") != current_uid
+            and p.get("uid") not in already
+        ),
+        key=lambda p: p.get("uid", ""),
+    )
+    return (picked + extras)[:limit]
+
+
+def _by_type_first(
+    candidates: list[dict], preferred_type: str | None, limit: int
+) -> list[dict]:
+    """Return up to ``limit`` candidates with same-type first, alpha-sorted within bucket."""
     same_type = sorted(
-        (p for p in same_city if p.get("type") == pool_type),
+        (p for p in candidates if p.get("type") == preferred_type),
         key=lambda p: p.get("uid", ""),
     )
     other_type = sorted(
-        (p for p in same_city if p.get("type") != pool_type),
+        (p for p in candidates if p.get("type") != preferred_type),
         key=lambda p: p.get("uid", ""),
     )
-    ordered = same_type + other_type
+    return (same_type + other_type)[:limit]
 
+
+def _city_pools_with_rotation(
+    current: dict, same_city: list[dict], limit: int
+) -> list[dict]:
+    """Same-type-first ordering plus sliding-window rotation when siblings > limit.
+
+    The offset = current pool's index in the city's alphabetically sorted uids,
+    so adjacent pages show overlapping but shifted windows — every sibling
+    ends up linked from roughly the same number of pages instead of a few
+    hubs hoarding all inbound links.
+    """
+    ordered = _by_type_first(same_city, current.get("type"), len(same_city))
     if len(ordered) <= limit:
         return ordered
-
-    # Sliding-window rotation: offset = current pool's index within the
-    # alphabetically sorted uids of all pools in the city. Adjacent pool
-    # pages show overlapping but shifted windows, distributing inbound
-    # links evenly across the entire city cluster.
+    current_uid = current.get("uid", "")
     city_uids_sorted = sorted(p.get("uid", "") for p in same_city + [current])
     try:
         offset = city_uids_sorted.index(current_uid)
@@ -426,6 +518,19 @@ def _compute_related_pools(
         offset = 0
     n = len(ordered)
     return [ordered[(offset + i) % n] for i in range(limit)]
+
+
+def _related_pools_label(scope: str, pool: dict) -> str:
+    """Pick the German section heading for the related-pools block."""
+    if scope == "city":
+        city = pool.get("city", "")
+        return f"Weitere Bäder in {CITY_DISPLAY.get(city, city.title())}"
+    if scope == "region":
+        return "Weitere Bäder in der Nähe"
+    if scope == "type":
+        type_label = TYPE_LABELS_DE.get(pool.get("type", ""), "Bäder")
+        return f"Andere {type_label}"
+    return ""
 
 
 _DAY_DE_FULL = {
