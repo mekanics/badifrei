@@ -4,6 +4,33 @@
 {% block og_description %}Echtzeit-Auslastung und KI-Prognosen für alle Zürcher Schwimmbäder. Schau vor dem Besuch nach
 — jede Minute aktualisiert.{% endblock %}
 {% block twitter_title %}Zürcher Schwimmbäder – Auslastung live & Prognose{% endblock %}
+{% block structured_data %}
+{# One ItemList per city, mirroring the visual <h2>Schwimmbäder {city}</h2>
+   sections below. Helps Google map the site's pool inventory and reinforces
+   the topical clustering already signaled by the related-pools blocks on
+   each detail page. #}
+{% for city in cities %}{% if city.pools %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": {{ ("Schwimmbäder " ~ city.label) | tojson }},
+  "itemListOrder": "https://schema.org/ItemListOrderAscending",
+  "numberOfItems": {{ city.pools | length }},
+  "itemListElement": [
+    {%- for pool in city.pools %}
+    {
+      "@type": "ListItem",
+      "position": {{ loop.index }},
+      "url": {{ ("https://badifrei.ch/bad/" ~ pool.uid) | tojson }},
+      "name": {{ pool.name | tojson }}
+    }{% if not loop.last %},{% endif %}
+    {%- endfor %}
+  ]
+}
+</script>
+{% endif %}{% endfor %}
+{% endblock %}
 {% block content %}
 <h1 class="page-title">Zürcher Schwimmbäder – Auslastung live & Prognose</h1>
 <p class="subtitle">Ist deine Lieblingsbadi gerade voll? Schau nach — Auslastung live, jede Minute aktualisiert.</p>
