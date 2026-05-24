@@ -98,15 +98,15 @@ async def load_data(
                     SELECT
                         time_bucket($1, time) AS time,
                         pool_uid,
-                        pool_name,
+                        LAST(pool_name, time) AS pool_name,
                         AVG(current_fill) AS current_fill,
-                        max_space,
+                        LAST(max_space, time) AS max_space,
                         AVG(free_space) AS free_space,
                         AVG(occupancy_pct) AS occupancy_pct
                     FROM pool_occupancy
                     WHERE time <= $2
                       AND max_space > 0
-                    GROUP BY time_bucket($1, time), pool_uid, pool_name, max_space
+                    GROUP BY time_bucket($1, time), pool_uid
                     ORDER BY pool_uid, time ASC
                     """,
                     bucket_td,
@@ -118,16 +118,16 @@ async def load_data(
                     SELECT
                         time_bucket($1, time) AS time,
                         pool_uid,
-                        pool_name,
+                        LAST(pool_name, time) AS pool_name,
                         AVG(current_fill) AS current_fill,
-                        max_space,
+                        LAST(max_space, time) AS max_space,
                         AVG(free_space) AS free_space,
                         AVG(occupancy_pct) AS occupancy_pct
                     FROM pool_occupancy
                     WHERE time >= $2
                       AND time <= $3
                       AND max_space > 0
-                    GROUP BY time_bucket($1, time), pool_uid, pool_name, max_space
+                    GROUP BY time_bucket($1, time), pool_uid
                     ORDER BY pool_uid, time ASC
                     """,
                     bucket_td,

@@ -194,6 +194,21 @@ class TestLagFeatures:
         result = add_lag_features(df)
         assert "lag_1w" in result.columns
 
+    def test_duplicate_pool_time_raises_clear_error(self):
+        from ml.features import add_lag_features
+
+        duplicate_time = pd.Timestamp("2026-02-01 10:00:00", tz="UTC")
+        df = pd.DataFrame(
+            {
+                "time": [duplicate_time, duplicate_time],
+                "pool_uid": ["SSD-5", "SSD-5"],
+                "occupancy_pct": [40.0, 42.0],
+            }
+        )
+
+        with pytest.raises(ValueError, match="Duplicate \\(pool_uid, time\\)"):
+            add_lag_features(df)
+
 
 class TestRollingFeatures:
     def test_rolling_mean_7d_column_exists(self):

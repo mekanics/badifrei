@@ -121,6 +121,27 @@ class TestBucketedQueryUsesTimeBucket:
             f"Got: {type(first_param)} = {first_param!r}"
         )
 
+    @pytest.mark.parametrize("start", [None, START])
+    async def test_bucketed_query_groups_one_row_per_pool_and_bucket(self, start):
+        """Mutable fields must not split one pool/time bucket into duplicate rows."""
+        from ml.data_loader import load_data
+
+        rows = make_raw_rows(1000)
+        ctx, mock_conn = patch_db(rows)
+
+        with ctx:
+            await load_data(start, END, min_records=100, bucket_interval="10 minutes")
+
+        sql_called = mock_conn.fetch.call_args[0][0]
+        sql_normalized = " ".join(sql_called.lower().split())
+        group_by_clause = sql_normalized.split("group by", 1)[1].split("order by", 1)[0]
+
+        assert "pool_uid" in group_by_clause
+        assert "pool_name" not in group_by_clause
+        assert "max_space" not in group_by_clause
+        assert "last(pool_name, time) as pool_name" in sql_normalized
+        assert "last(max_space, time) as max_space" in sql_normalized
+
 
 # ---------------------------------------------------------------------------
 # Test 2 — raw query unchanged when bucket_interval=None

@@ -127,6 +127,23 @@ def add_pool_features(
     return df
 
 
+def _validate_unique_pool_times(df: pd.DataFrame, time_col: str) -> None:
+    duplicate_mask = df.duplicated(["pool_uid", time_col], keep=False)
+    if not duplicate_mask.any():
+        return
+
+    examples = (
+        df.loc[duplicate_mask, ["pool_uid", time_col]]
+        .drop_duplicates()
+        .head(5)
+        .to_dict("records")
+    )
+    raise ValueError(
+        "Duplicate (pool_uid, time) rows are not supported for time-series "
+        f"feature generation; examples: {examples}"
+    )
+
+
 def add_lag_features(df: pd.DataFrame) -> pd.DataFrame:
     """Add lag features per pool using time-based shifts.
 
@@ -137,6 +154,7 @@ def add_lag_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df = df.sort_values(["pool_uid", "time"])
     df["time_dt"] = pd.to_datetime(df["time"])
+    _validate_unique_pool_times(df, "time_dt")
 
     def _time_shift(group: pd.DataFrame, freq: str):
         g = group.set_index("time_dt").sort_index()
@@ -171,6 +189,7 @@ def add_rolling_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df = df.sort_values(["pool_uid", "time"])
     df["_ts"] = pd.to_datetime(df["time"])
+    _validate_unique_pool_times(df, "_ts")
     df = df.set_index("_ts")
     df["rolling_mean_7d"] = df.groupby("pool_uid")["occupancy_pct"].transform(
         lambda x: x.rolling("7D", min_periods=1).mean()
