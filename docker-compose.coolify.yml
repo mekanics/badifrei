@@ -56,7 +56,13 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=3).read()",
+        ]
       interval: 30s
       timeout: 5s
       retries: 3
