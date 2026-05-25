@@ -538,17 +538,17 @@ def add_opening_hours_features(
     df["open_min"] = df["open_min"].fillna(0).astype(int)
     df["close_min"] = df["close_min"].fillna(1440).astype(int)
 
-    # --- 3. Seasonal check (vectorized ordinal arithmetic) ---
-    # Convert timestamps to day ordinals without any Python-level iteration:
-    #   days_since_unix_epoch = floor(ts_ns / ns_per_day)
-    #   ordinal = days_since_unix_epoch + ordinal(1970-01-01)
-    EPOCH_ORDINAL = datetime.date(1970, 1, 1).toordinal()  # 719163
-    dt_series = pd.to_datetime(df["time"])
-    if dt_series.dt.tz is not None:
-        dt_series = dt_series.dt.tz_convert("UTC")
-    row_ordinal = (
-        dt_series.dt.normalize().astype("int64") // (86_400 * 10**9)
-    ) + EPOCH_ORDINAL
+    # --- 3. Seasonal check ---
+    # Use calendar dates instead of timestamp integer units. Pandas versions
+    # differ in the unit exposed by astype("int64"), which can corrupt ordinals.
+    if "date" in df.columns:
+        local_dates = pd.to_datetime(df["date"]).dt.date
+    else:
+        dt_series = pd.to_datetime(df["time"])
+        if dt_series.dt.tz is not None:
+            dt_series = dt_series.dt.tz_convert("Europe/Zurich")
+        local_dates = dt_series.dt.date
+    row_ordinal = local_dates.map(lambda d: d.toordinal()).astype("int64")
 
     if seasonal_dict:
         so_map = {uid: v[0] for uid, v in seasonal_dict.items()}

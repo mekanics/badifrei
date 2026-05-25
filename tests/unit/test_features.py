@@ -477,6 +477,45 @@ class TestOpeningHoursFeatures:
         assert row["minutes_since_open"] == 60
         assert row["minutes_until_close"] == 900
 
+    def test_seasonal_pool_opening_hours_in_season(self):
+        from ml.features import add_time_features, add_opening_hours_features
+
+        metadata = {
+            "SEASONAL-1": {
+                "uid": "SEASONAL-1",
+                "name": "Seasonal Pool",
+                "type": "freibad",
+                "seasonal": True,
+                "opening_hours": {
+                    "schedule": {
+                        "Mon": {"open": "09:00", "close": "20:00"},
+                        "Tue": {"open": "09:00", "close": "20:00"},
+                        "Wed": {"open": "09:00", "close": "20:00"},
+                        "Thu": {"open": "09:00", "close": "20:00"},
+                        "Fri": {"open": "09:00", "close": "20:00"},
+                        "Sat": {"open": "09:00", "close": "20:00"},
+                        "Sun": {"open": "09:00", "close": "20:00"},
+                    },
+                    "seasonal_open": "2026-05-09",
+                    "seasonal_close": "2026-09-20",
+                },
+            }
+        }
+        df = pd.DataFrame(
+            {
+                "time": [pd.Timestamp("2026-05-25 10:00:00", tz="Europe/Zurich")],
+                "pool_uid": "SEASONAL-1",
+                "occupancy_pct": [50.0],
+            }
+        )
+
+        result = add_opening_hours_features(add_time_features(df), metadata)
+        row = result.iloc[0]
+
+        assert row["is_open"] == 1
+        assert row["minutes_since_open"] == 60
+        assert row["minutes_until_close"] == 600
+
     def test_hour_22_is_closed(self):
         from ml.features import add_opening_hours_features
 
