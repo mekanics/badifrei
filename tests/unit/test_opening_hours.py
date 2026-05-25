@@ -36,9 +36,7 @@ def test_schedule_has_all_seven_days(pools):
     for pool in pools:
         schedule = pool["opening_hours"]["schedule"]
         missing = [d for d in DAYS if d not in schedule]
-        assert not missing, (
-            f"Pool {pool['uid']} schedule missing days: {missing}"
-        )
+        assert not missing, f"Pool {pool['uid']} schedule missing days: {missing}"
 
 
 def test_open_before_close(pools):
@@ -52,14 +50,15 @@ def test_open_before_close(pools):
             assert "close" in slot, f"Pool {pool['uid']} {day} missing 'close'"
             open_t = slot["open"]
             close_t = slot["close"]
-            assert open_t < close_t, (
-                f"Pool {pool['uid']} {day}: open={open_t} is not before close={close_t}"
-            )
+            assert (
+                open_t < close_t
+            ), f"Pool {pool['uid']} {day}: open={open_t} is not before close={close_t}"
 
 
 def test_time_format(pools):
     """Time strings must be in HH:MM format."""
     import re
+
     pattern = re.compile(r"^\d{2}:\d{2}$")
     for pool in pools:
         schedule = pool["opening_hours"]["schedule"]
@@ -68,9 +67,9 @@ def test_time_format(pools):
                 continue
             for field in ("open", "close"):
                 val = slot[field]
-                assert pattern.match(val), (
-                    f"Pool {pool['uid']} {day} {field}='{val}' not in HH:MM format"
-                )
+                assert pattern.match(
+                    val
+                ), f"Pool {pool['uid']} {day} {field}='{val}' not in HH:MM format"
 
 
 def test_seasonal_fields_present(pools):
@@ -86,12 +85,12 @@ def test_seasonal_pools_have_dates(pools):
     for pool in pools:
         if pool.get("seasonal"):
             oh = pool["opening_hours"]
-            assert oh["seasonal_open"] is not None, (
-                f"Seasonal pool {pool['uid']} has null seasonal_open"
-            )
-            assert oh["seasonal_close"] is not None, (
-                f"Seasonal pool {pool['uid']} has null seasonal_close"
-            )
+            assert (
+                oh["seasonal_open"] is not None
+            ), f"Seasonal pool {pool['uid']} has null seasonal_open"
+            assert (
+                oh["seasonal_close"] is not None
+            ), f"Seasonal pool {pool['uid']} has null seasonal_close"
 
 
 def test_year_round_pools_have_null_seasonal_dates(pools):
@@ -99,12 +98,12 @@ def test_year_round_pools_have_null_seasonal_dates(pools):
     for pool in pools:
         if not pool.get("seasonal"):
             oh = pool["opening_hours"]
-            assert oh["seasonal_open"] is None, (
-                f"Year-round pool {pool['uid']} has non-null seasonal_open: {oh['seasonal_open']}"
-            )
-            assert oh["seasonal_close"] is None, (
-                f"Year-round pool {pool['uid']} has non-null seasonal_close: {oh['seasonal_close']}"
-            )
+            assert (
+                oh["seasonal_open"] is None
+            ), f"Year-round pool {pool['uid']} has non-null seasonal_open: {oh['seasonal_open']}"
+            assert (
+                oh["seasonal_close"] is None
+            ), f"Year-round pool {pool['uid']} has non-null seasonal_close: {oh['seasonal_close']}"
 
 
 def test_seasonal_open_before_close(pools):
@@ -128,8 +127,13 @@ from datetime import datetime  # noqa: E402
 _TZ = zoneinfo.ZoneInfo("Europe/Zurich")
 
 
-def _make_pool(open_time: str, close_time: str, day: str = "Fri",
-               seasonal_open=None, seasonal_close=None) -> dict:
+def _make_pool(
+    open_time: str,
+    close_time: str,
+    day: str = "Fri",
+    seasonal_open=None,
+    seasonal_close=None,
+) -> dict:
     """Build a minimal pool dict with a fixed schedule for all seven days."""
     schedule = {}
     for d in DAYS:
@@ -154,6 +158,7 @@ class TestComputePoolIsOpen:
 
     def _call(self, pool: dict, now: datetime) -> dict:
         from api.main import _compute_pool_is_open
+
         return _compute_pool_is_open(pool, now)
 
     # ── The exact bug case ──────────────────────────────────────────────────
@@ -230,11 +235,63 @@ class TestComputePoolIsOpen:
 
     def test_off_season_returns_closed_with_seasonal_label(self):
         """Pool outside seasonal window shows opens_seasonal label, not next_open."""
-        pool = _make_pool("09:00", "20:00",
-                          seasonal_open="2026-05-01", seasonal_close="2026-09-30")
+        pool = _make_pool(
+            "09:00", "20:00", seasonal_open="2026-05-01", seasonal_close="2026-09-30"
+        )
         # March is before May — off-season
         result = self._call(pool, _zurich(2026, 3, 20, 14, 0))
         assert result["is_open"] is False
         assert result["next_open"] is None
         assert result["opens_seasonal"] is not None
         assert "Mai" in result["opens_seasonal"]
+
+
+class TestClassifyPredictionDay:
+    """Unit tests for prediction status metadata."""
+
+    def _call(self, pool: dict, day, model_available: bool) -> dict:
+        from api.main import _classify_prediction_day
+
+        return _classify_prediction_day(pool, day, model_available)
+
+    def test_off_season_takes_precedence_over_model_status(self):
+        pool = _make_pool(
+            "09:00",
+            "20:00",
+            seasonal_open="2026-05-01",
+            seasonal_close="2026-09-30",
+        )
+
+        result = self._call(pool, _zurich(2026, 3, 20, 12, 0).date(), False)
+
+        assert result["prediction_status"] == "off_season"
+        assert result["open_hours_count"] == 0
+        assert result["model_available"] is False
+
+    def test_closed_all_day_takes_precedence_over_model_status(self):
+        pool = _make_pool("09:00", "20:00")
+        pool["opening_hours"]["schedule"]["Fri"] = None
+
+        result = self._call(pool, _zurich(2026, 3, 20, 12, 0).date(), False)
+
+        assert result["prediction_status"] == "closed_all_day"
+        assert result["open_hours_count"] == 0
+        assert result["model_available"] is False
+
+    def test_open_day_without_model_returns_no_model(self):
+        pool = _make_pool("09:00", "20:00")
+
+        result = self._call(pool, _zurich(2026, 3, 20, 12, 0).date(), False)
+
+        assert result["prediction_status"] == "no_model"
+        assert result["open_hours_count"] == 11
+        assert result["model_available"] is False
+
+    def test_open_day_with_model_returns_ok(self):
+        pool = _make_pool("09:00", "20:00")
+
+        result = self._call(pool, _zurich(2026, 3, 20, 12, 0).date(), True)
+
+        assert result["prediction_status"] == "ok"
+        assert result["open_hours_count"] == 11
+        assert result["model_available"] is True

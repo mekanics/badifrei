@@ -33,8 +33,12 @@ class TestHealth:
         # CORS is now restricted to configured origins (default: https://badifrei.ch).
         # Requests from unknown origins receive no ACAO header (browser blocks them).
         # Requests from an allowed origin get a reflected ACAO header.
-        response = await client.get("/health", headers={"Origin": "https://badifrei.ch"})
-        assert response.headers.get("access-control-allow-origin") == "https://badifrei.ch"
+        response = await client.get(
+            "/health", headers={"Origin": "https://badifrei.ch"}
+        )
+        assert (
+            response.headers.get("access-control-allow-origin") == "https://badifrei.ch"
+        )
 
 
 class TestOpenAPI:
@@ -75,3 +79,26 @@ class TestPools:
         response = await client.get("/pools")
         pools_by_uid = {p["uid"]: p for p in response.json()}
         assert not pools_by_uid["SSD-5"]["seasonal"]
+
+
+class TestPredictions:
+    async def test_range_prediction_includes_status_metadata(self, client, monkeypatch):
+        from api import main as api_main
+
+        async def _predict_range_batch(pool_uid, hours, db_pool=None):
+            return [0.0] * len(hours)
+
+        monkeypatch.setattr(api_main.predictor, "is_loaded", lambda: False)
+        monkeypatch.setattr(
+            api_main.predictor, "predict_range_batch", _predict_range_batch
+        )
+
+        response = await client.get("/predict/range?pool_uid=SSD-5&date=2026-03-07")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["model_available"] is False
+        assert data["model_version"] == "no-model"
+        assert data["prediction_status"] == "no_model"
+        assert data["open_hours_count"] > 0
+        assert len(data["predictions"]) == 24

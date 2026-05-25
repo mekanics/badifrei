@@ -1,6 +1,7 @@
 """Pydantic schemas for the API."""
+
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 from pydantic import BaseModel, field_validator
 
 
@@ -46,4 +47,8 @@ class RangePredictionResponse(BaseModel):
     pool_uid: str
     pool_name: str
     date: str
+    model_available: bool
+    model_version: str
+    prediction_status: Literal["ok", "no_model", "closed_all_day", "off_season"]
+    open_hours_count: int
     predictions: list[RangePredictionItem]

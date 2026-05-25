@@ -64,6 +64,7 @@ const appData = document.getElementById('ssr-data')
 const POOL_UID = appData.dataset.poolUid
 const POOL_CITY = appData.dataset.city || ''
 const SSR_DATE = appData.dataset.todayDate
+const SSR_PREDICTION_STATUS = appData.dataset.predictionStatus || 'ok'
 const SSR_PREDICTIONS = JSON.parse(appData.dataset.ssrPredictions)
 
 track('pool-view', { pool_uid: POOL_UID, city: POOL_CITY })
@@ -146,6 +147,20 @@ const chart = new Chart(ctx, {
 	},
 })
 
+function updatePredictionMessage(status) {
+	const el = document.getElementById('no-model-msg')
+	if (!el) return
+
+	const messages = {
+		no_model: 'Für dieses Bad ist noch kein Prognosemodell verfügbar.',
+		off_season: 'Dieses Bad ist an diesem Datum ausserhalb der Saison geschlossen.',
+		closed_all_day: 'Dieses Bad ist an diesem Datum geschlossen.',
+	}
+	const message = messages[status]
+	el.textContent = message || ''
+	el.style.display = message ? 'block' : 'none'
+}
+
 async function loadChart(date) {
 	const today = todayZurich()
 	const isPast = date < today
@@ -154,16 +169,18 @@ async function loadChart(date) {
 
 	try {
 		let predValues
+		let predictionStatus
 		if (date === SSR_DATE) {
 			predValues = SSR_PREDICTIONS
+			predictionStatus = SSR_PREDICTION_STATUS
 		} else {
 			const predRes = await fetch(`/predict/range?pool_uid=${encodeURIComponent(POOL_UID)}&date=${date}`)
 			if (!predRes.ok) return
 			const predData = await predRes.json()
 			predValues = predData.predictions.map(p => p.predicted_occupancy_pct)
+			predictionStatus = predData.prediction_status || 'ok'
 		}
-		const allZero = predValues.every(v => v === 0.0)
-		document.getElementById('no-model-msg').style.display = allZero ? 'block' : 'none'
+		updatePredictionMessage(predictionStatus)
 		chart.data.datasets[1].data = predValues
 
 		let actuals = Array(24).fill(null)
