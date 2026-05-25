@@ -378,5 +378,5 @@ endif %} – Auslastung live mit Prognose. Wann ist es am ruhigsten?{% endblock 
   data-prediction-status="{{ today_prediction_status }}" data-ssr-predictions="{{ today_predictions_json }}" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"
   integrity="sha384-b0GXujLkk9eYYSmcSfoyZbfyElGAQnDyY0skCHSG6w3JgTMFnz11ggrTAr7seu9f" crossorigin="anonymous"></script>
-<script src="/static/pool.js?v={{ static_ver }}"></script>
+<script src="/static/pool.js?v={{ static_ver('pool.js') }}"></script>
 {% endblock %}

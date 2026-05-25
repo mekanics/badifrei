@@ -244,11 +244,26 @@ templates = Jinja2Templates(directory=str(TEMPLATES_PATH))
 # Cache-busting hash for static assets — recomputed on every deploy/restart
 import hashlib as _hashlib  # noqa: E402
 
-_css_path = STATIC_PATH / "style.css"
-_STATIC_VER = (
-    _hashlib.md5(_css_path.read_bytes()).hexdigest()[:8] if _css_path.exists() else "0"
-)
-templates.env.globals["static_ver"] = _STATIC_VER
+_STATIC_VER_CACHE: dict[tuple[Path, str], str] = {}
+
+
+def _static_ver(filename: str) -> str:
+    """Return an 8-char content hash for a top-level static asset."""
+    asset_name = Path(filename)
+    if asset_name.name != filename:
+        return "0"
+    cache_key = (STATIC_PATH, filename)
+    if cache_key in _STATIC_VER_CACHE:
+        return _STATIC_VER_CACHE[cache_key]
+    asset_path = STATIC_PATH / filename
+    if not asset_path.is_file():
+        return "0"
+    version = _hashlib.md5(asset_path.read_bytes()).hexdigest()[:8]
+    _STATIC_VER_CACHE[cache_key] = version
+    return version
+
+
+templates.env.globals["static_ver"] = _static_ver
 templates.env.globals["umami_script_url"] = UMAMI_SCRIPT_URL
 templates.env.globals["umami_website_id"] = UMAMI_WEBSITE_ID
 

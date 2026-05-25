@@ -102,3 +102,71 @@ class TestPredictions:
         assert data["prediction_status"] == "no_model"
         assert data["open_hours_count"] > 0
         assert len(data["predictions"]) == 24
+
+
+class TestStaticAssetVersions:
+    def test_static_ver_hashes_each_file_independently(self, tmp_path, monkeypatch):
+        from api import main as api_main
+
+        (tmp_path / "style.css").write_text("body{color:red}", encoding="utf-8")
+        (tmp_path / "pool.js").write_text("console.log('pool')", encoding="utf-8")
+        monkeypatch.setattr(api_main, "STATIC_PATH", tmp_path)
+
+        style_ver = api_main._static_ver("style.css")
+        pool_ver = api_main._static_ver("pool.js")
+
+        assert len(style_ver) == 8
+        assert len(pool_ver) == 8
+        assert style_ver != pool_ver
+
+    def test_static_ver_missing_asset_returns_zero(self, tmp_path, monkeypatch):
+        from api import main as api_main
+
+        monkeypatch.setattr(api_main, "STATIC_PATH", tmp_path)
+
+        assert api_main._static_ver("missing.js") == "0"
+
+    def test_static_ver_memoizes_asset_hashes(self, tmp_path, monkeypatch):
+        from api import main as api_main
+
+        asset = tmp_path / "pool.js"
+        asset.write_text("first", encoding="utf-8")
+        monkeypatch.setattr(api_main, "STATIC_PATH", tmp_path)
+        api_main._STATIC_VER_CACHE.clear()
+
+        first_ver = api_main._static_ver("pool.js")
+        asset.write_text("second", encoding="utf-8")
+
+        assert api_main._static_ver("pool.js") == first_ver
+
+    def test_static_ver_rejects_nested_paths(self, tmp_path, monkeypatch):
+        from api import main as api_main
+
+        nested = tmp_path / "nested"
+        nested.mkdir()
+        (nested / "pool.js").write_text("stale", encoding="utf-8")
+        monkeypatch.setattr(api_main, "STATIC_PATH", tmp_path)
+
+        assert api_main._static_ver("nested/pool.js") == "0"
+
+    async def test_pool_page_uses_pool_js_hash(self, client, monkeypatch):
+        import hashlib
+        import re
+        from api import main as api_main
+
+        async def _predict_range_batch(pool_uid, hours, db_pool=None):
+            return [0.0] * len(hours)
+
+        monkeypatch.setattr(api_main.predictor, "is_loaded", lambda: False)
+        monkeypatch.setattr(
+            api_main.predictor, "predict_range_batch", _predict_range_batch
+        )
+
+        response = await client.get("/bad/fb006")
+
+        assert response.status_code == 200
+        pool_js = api_main.STATIC_PATH / "pool.js"
+        expected_ver = hashlib.md5(pool_js.read_bytes()).hexdigest()[:8]
+        match = re.search(r"/static/pool\.js\?v=([a-f0-9]+)", response.text)
+        assert match is not None
+        assert match.group(1) == expected_ver
