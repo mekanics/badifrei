@@ -480,8 +480,12 @@ body {
 /* Star button */
 .star-btn {
 	position: absolute;
-	top: 0.5rem;
-	right: 0.5rem;
+	top: 0.25rem;
+	right: 0.25rem;
+	display: grid;
+	place-items: center;
+	width: 1.5rem;
+	height: 1.5rem;
 	background: none;
 	border: none;
 	cursor: pointer;
@@ -491,7 +495,6 @@ body {
 	transition:
 		opacity 0.15s,
 		transform 0.15s;
-	padding: 0.2rem;
 	z-index: 2;
 	filter: grayscale(1);
 }
