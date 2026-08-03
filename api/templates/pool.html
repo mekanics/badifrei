@@ -8,13 +8,14 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
 Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
 {% block twitter_title %}{{ pool.name }}{% if city_label and city_label not in pool.name %} {{ city_label }}{% endif %}
 – Auslastung live | badifrei.ch{% endblock %}
-{% block description %}{{ pool.name }}{% if city_label and city_label not in pool.name %} {{ city_label }}{% endif %} –
-Auslastung live. Wann ist es am wenigsten voll? Prognose, Öffnungszeiten & Kapazität auf badifrei.ch.{% endblock %}
+{% set _type = pool.type | title if pool.type else '' %}
+{% set _name = pool.name %}
+{% set _needs_type = _type and not _name.lower().startswith(_type.lower()) %}
+{% set _prefix = _type + ' ' if _needs_type else '' %}
+{% block description %}{{ _prefix }}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{% endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sieh vor dem Besuch, wie voll es ist →{% endblock %}
 {% block og_url_path %}/bad/{{ pool.uid }}{% endblock %}
-{% block og_description %}{{ pool.name }}{% if city_label and city_label not in pool.name %} {{ city_label }}{% endif %}
-– Auslastung live mit Prognose auf badifrei.ch. Finde den besten Zeitpunkt für deinen Besuch.{% endblock %}
-{% block twitter_description %}{{ pool.name }}{% if city_label and city_label not in pool.name %} {{ city_label }}{%
-endif %} – Auslastung live mit Prognose. Wann ist es am ruhigsten?{% endblock %}
+{% block og_description %}{{ _prefix }}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{% endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sieh vor dem Besuch, wie voll es ist →{% endblock %}
+{% block twitter_description %}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{% endif %}: Live-Auslastung & aktuelle Besucherzahlen | badifrei.ch{% endblock %}
 {% block canonical_path %}/bad/{{ pool.uid }}{% endblock %}
 {% block structured_data %}
 {% set day_schema = {"Mon": "Monday", "Tue": "Tuesday", "Wed": "Wednesday", "Thu": "Thursday", "Fri": "Friday", "Sat":
