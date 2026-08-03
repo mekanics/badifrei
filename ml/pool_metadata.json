@@ -1,1097 +1,1422 @@
 [
-	{
-		"uid": "fb006",
-		"name": "Freibad Allenmoos",
-		"type": "freibad",
-		"seasonal": true,
-		"city": "zurich",
-		"max_capacity": 2500,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Tue": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Wed": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Thu": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Fri": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Sat": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Sun": {
-					"open": "09:00",
-					"close": "20:00"
-				}
-			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-20",
-			"notes": "Weather-dependent: opens at 09:00 regardless of weather, extended until 20:00 in good weather only. Peak summer (Jun 19 - Aug 22) closes 21:00."
-		},
-		"description": "Das Freibad Allenmoos liegt im Norden Zürichs im Quartier Unterstrass und gehört zu den beliebtesten Freibädern der Stadt. Die grosszügige Anlage verfügt über Schwimm- und Planschbecken, vier Beachvolleyballfelder sowie Grillstellen und einen Spielplatz. Die Liegewiesen laden zum Entspannen ein. Ausserhalb der Badesaison ist das Gelände als Grünanlage kostenlos zugänglich.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/allenmoos.html"
-	},
-	{
-		"uid": "fb008",
-		"name": "Freibad Auhof",
-		"type": "freibad",
-		"seasonal": true,
-		"city": "zurich",
-		"max_capacity": 2001,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Tue": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Wed": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Thu": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Fri": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Sat": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Sun": {
-					"open": "09:00",
-					"close": "20:00"
-				}
-			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-27",
-			"notes": "Weather-dependent hours. Closes end of September (same weekend as Letzigraben, Mythenquai, Tiefenbrunnen)."
-		},
-		"description": "Das Freibad Auhof liegt im Osten Zürichs nahe dem Zürichberg und bietet eine ruhige, naturnahe Atmosphäre. Die Anlage verfügt über ein Schwimmbecken, ein Planschbecken für Kinder sowie eine grosse Liegewiese. Grillstellen und ein Spielplatz machen das Auhof besonders familienfreundlich. Die verlängerte Saison bis in den Herbst macht es zu einem der langlebigsten Freibäder Zürichs.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/auhof.html"
-	},
-	{
-		"uid": "fb012",
-		"name": "Freibad Heuried",
-		"type": "freibad",
-		"seasonal": true,
-		"city": "zurich",
-		"max_capacity": 2600,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Tue": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Wed": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Thu": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Fri": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Sat": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Sun": {
-					"open": "09:00",
-					"close": "20:00"
-				}
-			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-20",
-			"notes": "Weather-dependent hours. Typical close early-mid September."
-		},
-		"description": "Das Freibad Heuried liegt im Kreis 3 in der Nähe des Sportzentrums Heuried und ist ein beliebter Treffpunkt für Familien und Sportbegeisterte aus dem Quartier. Das Bad bietet ein Schwimmbecken, ein Kinderbecken sowie eine Wasserrutschbahn. Die Anlage ist eingebettet in eine grosse Liegewiese mit Grillstellen und einem Spielplatz.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/heuried.html"
-	},
-	{
-		"uid": "LETZI-1",
-		"name": "Freibad Letzigraben",
-		"type": "freibad",
-		"seasonal": true,
-		"city": "zurich",
-		"max_capacity": 3800,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Tue": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Wed": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Thu": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Fri": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Sat": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Sun": {
-					"open": "07:00",
-					"close": "21:00"
-				}
-			},
-			"seasonal_open": "2026-05-01",
-			"seasonal_close": "2026-09-27",
-			"notes": "Opens 1 May (earlier than most Freibäder). Early morning swim from 07:00. Peak summer until 21:00; shoulder season until 19:00 or 20:00. Weather-dependent extended hours."
-		},
-		"description": "Das Freibad Letzigraben im Kreis 9 ist eines der wenigen beheizten Freibäder Zürichs und hat daher eine besonders lange Saison – von Mai bis Ende Oktober. Die Anlage bietet ein grosses Schwimmbecken, ein Nichtschwimmerbecken sowie Grillstellen und einen Spielplatz. Die gute Erreichbarkeit mit dem ÖV macht das Letzigraben sehr beliebt.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/letzigraben.html"
-	},
-	{
-		"uid": "SSD-11",
-		"name": "Freibad Seebach",
-		"type": "freibad",
-		"seasonal": true,
-		"city": "zurich",
-		"max_capacity": 2000,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Tue": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Wed": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Thu": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Fri": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Sat": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Sun": {
-					"open": "07:00",
-					"close": "21:00"
-				}
-			},
-			"seasonal_open": "2026-04-11",
-			"seasonal_close": "2026-10-25",
-			"notes": "One of the first and last outdoor pools open each season. Extends to late October along with Seebad Utoquai."
-		},
-		"description": "Das Freibad Seebach liegt im nördlichsten Stadtteil Zürichs und ist eine beheizte Aussenanlage mit einer langen Saison. Das Bad verfügt über ein Schwimmbecken, ein Planschbecken und eine grosse Liegewiese. Es ist vor allem für die Bewohnerinnen und Bewohner des Stadtteils Seebach ein wichtiger Naherholungsort.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/seebach.html"
-	},
-	{
-		"uid": "fb018",
-		"name": "Freibad Zwischen den Hölzern",
-		"type": "freibad",
-		"seasonal": true,
-		"city": "zurich",
-		"max_capacity": 2000,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Tue": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Wed": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Thu": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Fri": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Sat": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Sun": {
-					"open": "09:00",
-					"close": "20:00"
-				}
-			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-20",
-			"notes": "Weather-dependent hours. Always open 09:00-14:00; extended to 20:00 in good weather."
-		},
-		"description": "Das Freibad Zwischen den Hölzern liegt im südlichen Zürich im Kreis 2 und bietet eine ruhige, waldnahe Atmosphäre. Mit Schwimmbecken, Kinderbecken, Grillstellen und einem weitläufigen Gelände ist es ein idealer Ausflugsziel für Familien. Der Name leitet sich vom bewaldeten Hügel ab, der das Bad umgibt.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/zwischen-den-hoelzern.html"
-	},
-	{
-		"uid": "SSD-1",
-		"name": "Hallenbad Altstetten",
-		"type": "hallenbad",
-		"seasonal": false,
-		"city": "zurich",
-		"max_capacity": 0,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "06:00",
-					"close": "21:00"
-				},
-				"Tue": {
-					"open": "08:00",
-					"close": "21:00"
-				},
-				"Wed": {
-					"open": "06:00",
-					"close": "21:00"
-				},
-				"Thu": {
-					"open": "08:00",
-					"close": "21:00"
-				},
-				"Fri": {
-					"open": "06:00",
-					"close": "21:00"
-				},
-				"Sat": {
-					"open": "08:00",
-					"close": "18:00"
-				},
-				"Sun": {
-					"open": "08:00",
-					"close": "18:00"
-				}
-			},
-			"seasonal_open": null,
-			"seasonal_close": null,
-			"notes": "Operated by Betriebsgenossenschaft Hallenbad Altstetten. Wellness pool and slide. Mon/Wed/Fri early start 06:00; Tue/Thu from 08:00. Sauna has separate hours. Revision planned 2027-2029."
-		},
-		"description": "Das Hallenbad Altstetten liegt im Westen Zürichs im Kreis 9 und gehört zu den sieben öffentlichen Hallenbädern der Stadt. Es bietet ein 25-Meter-Becken, einen Wellnessbereich sowie eine Rutschbahn für Jung und Alt. Die Anlage ist ideal für regelmässige Schwimmerinnen und Schwimmer sowie für Familien.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/altstetten.html"
-	},
-	{
-		"uid": "SSD-2",
-		"name": "Hallenbad Blaesi",
-		"type": "hallenbad",
-		"seasonal": false,
-		"city": "zurich",
-		"max_capacity": 70,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "12:00",
-					"close": "19:00"
-				},
-				"Tue": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Wed": {
-					"open": "09:00",
-					"close": "19:00"
-				},
-				"Thu": {
-					"open": "09:00",
-					"close": "22:00"
-				},
-				"Fri": {
-					"open": "12:00",
-					"close": "19:00"
-				},
-				"Sat": {
-					"open": "09:00",
-					"close": "16:00"
-				},
-				"Sun": {
-					"open": "09:00",
-					"close": "16:00"
-				}
-			},
-			"seasonal_open": null,
-			"seasonal_close": null,
-			"notes": "Small neighbourhood pool in Höngg. Wed afternoon: Kinderspielnachmittag 14:00-16:30. Last entry 30 min before closing."
-		},
-		"description": "Das Hallenbad Bläsi befindet sich in Zürich-Wipkingen und bietet ein 25-Meter-Becken, eine Liegeterrasse sowie regelmässige Kinderspielnachmittage. Das Bad ist besonders bei Familien und Schulklassen beliebt. Die ruhige Lage nahe dem Limmatufer macht es zu einem angenehmen Ort für Erholung und Sport.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/blaesi.html"
-	},
-	{
-		"uid": "SSD-3",
-		"name": "Hallenbad Bungertwies",
-		"type": "hallenbad",
-		"seasonal": false,
-		"city": "zurich",
-		"max_capacity": 70,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "12:00",
-					"close": "19:00"
-				},
-				"Tue": {
-					"open": "12:00",
-					"close": "19:00"
-				},
-				"Wed": {
-					"open": "12:00",
-					"close": "19:00"
-				},
-				"Thu": {
-					"open": "12:00",
-					"close": "19:00"
-				},
-				"Fri": null,
-				"Sat": null,
-				"Sun": {
-					"open": "09:00",
-					"close": "16:00"
-				}
-			},
-			"seasonal_open": null,
-			"seasonal_close": null,
-			"notes": "Mon-Thu split hours: 12:00-13:30 and 16:00-19:00 (closed 13:30-16:00 for school lessons). Fri and Sat closed. Wed afternoon: Kinderspielnachmittag."
-		},
-		"description": "Das Hallenbad Bungertwies liegt im Kreis 7 in Zürich und verfügt über ein 25-Meter-Becken, eine Liegeterrasse und regelmässige Kinderspielnachmittage. Es ist ein beliebtes Quartier-Hallenbad und wird von Schülerinnen und Schülern sowie Freizeitschwimmerinnen und -schwimmern aus dem ganzen Stadtkreis genutzt.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/bungertwies.html"
-	},
-	{
-		"uid": "SSD-4",
-		"name": "Hallenbad City",
-		"type": "hallenbad",
-		"seasonal": false,
-		"city": "zurich",
-		"max_capacity": 220,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "06:00",
-					"close": "22:00"
-				},
-				"Tue": {
-					"open": "06:00",
-					"close": "22:00"
-				},
-				"Wed": {
-					"open": "06:00",
-					"close": "22:00"
-				},
-				"Thu": {
-					"open": "06:00",
-					"close": "22:00"
-				},
-				"Fri": {
-					"open": "06:00",
-					"close": "22:00"
-				},
-				"Sat": {
-					"open": "06:00",
-					"close": "22:00"
-				},
-				"Sun": {
-					"open": "06:00",
-					"close": "22:00"
-				}
-			},
-			"seasonal_open": null,
-			"seasonal_close": null,
-			"notes": "Central location (Kreis 1). 50m pool, sauna, open 365 days 06:00-22:00. Sauna has separate hours and gender-restricted sessions."
-		},
-		"description": "Das Hallenbad City liegt im Herzen Zürichs im Kreis 1 beim Schanzengraben und ist mit seinem markanten Glasdach eines der schönsten Hallenbäder der Stadt. Es bietet ein 50-Meter-Becken mit fünf Bahnen, ein Nichtschwimmer- und Variobecken sowie eine vielfältige Saunalandschaft mit finnischer Sauna, Bio-Sauna und Aussenbereich. Lange Öffnungszeiten und zentrale Lage machen es zur ersten Wahl für Sportbegeisterte in der Innenstadt.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/city.html"
-	},
-	{
-		"uid": "SSD-6",
-		"name": "Hallenbad Leimbach",
-		"type": "hallenbad",
-		"seasonal": false,
-		"city": "zurich",
-		"max_capacity": 80,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "06:00",
-					"close": "21:00"
-				},
-				"Tue": {
-					"open": "06:00",
-					"close": "21:00"
-				},
-				"Wed": {
-					"open": "06:00",
-					"close": "21:00"
-				},
-				"Thu": {
-					"open": "06:00",
-					"close": "21:00"
-				},
-				"Fri": {
-					"open": "06:00",
-					"close": "21:00"
-				},
-				"Sat": {
-					"open": "09:00",
-					"close": "18:00"
-				},
-				"Sun": {
-					"open": "09:00",
-					"close": "18:00"
-				}
-			},
-			"seasonal_open": null,
-			"seasonal_close": null,
-			"notes": "Mon/Tue/Thu/Fri: split hours 06:00-08:00 (Frühschwimmen) and 12:00-21:00 (closed 08:00-12:00 for school). Wed: continuous 06:00-21:00. Sat: Familienschwimmen until 14:00, Sportschwimmen 14:30+."
-		},
-		"description": "Das Hallenbad Leimbach liegt im südlichsten Stadtkreis Zürichs und gilt als eines der familiengerechtesten Hallenbäder der Stadt. Neben dem Schwimmbecken bietet die Anlage einen Aussenbereich, eine Sauna und ein Dampfbad. Das Bad ist bei Familien mit Kindern sowie bei Entspannungssuchenden gleichermassen beliebt.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/leimbach.html"
-	},
-	{
-		"uid": "SSD-7",
-		"name": "Hallenbad Oerlikon",
-		"type": "hallenbad",
-		"seasonal": false,
-		"city": "zurich",
-		"max_capacity": 200,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "06:00",
-					"close": "20:00"
-				},
-				"Tue": {
-					"open": "06:00",
-					"close": "20:00"
-				},
-				"Wed": {
-					"open": "06:00",
-					"close": "22:00"
-				},
-				"Thu": {
-					"open": "06:00",
-					"close": "20:00"
-				},
-				"Fri": {
-					"open": "06:00",
-					"close": "22:00"
-				},
-				"Sat": {
-					"open": "06:00",
-					"close": "22:00"
-				},
-				"Sun": {
-					"open": "06:00",
-					"close": "22:00"
-				}
-			},
-			"seasonal_open": null,
-			"seasonal_close": null,
-			"notes": "50m pool with 10m diving tower. Wed: Kinderspielnachmittag 14:00-16:00. Frequently booked for competitions. New Sportzentrum Oerlikon planned (build from 2027, open ~2031)."
-		},
-		"description": "Das Hallenbad Oerlikon liegt im Kreis 11 im Norden Zürichs und gehört mit seinem 50-Meter-Becken und einer imposanten Sprungturmanlage zu den leistungsfähigsten Hallenbädern der Stadt. Lange Öffnungszeiten machen es für Frühschwimmer und Abendsportler gleichermassen attraktiv. Das Bad ist sehr gut mit dem ÖV erreichbar und liegt in direkter Nähe zum Bahnhof Oerlikon.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/oerlikon.html"
-	},
-	{
-		"uid": "LIDO-1",
-		"name": "Lido Luzern",
-		"type": "strandbad",
-		"seasonal": true,
-		"city": "luzern",
-		"max_capacity": 3500,
-		"opening_hours": {
-			"schedule": {
-				"Mon": { "open": "09:30", "close": "19:30" },
-				"Tue": { "open": "09:30", "close": "19:30" },
-				"Wed": { "open": "09:30", "close": "19:30" },
-				"Thu": { "open": "09:30", "close": "19:30" },
-				"Fri": { "open": "09:30", "close": "19:30" },
-				"Sat": { "open": "09:30", "close": "19:30" },
-				"Sun": { "open": "09:30", "close": "19:30" }
-			},
-			"seasonal_open": "2026-05-01",
-			"seasonal_close": "2026-09-30",
-			"notes": "Strandbad Lido Luzern (Lidostrasse 6A). Lake beach on Vierwaldstättersee with sandy beach, sunbathing lawns, heated 25m pool, and beach volleyball. Open daily 09:30–19:30 during season. Season ~May–end of September."
-		},
-		"description": "Das Strandbad Lido Luzern liegt am Ufer des Vierwaldstättersees mit Blick auf Rigi und Bürgenstock. Es bietet einen Sandstrand, ausgedehnte Liegewiesen, einen beheizten 25-Meter-Pool, Beach-Volleyball und ein Restaurant. Mit über 45'000 m² Fläche und 500 m Strandlänge ist es die grösste Seebadeanstalt der Schweiz.",
-		"official_url": "https://www.luzern.com/en/poi/lido-lucerne"
-	},
-	{
-		"uid": "RISCH-1",
-		"name": "Schwimmbad Rotkreuz",
-		"type": "freibad",
-		"seasonal": true,
-		"city": "rotkreuz",
-		"max_capacity": 600,
-		"opening_hours": {
-			"schedule": {
-				"Mon": { "open": "09:00", "close": "20:00" },
-				"Tue": { "open": "09:00", "close": "20:00" },
-				"Wed": { "open": "09:00", "close": "20:00" },
-				"Thu": { "open": "09:00", "close": "20:00" },
-				"Fri": { "open": "09:00", "close": "20:00" },
-				"Sat": { "open": "09:00", "close": "20:00" },
-				"Sun": { "open": "09:00", "close": "19:00" }
-			},
-			"seasonal_open": "2026-05-02",
-			"seasonal_close": "2026-09-27",
-			"notes": "Schwimmbad Rotkreuz (Buonaserstrasse 29, 6343 Rotkreuz). Freiluftbadi (outdoor only). 50m pool with 4 lanes + kids pool. Season ~May–late Sept. Mon–Sat 09:00–20:00, Sun 09:00–19:00. Weather-dependent closures (call 079 538 47 32)."
-		},
-		"description": "Das Schwimmbad Rotkreuz in der Gemeinde Risch (Kanton Zug) ist ein klassisches Freibad mit 50-Meter-Schwimmbecken, Kinderschwimmbecken, 1m- und 2m-Sprungbrettern, Liegewiesen und Grillplatz. Eintritt kostenpflichtig. Gut erreichbar aus der gesamten Agglomeration Zug/Luzern.",
-		"official_url": "https://www.zg.ch/behoerden/gemeinden/risch-rotkreuz/verwaltung/tiefbau-umwelt-sicherheit-1/copy_of_laerm/copy_of_plaetze-und-anlagen/badi-rotkreuz-1"
-	},
-	{
-		"uid": "SSD-10",
-		"name": "Seebad Utoquai",
-		"type": "seebad",
-		"seasonal": true,
-		"city": "zurich",
-		"max_capacity": 800,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Tue": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Wed": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Thu": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Fri": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Sat": {
-					"open": "07:00",
-					"close": "21:00"
-				},
-				"Sun": {
-					"open": "07:00",
-					"close": "21:00"
-				}
-			},
-			"seasonal_open": "2026-04-11",
-			"seasonal_close": "2026-10-25",
-			"notes": "One of the first pools to open and last to close each season. Lake swimming. Winter swimming (Winterschwimmen) Sat/Sun 11:00-14:00 outside main season."
-		},
-		"description": "Das Seebad Utoquai liegt am rechten Ufer des Zürichsees im noblen Quartier Seefeld und ist eine historische Badeanstalt aus dem 19. Jahrhundert. Die elegante Anlage bietet einen direkten Seezugang, eine grosszügige Liegewiese sowie eine einzigartige Atmosphäre. Im Winter ist Winterschwimmen unter Aufsicht möglich – ein besonderes Erlebnis für Hartgesottene.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/utoquai.html"
-	},
-	{
-		"uid": "seb6946",
-		"name": "Strandbad Mythenquai",
-		"type": "strandbad",
-		"seasonal": true,
-		"city": "zurich",
-		"max_capacity": 4500,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "07:00",
-					"close": "20:00"
-				},
-				"Tue": {
-					"open": "07:00",
-					"close": "20:00"
-				},
-				"Wed": {
-					"open": "07:00",
-					"close": "20:00"
-				},
-				"Thu": {
-					"open": "07:00",
-					"close": "20:00"
-				},
-				"Fri": {
-					"open": "07:00",
-					"close": "20:00"
-				},
-				"Sat": {
-					"open": "07:00",
-					"close": "20:00"
-				},
-				"Sun": {
-					"open": "07:00",
-					"close": "20:00"
-				}
-			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-27",
-			"notes": "Large lake beach. Open 07:00-11:00 at all weather; extended to 20:00 (21:00 peak summer) in good weather. Park area open year-round. Children's area from 09:00."
-		},
-		"description": "Das Strandbad Mythenquai am linken Zürichseeufer gehört zu den bekanntesten und meistbesuchten Badeanstalten der Schweiz. Mit seinem feinen Sandstrand, den Liegewiesen und dem Sprungturm (1, 3 und 5 Meter) zieht es jährlich Hunderttausende an. Planschbecken, Grillstellen, Spielwiesen und ein Bücherschrank machen es zum perfekten Ausflugsziel für Familien.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/mythenquai.html"
-	},
-	{
-		"uid": "seb6947",
-		"name": "Strandbad Tiefenbrunnen",
-		"type": "strandbad",
-		"seasonal": true,
-		"city": "zurich",
-		"max_capacity": 3500,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "07:00",
-					"close": "20:00"
-				},
-				"Tue": {
-					"open": "07:00",
-					"close": "20:00"
-				},
-				"Wed": {
-					"open": "07:00",
-					"close": "20:00"
-				},
-				"Thu": {
-					"open": "07:00",
-					"close": "20:00"
-				},
-				"Fri": {
-					"open": "07:00",
-					"close": "20:00"
-				},
-				"Sat": {
-					"open": "07:00",
-					"close": "20:00"
-				},
-				"Sun": {
-					"open": "07:00",
-					"close": "20:00"
-				}
-			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-27",
-			"notes": "Lake beach on right shore of Zürichsee. Similar season and hours to Mythenquai. Weather-dependent extended hours."
-		},
-		"description": "Das Strandbad Tiefenbrunnen liegt im Osten Zürichs am Seeufer und ist eine der ältesten noch betriebenen Badeanlagen am Zürichsee. Die historische Anlage mit ihrem charakteristischen Holzpavillon bietet einen Sandstrand, grosse Liegewiesen, Grillstellen und direkten Seezugang. Das Bad ist auch für Abendveranstaltungen bekannt und hat eine entspannte, lebhafte Atmosphäre.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/tiefenbrunnen.html"
-	},
-	{
-		"uid": "seb6948",
-		"name": "Strandbad Wollishofen",
-		"type": "strandbad",
-		"seasonal": true,
-		"city": "zurich",
-		"max_capacity": 700,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Tue": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Wed": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Thu": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Fri": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Sat": {
-					"open": "09:00",
-					"close": "20:00"
-				},
-				"Sun": {
-					"open": "09:00",
-					"close": "20:00"
-				}
-			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-20",
-			"notes": "Smaller lake beach south of Mythenquai. Closes mid-September."
-		},
-		"description": "Das Strandbad Wollishofen liegt am südlichen Ende des Zürichsees und bietet eine familienfreundliche Atmosphäre in einem ruhigeren Umfeld als die zentraleren Strandbäder. Der Sandstrand, die Liegewiesen, Grillstellen und ein Spielplatz machen es zum idealen Ausflugsziel für Familien mit Kindern. Die ruhigere Lage macht Wollishofen zu einem Geheimtipp unter Einheimischen.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/wollishofen.html"
-	},
-	{
-		"uid": "SSD-5",
-		"name": "Wärmebad Käferberg",
-		"type": "hallenbad",
-		"seasonal": false,
-		"city": "zurich",
-		"max_capacity": 70,
-		"opening_hours": {
-			"schedule": {
-				"Mon": {
-					"open": "11:00",
-					"close": "15:00"
-				},
-				"Tue": {
-					"open": "06:30",
-					"close": "22:00"
-				},
-				"Wed": {
-					"open": "06:30",
-					"close": "22:00"
-				},
-				"Thu": {
-					"open": "06:30",
-					"close": "22:00"
-				},
-				"Fri": {
-					"open": "06:30",
-					"close": "22:00"
-				},
-				"Sat": {
-					"open": "09:00",
-					"close": "18:00"
-				},
-				"Sun": {
-					"open": "09:00",
-					"close": "18:00"
-				}
-			},
-			"seasonal_open": null,
-			"seasonal_close": null,
-			"notes": "Warm bath (32°C). Mon: 11:00-15:00 only. Tue-Fri: early slot 06:30-08:00, then complex schedule with adult-only and swimmer-only periods through to 22:00. Sat/Sun: 09:00-16:00 (May-Sep), 09:00-18:00 (Oct-Apr). Not suitable for lane swimming."
-		},
-		"description": "Das Wärmebad Käferberg liegt auf einer Anhöhe in Zürich-Wipkingen und ist einzigartig unter den städtischen Bädern: Das Wasser wird auf 32 Grad Celsius erwärmt, was es das ganze Jahr über besonders angenehm macht. Die Anlage bietet ein Mehrzweckbecken mit Hubboden, einen Ruheraum, eine Liegewiese sowie einen atemberaubenden Panoramablick über die Stadt Zürich. Das Bad ist besonders beliebt bei Menschen mit Bewegungseinschränkungen sowie bei allen, die ein entspanntes Schwimmerlebnis suchen.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/kaeferberg.html"
-	},
-	{
-		"uid": "WEN-1",
-		"name": "Freibad Wengen",
-		"type": "freibad",
-		"seasonal": true,
-		"city": "wengen",
-		"max_capacity": 70,
-		"opening_hours": {
-			"schedule": {
-				"Mon": { "open": "10:00", "close": "19:00" },
-				"Tue": { "open": "10:00", "close": "19:00" },
-				"Wed": { "open": "10:00", "close": "19:00" },
-				"Thu": { "open": "10:00", "close": "19:00" },
-				"Fri": { "open": "10:00", "close": "19:00" },
-				"Sat": { "open": "10:00", "close": "19:00" },
-				"Sun": { "open": "10:00", "close": "19:00" }
-			},
-			"seasonal_open": "2026-06-06",
-			"seasonal_close": "2026-09-07",
-			"notes": "Sonnen- und Schwimmbad Waldbort, Wengen (1274m ü.M., Bernese Oberland). Outdoor mountain pool, open only in good/warm weather. Season ~June–early Sept. Hours 10:00–19:00 daily (weather-dependent). Small capacity (70). Tel: 033 855 14 66."
-		},
-		"description": "Das Freibad Wengen (Sonnen- und Schwimmbad Waldbort) liegt auf 1274 Metern im autofreien Bergdorf Wengen im Berner Oberland. Das kleine Freibad bietet ein beheiztes Becken mit Sprungturm und spektakulärem Blick auf Jungfrau, Mönch und Eiger. Geöffnet nur bei gutem Wetter, typischerweise Juni bis Anfang September.",
-		"official_url": "https://wengen.swiss/de/map/detail/freibad-wengen-58e45aa0-121e-40ce-ae59-0527cdfae84f.html"
-	},
-	{
-		"uid": "HUENENBERG-1",
-		"name": "Strandbad Hünenberg",
-		"type": "strandbad",
-		"seasonal": true,
-		"city": "hunenberg",
-		"max_capacity": 1000,
-		"opening_hours": {
-			"schedule": {
-				"Mon": { "open": "09:00", "close": "20:00" },
-				"Tue": { "open": "09:00", "close": "20:00" },
-				"Wed": { "open": "09:00", "close": "20:00" },
-				"Thu": { "open": "09:00", "close": "20:00" },
-				"Fri": { "open": "09:00", "close": "20:00" },
-				"Sat": { "open": "09:00", "close": "20:00" },
-				"Sun": { "open": "09:00", "close": "20:00" }
-			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-20",
-			"notes": "Strandbad Hünenberg (Kanton Zug), lake beach on Zugersee. Season: Saturday before Muttertag to Bettag (mid-May to mid-September). Hours 09:00–20:00 daily with lifeguard supervision. Gastronomie also open Apr and Oct weather-permitting."
-		},
-		"description": "Das Strandbad Hünenberg liegt direkt am Zugersee in der Gemeinde Hünenberg (Kanton Zug). Es bietet einen Seezugang, Liegewiesen, Spielgeräte, eine eingezäunte Spielwiese und einen Grillplatz. Die Gastronomie ist auch ausserhalb der Badesaison bei guter Witterung geöffnet.",
-		"official_url": "https://www.zg.ch/behoerden/gemeinden/hunenberg/de/verwaltung/sicherheit-und-umwelt/strandbad/oeffnungszeiten"
-	},
-	{
-		"uid": "BADI-1",
-		"name": "Seebad Enge",
-		"type": "seebad",
-		"seasonal": false,
-		"city": "zurich",
-		"max_capacity": 54,
-		"opening_hours": {
-			"schedule": {
-				"Mon": { "open": "08:00", "close": "20:00" },
-				"Tue": { "open": "08:00", "close": "20:00" },
-				"Wed": { "open": "08:00", "close": "20:00" },
-				"Thu": { "open": "08:00", "close": "20:00" },
-				"Fri": { "open": "08:00", "close": "20:00" },
-				"Sat": { "open": "08:00", "close": "20:00" },
-				"Sun": { "open": "08:00", "close": "20:00" }
-			},
-			"seasonal_open": null,
-			"seasonal_close": null,
-			"notes": "Lake bath on Zürichsee (Mythenquai 9). Summer season ~May 10–Sept 14, 08:00–20:00 daily. Winter: Winterschwimmen Mon–Thu 10:00–dusk only, max 30 persons at a time. Sauna year-round. Small capacity (54) due to limited winter access."
-		},
-		"description": "Das Seebad Enge (auch Seebad Tonttu) liegt direkt am Zürichsee beim Arboretum und bietet als einzige Badeanstalt Zürichs Winterschwimmen an. Im Sommer ist es ein beliebtes See- und Sonnenbad mit Schwimm- und Nichtschwimmerbereich, Bar und Selbstbedienungsrestaurant. Im Winter steht das Winterschwimmen (Mon–Do, Aufenthaltsdauer max. 1 Stunde) und die Sauna im Vordergrund.",
-		"official_url": "https://www.seebadenge.ch"
-	},
-	{
-		"uid": "FREIBAD-1",
-		"name": "Entfelden",
-		"type": "freibad",
-		"seasonal": true,
-		"city": "entfelden",
-		"max_capacity": 1300,
-		"opening_hours": {
-			"schedule": {
-				"Mon": { "open": "07:30", "close": "20:00" },
-				"Tue": { "open": "07:30", "close": "20:00" },
-				"Wed": { "open": "07:30", "close": "20:00" },
-				"Thu": { "open": "07:30", "close": "20:00" },
-				"Fri": { "open": "07:30", "close": "20:00" },
-				"Sat": { "open": "08:00", "close": "20:00" },
-				"Sun": { "open": "08:00", "close": "20:00" }
-			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-15",
-			"notes": "Badi Entfelden, Kanton Aargau. Has both indoor (Hallenbad) and outdoor (Freibad) pools. WS appears to track Freibad occupancy. Indoor pool open year-round (separate crowdmonitor entry not present). Freibad season ~May 10–Sept 15."
-		},
-		"description": "Die Badi Entfelden in Oberentfelden (Kanton Aargau) bietet sowohl ein Hallenbad als auch ein Freibad mit 50-Meter-Becken, Strömungskanal, Rutschbahn und Kinderplanschbecken. Die Anlage zieht Gäste aus der gesamten Region Aarau an.",
-		"official_url": "https://badi-entfelden.ch"
-	},
-	{
-		"uid": "IMBAD-1",
-		"name": "Adliswil",
-		"type": "freibad",
-		"seasonal": true,
-		"city": "adliswil",
-		"max_capacity": 2000,
-		"opening_hours": {
-			"schedule": {
-				"Mon": { "open": "07:30", "close": "20:00" },
-				"Tue": { "open": "07:30", "close": "20:00" },
-				"Wed": { "open": "07:30", "close": "20:00" },
-				"Thu": { "open": "07:30", "close": "20:00" },
-				"Fri": { "open": "07:30", "close": "20:00" },
-				"Sat": { "open": "08:00", "close": "20:00" },
-				"Sun": { "open": "08:00", "close": "20:00" }
-			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-15",
-			"notes": "Hallen- und Freibad im Tal, Adliswil (Talstrasse 10). WS appears to track Freibad section (shows 0 in winter). Freibad season ~May 10–Sept 15. Hallenbad is open year-round (Mon–Fri 06:30–20:30, Sat–Sun 08:00–18:00) but may be tracked separately or not connected."
-		},
-		"description": "Das Hallen- und Freibad im Tal in Adliswil bietet einen 25-Meter-Innenpool mit Sprungtürmen sowie ein weitläufiges Freibad mit 25-Meter-Becken, Strömungskanal, Rutschbahn und Kinderplanschbecken. Die Anlage liegt südlich von Zürich im Sihltal.",
-		"official_url": "https://www.adliswil.ch"
-	},
-	{
-		"uid": "MARZILI-1",
-		"name": "Bern Marzili",
-		"type": "freibad",
-		"seasonal": true,
-		"city": "bern",
-		"max_capacity": 14999,
-		"opening_hours": {
-			"schedule": {
-				"Mon": { "open": "07:00", "close": "21:00" },
-				"Tue": { "open": "07:00", "close": "21:00" },
-				"Wed": { "open": "07:00", "close": "21:00" },
-				"Thu": { "open": "07:00", "close": "21:00" },
-				"Fri": { "open": "07:00", "close": "21:00" },
-				"Sat": { "open": "09:00", "close": "21:00" },
-				"Sun": { "open": "09:00", "close": "21:00" }
-			},
-			"seasonal_open": "2026-05-30",
-			"seasonal_close": "2026-08-31",
-			"notes": "Freibad Marzili, Bern (Marzilistrasse 29). Free entry. Iconic Aare river bath. Under major renovation 2025–2029; 2026 season opens 'at earliest end of May 2026' with restrictions. Normal season ~May 10–Aug 31 (Schwimmkanal until Sept 21). Peak hours Mon–Fri 07:00–21:00, Sat–Sun 09:00–21:00."
-		},
-		"description": "Das Freibad Marzili ist Berns bekannteste Badeanstalt und liegt direkt an der Aare unterhalb des Bundeshauses. Mit Spitzenfrequenzen von über 13'000 Besuchern täglich ist es eines der meistbesuchten Freibäder der Schweiz. Eintritt gratis. 2026 teilweise eingeschränkter Betrieb wegen Gesamtsanierung (Kredit 67 Mio. CHF, Bauende 2029).",
-		"official_url": "https://www.sportamt-bern.ch/sportanlage/marzili/"
-	},
-	{
-		"uid": "WEYERMANNSHAUS-1",
-		"name": "Bern Weyermannshaus",
-		"type": "hallenbad",
-		"seasonal": false,
-		"city": "bern",
-		"max_capacity": 3500,
-		"opening_hours": {
-			"schedule": {
-				"Mon": { "open": "06:00", "close": "21:00" },
-				"Tue": { "open": "06:00", "close": "21:00" },
-				"Wed": { "open": "11:00", "close": "21:00" },
-				"Thu": { "open": "06:00", "close": "21:00" },
-				"Fri": { "open": "06:00", "close": "21:00" },
-				"Sat": { "open": "07:00", "close": "18:00" },
-				"Sun": { "open": "07:00", "close": "18:00" }
-			},
-			"seasonal_open": null,
-			"seasonal_close": null,
-			"notes": "Schwimmbad Weyermannshaus, Bern (Stöckackerstrasse 9). Has both Hallenbad (year-round) and Freibad (season ~May 9–Sept 13). Max capacity 3500 is the combined Freibad+Hallenbad. Hallenbad hours shown. Wed restricted due to school use mornings. Freibad 2026: reopens May 10."
-		},
-		"description": "Das Schwimmbad Weyermannshaus in Bern bietet ein ganzjährig geöffnetes Hallenbad sowie ein saisonales Freibad (gratis Eintritt). Das Hallenbad ist das Zwillingsbad des Hallenbads Wyler und bietet 25-Meter-Becken, Lehrschwimmbecken und Therapiebad.",
-		"official_url": "https://www.sportamt-bern.ch/sportanlage/freibad-weyermannshaus/"
-	},
-	{
-		"uid": "WYLERBAD-1",
-		"name": "Bern Wylerbad",
-		"type": "hallenbad",
-		"seasonal": false,
-		"city": "bern",
-		"max_capacity": 2500,
-		"opening_hours": {
-			"schedule": {
-				"Mon": { "open": "06:00", "close": "21:00" },
-				"Tue": { "open": "06:00", "close": "21:00" },
-				"Wed": { "open": "11:00", "close": "21:00" },
-				"Thu": { "open": "06:00", "close": "21:00" },
-				"Fri": { "open": "06:00", "close": "21:00" },
-				"Sat": { "open": "07:00", "close": "18:00" },
-				"Sun": { "open": "07:00", "close": "18:00" }
-			},
-			"seasonal_open": null,
-			"seasonal_close": null,
-			"notes": "Freibad / Hallenbad Wyler, Bern (Scheibenstrasse 65). Hallenbad year-round, Freibad season ~May 10–Sept 30. Max capacity 2500 is combined. Wed morning restricted for schools. Tue closes at 18:30 due to club evening. Frühschwimmen from 06:00 with Abo only."
-		},
-		"description": "Das Hallenbad Wyler (Wylerbad) in Bern ist das Zwillingsbad des Hallenbads Weyermannshaus. Es bietet ein 25-Meter-Becken mit 5 Bahnen, ein Lehrschwimmbecken sowie ein Therapiebad. Das dazugehörige Freibad (gratis Eintritt) ist von Mai bis Ende September geöffnet.",
-		"official_url": "https://www.sportamt-bern.ch/sportanlage/wyler/"
-	},
-	{
-		"uid": "flb6939",
-		"name": "Flussbad Oberer Letten",
-		"type": "freibad",
-		"seasonal": true,
-		"city": "zurich",
-		"max_capacity": 1000,
-		"opening_hours": {
-			"schedule": {
-				"Mon": { "open": "09:00", "close": "21:00" },
-				"Tue": { "open": "09:00", "close": "21:00" },
-				"Wed": { "open": "09:00", "close": "21:00" },
-				"Thu": { "open": "09:00", "close": "21:00" },
-				"Fri": { "open": "09:00", "close": "21:00" },
-				"Sat": { "open": "09:00", "close": "21:00" },
-				"Sun": { "open": "09:00", "close": "21:00" }
-			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-20",
-			"notes": "Flussbad Oberer Letten (Lettensteg 10). Free entry. Limmat river bath with 400m swim canal. Guaranteed open 09:00–14:00; extended to 20:00–21:00 in good weather. Swimmers only (no young children). Season 2026: May 9–Sept 20."
-		},
-		"description": "Das Flussbad Oberer Letten liegt im Herzen Zürichs an der Limmat und bietet einen 400 Meter langen Schwimmkanal sowie ein 2-Meter-Sprungbrett. Der Eintritt ist gratis. Das Bad ist nur für gute Schwimmer geeignet – die Strömung ist stark und der Kanal bis zu 6 Meter tief.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/oberer-letten.html"
-	},
-	{
-		"uid": "flb6940",
-		"name": "Flussbad Unterer Letten",
-		"type": "freibad",
-		"seasonal": true,
-		"city": "zurich",
-		"max_capacity": 800,
-		"opening_hours": {
-			"schedule": {
-				"Mon": { "open": "09:00", "close": "20:00" },
-				"Tue": { "open": "09:00", "close": "20:00" },
-				"Wed": { "open": "09:00", "close": "20:00" },
-				"Thu": { "open": "09:00", "close": "20:00" },
-				"Fri": { "open": "09:00", "close": "20:00" },
-				"Sat": { "open": "09:00", "close": "20:00" },
-				"Sun": { "open": "09:00", "close": "20:00" }
-			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-20",
-			"notes": "Flussbad Unterer Letten, Zürich. Free entry. Oldest river bath in Zürich with 100m swim canal. Tue closes 20:00 (Flussbar evening). Open-air cinema Filmfluss: mid-July, closes 19:30. Season 2026: May 9–Sept 20."
-		},
-		"description": "Das Flussbad Unterer Letten ist das älteste Flussbad Zürichs und bietet einen 100-Meter-Schwimmkanal in der Limmat sowie ein Beckenbad. Eintritt gratis. Im Sommer finden hier die Flussbar (dienstags ab 20:15 Uhr) und das Open-Air-Kino Filmfluss statt.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/unterer-letten.html"
-	},
-	{
-		"uid": "flb6941",
-		"name": "Frauenbad Stadthausquai",
-		"type": "freibad",
-		"seasonal": true,
-		"city": "zurich",
-		"max_capacity": 350,
-		"opening_hours": {
-			"schedule": {
-				"Mon": { "open": "07:00", "close": "19:30" },
-				"Tue": { "open": "07:00", "close": "19:30" },
-				"Wed": { "open": "07:00", "close": "19:30" },
-				"Thu": { "open": "07:00", "close": "19:30" },
-				"Fri": { "open": "07:00", "close": "19:30" },
-				"Sat": { "open": "07:00", "close": "19:30" },
-				"Sun": { "open": "07:00", "close": "19:30" }
-			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-21",
-			"notes": "Frauenbad Stadthausquai, Zürich. Women-only during daytime. Historic Jugendstil bath on the Limmat with Grossmünster view. Barfussbar evenings (Tue/Thu/Fri) open to all. Season 2025: May 10–Sept 21."
-		},
-		"description": "Das Frauenbad Stadthausquai ist ein historisches Jugendstil-Flussbad am Limmatufer im Herzen Zürichs. Tagsüber ausschliesslich für Frauen geöffnet. Es bietet ein Schwimmer- und ein Nichtschwimmerinnenbecken mit Blick auf Grossmünster und Wasserkirche. An drei Abenden pro Woche öffnet die Barfussbar auch für Männer.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/stadthausquai.html"
-	},
-	{
-		"uid": "flb8803",
-		"name": "Flussbad Unterer Letten (Flussteil)",
-		"type": "freibad",
-		"seasonal": true,
-		"city": "zurich",
-		"max_capacity": 800,
-		"opening_hours": {
-			"schedule": {
-				"Mon": { "open": "09:00", "close": "20:00" },
-				"Tue": { "open": "09:00", "close": "20:00" },
-				"Wed": { "open": "09:00", "close": "20:00" },
-				"Thu": { "open": "09:00", "close": "20:00" },
-				"Fri": { "open": "09:00", "close": "20:00" },
-				"Sat": { "open": "09:00", "close": "20:00" },
-				"Sun": { "open": "09:00", "close": "20:00" }
-			},
-			"seasonal_open": "2026-05-09",
-			"seasonal_close": "2026-09-20",
-			"notes": "River section of Flussbad Unterer Letten (Limmat drift zone). Separate crowdmonitor sensor from the Beckenbad section (flb6940). Same season and approximate hours. Swimmers only."
-		},
-		"description": "Der Flussteil des Unteren Lettens ist die Treib-/Schwimmstrecke in der Limmat, die zum Flussbad Unterer Letten gehört. Schwimmer treiben vom Einsteigspunkt flussabwärts und verlassen das Wasser an der Ausstiegstreppe. Eintritt gratis.",
-		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/unterer-letten.html"
-	}
+  {
+    "uid": "fb006",
+    "name": "Freibad Allenmoos",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 2500,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Tue": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Wed": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Thu": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Fri": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sat": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sun": {
+          "open": "09:00",
+          "close": "20:00"
+        }
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-20",
+      "notes": "Weather-dependent: opens at 09:00 regardless of weather, extended until 20:00 in good weather only. Peak summer (Jun 19 - Aug 22) closes 21:00.",
+      "version": 1
+    },
+    "description": "Das Freibad Allenmoos liegt im Norden Zürichs im Quartier Unterstrass und gehört zu den beliebtesten Freibädern der Stadt. Die grosszügige Anlage verfügt über Schwimm- und Planschbecken, vier Beachvolleyballfelder sowie Grillstellen und einen Spielplatz. Die Liegewiesen laden zum Entspannen ein. Ausserhalb der Badesaison ist das Gelände als Grünanlage kostenlos zugänglich.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/allenmoos.html"
+  },
+  {
+    "uid": "fb008",
+    "name": "Freibad Auhof",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 2001,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Tue": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Wed": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Thu": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Fri": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sat": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sun": {
+          "open": "09:00",
+          "close": "20:00"
+        }
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-27",
+      "notes": "Weather-dependent hours. Closes end of September (same weekend as Letzigraben, Mythenquai, Tiefenbrunnen).",
+      "version": 1
+    },
+    "description": "Das Freibad Auhof liegt im Osten Zürichs nahe dem Zürichberg und bietet eine ruhige, naturnahe Atmosphäre. Die Anlage verfügt über ein Schwimmbecken, ein Planschbecken für Kinder sowie eine grosse Liegewiese. Grillstellen und ein Spielplatz machen das Auhof besonders familienfreundlich. Die verlängerte Saison bis in den Herbst macht es zu einem der langlebigsten Freibäder Zürichs.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/auhof.html"
+  },
+  {
+    "uid": "fb012",
+    "name": "Freibad Heuried",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 2600,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Tue": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Wed": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Thu": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Fri": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sat": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sun": {
+          "open": "09:00",
+          "close": "20:00"
+        }
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-20",
+      "notes": "Weather-dependent hours. Typical close early-mid September.",
+      "version": 1
+    },
+    "description": "Das Freibad Heuried liegt im Kreis 3 in der Nähe des Sportzentrums Heuried und ist ein beliebter Treffpunkt für Familien und Sportbegeisterte aus dem Quartier. Das Bad bietet ein Schwimmbecken, ein Kinderbecken sowie eine Wasserrutschbahn. Die Anlage ist eingebettet in eine grosse Liegewiese mit Grillstellen und einem Spielplatz.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/heuried.html"
+  },
+  {
+    "uid": "LETZI-1",
+    "name": "Freibad Letzigraben",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 3800,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Tue": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Wed": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Thu": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Fri": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Sat": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Sun": {
+          "open": "07:00",
+          "close": "21:00"
+        }
+      },
+      "seasonal_open": "2026-05-01",
+      "seasonal_close": "2026-09-27",
+      "notes": "Opens 1 May (earlier than most Freibäder). Early morning swim from 07:00. Peak summer until 21:00; shoulder season until 19:00 or 20:00. Weather-dependent extended hours.",
+      "version": 1
+    },
+    "description": "Das Freibad Letzigraben im Kreis 9 ist eines der wenigen beheizten Freibäder Zürichs und hat daher eine besonders lange Saison – von Mai bis Ende Oktober. Die Anlage bietet ein grosses Schwimmbecken, ein Nichtschwimmerbecken sowie Grillstellen und einen Spielplatz. Die gute Erreichbarkeit mit dem ÖV macht das Letzigraben sehr beliebt.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/letzigraben.html"
+  },
+  {
+    "uid": "SSD-11",
+    "name": "Freibad Seebach",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 2000,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Tue": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Wed": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Thu": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Fri": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Sat": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Sun": {
+          "open": "07:00",
+          "close": "21:00"
+        }
+      },
+      "seasonal_open": "2026-04-11",
+      "seasonal_close": "2026-10-25",
+      "notes": "One of the first and last outdoor pools open each season. Extends to late October along with Seebad Utoquai.",
+      "version": 1
+    },
+    "description": "Das Freibad Seebach liegt im nördlichsten Stadtteil Zürichs und ist eine beheizte Aussenanlage mit einer langen Saison. Das Bad verfügt über ein Schwimmbecken, ein Planschbecken und eine grosse Liegewiese. Es ist vor allem für die Bewohnerinnen und Bewohner des Stadtteils Seebach ein wichtiger Naherholungsort.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/seebach.html"
+  },
+  {
+    "uid": "fb018",
+    "name": "Freibad Zwischen den Hölzern",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 2000,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Tue": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Wed": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Thu": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Fri": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sat": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sun": {
+          "open": "09:00",
+          "close": "20:00"
+        }
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-20",
+      "notes": "Weather-dependent hours. Always open 09:00-14:00; extended to 20:00 in good weather.",
+      "version": 1
+    },
+    "description": "Das Freibad Zwischen den Hölzern liegt im südlichen Zürich im Kreis 2 und bietet eine ruhige, waldnahe Atmosphäre. Mit Schwimmbecken, Kinderbecken, Grillstellen und einem weitläufigen Gelände ist es ein idealer Ausflugsziel für Familien. Der Name leitet sich vom bewaldeten Hügel ab, der das Bad umgibt.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/zwischen-den-hoelzern.html"
+  },
+  {
+    "uid": "SSD-1",
+    "name": "Hallenbad Altstetten",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "zurich",
+    "max_capacity": 0,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "06:00",
+          "close": "21:00"
+        },
+        "Tue": {
+          "open": "08:00",
+          "close": "21:00"
+        },
+        "Wed": {
+          "open": "06:00",
+          "close": "21:00"
+        },
+        "Thu": {
+          "open": "08:00",
+          "close": "21:00"
+        },
+        "Fri": {
+          "open": "06:00",
+          "close": "21:00"
+        },
+        "Sat": {
+          "open": "08:00",
+          "close": "18:00"
+        },
+        "Sun": {
+          "open": "08:00",
+          "close": "18:00"
+        }
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "Operated by Betriebsgenossenschaft Hallenbad Altstetten. Wellness pool and slide. Mon/Wed/Fri early start 06:00; Tue/Thu from 08:00. Sauna has separate hours. Revision planned 2027-2029.",
+      "version": 1
+    },
+    "description": "Das Hallenbad Altstetten liegt im Westen Zürichs im Kreis 9 und gehört zu den sieben öffentlichen Hallenbädern der Stadt. Es bietet ein 25-Meter-Becken, einen Wellnessbereich sowie eine Rutschbahn für Jung und Alt. Die Anlage ist ideal für regelmässige Schwimmerinnen und Schwimmer sowie für Familien.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/altstetten.html"
+  },
+  {
+    "uid": "SSD-2",
+    "name": "Hallenbad Blaesi",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "zurich",
+    "max_capacity": 70,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "12:00",
+          "close": "19:00"
+        },
+        "Tue": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Wed": {
+          "open": "09:00",
+          "close": "19:00"
+        },
+        "Thu": {
+          "open": "09:00",
+          "close": "22:00"
+        },
+        "Fri": {
+          "open": "12:00",
+          "close": "19:00"
+        },
+        "Sat": {
+          "open": "09:00",
+          "close": "16:00"
+        },
+        "Sun": {
+          "open": "09:00",
+          "close": "16:00"
+        }
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "Small neighbourhood pool in Höngg. Wed afternoon: Kinderspielnachmittag 14:00-16:30. Last entry 30 min before closing.",
+      "version": 1
+    },
+    "description": "Das Hallenbad Bläsi befindet sich in Zürich-Wipkingen und bietet ein 25-Meter-Becken, eine Liegeterrasse sowie regelmässige Kinderspielnachmittage. Das Bad ist besonders bei Familien und Schulklassen beliebt. Die ruhige Lage nahe dem Limmatufer macht es zu einem angenehmen Ort für Erholung und Sport.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/blaesi.html"
+  },
+  {
+    "uid": "SSD-3",
+    "name": "Hallenbad Bungertwies",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "zurich",
+    "max_capacity": 70,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "12:00",
+          "close": "19:00"
+        },
+        "Tue": {
+          "open": "12:00",
+          "close": "19:00"
+        },
+        "Wed": {
+          "open": "12:00",
+          "close": "19:00"
+        },
+        "Thu": {
+          "open": "12:00",
+          "close": "19:00"
+        },
+        "Fri": null,
+        "Sat": null,
+        "Sun": {
+          "open": "09:00",
+          "close": "16:00"
+        }
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "Mon-Thu split hours: 12:00-13:30 and 16:00-19:00 (closed 13:30-16:00 for school lessons). Fri and Sat closed. Wed afternoon: Kinderspielnachmittag.",
+      "version": 1
+    },
+    "description": "Das Hallenbad Bungertwies liegt im Kreis 7 in Zürich und verfügt über ein 25-Meter-Becken, eine Liegeterrasse und regelmässige Kinderspielnachmittage. Es ist ein beliebtes Quartier-Hallenbad und wird von Schülerinnen und Schülern sowie Freizeitschwimmerinnen und -schwimmern aus dem ganzen Stadtkreis genutzt.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/bungertwies.html"
+  },
+  {
+    "uid": "SSD-4",
+    "name": "Hallenbad City",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "zurich",
+    "max_capacity": 220,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "06:00",
+          "close": "22:00"
+        },
+        "Tue": {
+          "open": "06:00",
+          "close": "22:00"
+        },
+        "Wed": {
+          "open": "06:00",
+          "close": "22:00"
+        },
+        "Thu": {
+          "open": "06:00",
+          "close": "22:00"
+        },
+        "Fri": {
+          "open": "06:00",
+          "close": "22:00"
+        },
+        "Sat": {
+          "open": "06:00",
+          "close": "22:00"
+        },
+        "Sun": {
+          "open": "06:00",
+          "close": "22:00"
+        }
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "Central location (Kreis 1). 50m pool, sauna, open 365 days 06:00-22:00. Sauna has separate hours and gender-restricted sessions.",
+      "version": 1
+    },
+    "description": "Das Hallenbad City liegt im Herzen Zürichs im Kreis 1 beim Schanzengraben und ist mit seinem markanten Glasdach eines der schönsten Hallenbäder der Stadt. Es bietet ein 50-Meter-Becken mit fünf Bahnen, ein Nichtschwimmer- und Variobecken sowie eine vielfältige Saunalandschaft mit finnischer Sauna, Bio-Sauna und Aussenbereich. Lange Öffnungszeiten und zentrale Lage machen es zur ersten Wahl für Sportbegeisterte in der Innenstadt.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/city.html"
+  },
+  {
+    "uid": "SSD-6",
+    "name": "Hallenbad Leimbach",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "zurich",
+    "max_capacity": 80,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "06:00",
+          "close": "21:00"
+        },
+        "Tue": {
+          "open": "06:00",
+          "close": "21:00"
+        },
+        "Wed": {
+          "open": "06:00",
+          "close": "21:00"
+        },
+        "Thu": {
+          "open": "06:00",
+          "close": "21:00"
+        },
+        "Fri": {
+          "open": "06:00",
+          "close": "21:00"
+        },
+        "Sat": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "Sun": {
+          "open": "09:00",
+          "close": "18:00"
+        }
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "Mon/Tue/Thu/Fri: split hours 06:00-08:00 (Frühschwimmen) and 12:00-21:00 (closed 08:00-12:00 for school). Wed: continuous 06:00-21:00. Sat: Familienschwimmen until 14:00, Sportschwimmen 14:30+.",
+      "version": 1
+    },
+    "description": "Das Hallenbad Leimbach liegt im südlichsten Stadtkreis Zürichs und gilt als eines der familiengerechtesten Hallenbäder der Stadt. Neben dem Schwimmbecken bietet die Anlage einen Aussenbereich, eine Sauna und ein Dampfbad. Das Bad ist bei Familien mit Kindern sowie bei Entspannungssuchenden gleichermassen beliebt.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/leimbach.html"
+  },
+  {
+    "uid": "SSD-7",
+    "name": "Hallenbad Oerlikon",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "zurich",
+    "max_capacity": 200,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "06:00",
+          "close": "20:00"
+        },
+        "Tue": {
+          "open": "06:00",
+          "close": "20:00"
+        },
+        "Wed": {
+          "open": "06:00",
+          "close": "22:00"
+        },
+        "Thu": {
+          "open": "06:00",
+          "close": "20:00"
+        },
+        "Fri": {
+          "open": "06:00",
+          "close": "22:00"
+        },
+        "Sat": {
+          "open": "06:00",
+          "close": "22:00"
+        },
+        "Sun": {
+          "open": "06:00",
+          "close": "22:00"
+        }
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "50m pool with 10m diving tower. Wed: Kinderspielnachmittag 14:00-16:00. Frequently booked for competitions. New Sportzentrum Oerlikon planned (build from 2027, open ~2031).",
+      "version": 1
+    },
+    "description": "Das Hallenbad Oerlikon liegt im Kreis 11 im Norden Zürichs und gehört mit seinem 50-Meter-Becken und einer imposanten Sprungturmanlage zu den leistungsfähigsten Hallenbädern der Stadt. Lange Öffnungszeiten machen es für Frühschwimmer und Abendsportler gleichermassen attraktiv. Das Bad ist sehr gut mit dem ÖV erreichbar und liegt in direkter Nähe zum Bahnhof Oerlikon.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/oerlikon.html"
+  },
+  {
+    "uid": "LIDO-1",
+    "name": "Lido Luzern",
+    "type": "strandbad",
+    "seasonal": true,
+    "city": "luzern",
+    "max_capacity": 3500,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "09:30",
+          "close": "19:30"
+        },
+        "Tue": {
+          "open": "09:30",
+          "close": "19:30"
+        },
+        "Wed": {
+          "open": "09:30",
+          "close": "19:30"
+        },
+        "Thu": {
+          "open": "09:30",
+          "close": "19:30"
+        },
+        "Fri": {
+          "open": "09:30",
+          "close": "19:30"
+        },
+        "Sat": {
+          "open": "09:30",
+          "close": "19:30"
+        },
+        "Sun": {
+          "open": "09:30",
+          "close": "19:30"
+        }
+      },
+      "seasonal_open": "2026-05-01",
+      "seasonal_close": "2026-09-30",
+      "notes": "Strandbad Lido Luzern (Lidostrasse 6A). Lake beach on Vierwaldstättersee with sandy beach, sunbathing lawns, heated 25m pool, and beach volleyball. Open daily 09:30–19:30 during season. Season ~May–end of September.",
+      "version": 1
+    },
+    "description": "Das Strandbad Lido Luzern liegt am Ufer des Vierwaldstättersees mit Blick auf Rigi und Bürgenstock. Es bietet einen Sandstrand, ausgedehnte Liegewiesen, einen beheizten 25-Meter-Pool, Beach-Volleyball und ein Restaurant. Mit über 45'000 m² Fläche und 500 m Strandlänge ist es die grösste Seebadeanstalt der Schweiz.",
+    "official_url": "https://www.luzern.com/en/poi/lido-lucerne"
+  },
+  {
+    "uid": "RISCH-1",
+    "name": "Schwimmbad Rotkreuz",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "rotkreuz",
+    "max_capacity": 600,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Tue": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Wed": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Thu": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Fri": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sat": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sun": {
+          "open": "09:00",
+          "close": "19:00"
+        }
+      },
+      "seasonal_open": "2026-05-02",
+      "seasonal_close": "2026-09-27",
+      "notes": "Schwimmbad Rotkreuz (Buonaserstrasse 29, 6343 Rotkreuz). Freiluftbadi (outdoor only). 50m pool with 4 lanes + kids pool. Season ~May–late Sept. Mon–Sat 09:00–20:00, Sun 09:00–19:00. Weather-dependent closures (call 079 538 47 32).",
+      "version": 1
+    },
+    "description": "Das Schwimmbad Rotkreuz in der Gemeinde Risch (Kanton Zug) ist ein klassisches Freibad mit 50-Meter-Schwimmbecken, Kinderschwimmbecken, 1m- und 2m-Sprungbrettern, Liegewiesen und Grillplatz. Eintritt kostenpflichtig. Gut erreichbar aus der gesamten Agglomeration Zug/Luzern.",
+    "official_url": "https://www.zg.ch/behoerden/gemeinden/risch-rotkreuz/verwaltung/tiefbau-umwelt-sicherheit-1/copy_of_laerm/copy_of_plaetze-und-anlagen/badi-rotkreuz-1"
+  },
+  {
+    "uid": "SSD-10",
+    "name": "Seebad Utoquai",
+    "type": "seebad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 800,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Tue": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Wed": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Thu": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Fri": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Sat": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Sun": {
+          "open": "07:00",
+          "close": "21:00"
+        }
+      },
+      "seasonal_open": "2026-04-11",
+      "seasonal_close": "2026-10-25",
+      "notes": "One of the first pools to open and last to close each season. Lake swimming. Winter swimming (Winterschwimmen) Sat/Sun 11:00-14:00 outside main season.",
+      "version": 1
+    },
+    "description": "Das Seebad Utoquai liegt am rechten Ufer des Zürichsees im noblen Quartier Seefeld und ist eine historische Badeanstalt aus dem 19. Jahrhundert. Die elegante Anlage bietet einen direkten Seezugang, eine grosszügige Liegewiese sowie eine einzigartige Atmosphäre. Im Winter ist Winterschwimmen unter Aufsicht möglich – ein besonderes Erlebnis für Hartgesottene.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/utoquai.html"
+  },
+  {
+    "uid": "seb6946",
+    "name": "Strandbad Mythenquai",
+    "type": "strandbad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 4500,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "Tue": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "Wed": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "Thu": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "Fri": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "Sat": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "Sun": {
+          "open": "07:00",
+          "close": "20:00"
+        }
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-27",
+      "notes": "Large lake beach. Open 07:00-11:00 at all weather; extended to 20:00 (21:00 peak summer) in good weather. Park area open year-round. Children's area from 09:00.",
+      "version": 1
+    },
+    "description": "Das Strandbad Mythenquai am linken Zürichseeufer gehört zu den bekanntesten und meistbesuchten Badeanstalten der Schweiz. Mit seinem feinen Sandstrand, den Liegewiesen und dem Sprungturm (1, 3 und 5 Meter) zieht es jährlich Hunderttausende an. Planschbecken, Grillstellen, Spielwiesen und ein Bücherschrank machen es zum perfekten Ausflugsziel für Familien.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/mythenquai.html"
+  },
+  {
+    "uid": "seb6947",
+    "name": "Strandbad Tiefenbrunnen",
+    "type": "strandbad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 3500,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "Tue": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "Wed": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "Thu": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "Fri": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "Sat": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "Sun": {
+          "open": "07:00",
+          "close": "20:00"
+        }
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-27",
+      "notes": "Lake beach on right shore of Zürichsee. Similar season and hours to Mythenquai. Weather-dependent extended hours.",
+      "version": 1
+    },
+    "description": "Das Strandbad Tiefenbrunnen liegt im Osten Zürichs am Seeufer und ist eine der ältesten noch betriebenen Badeanlagen am Zürichsee. Die historische Anlage mit ihrem charakteristischen Holzpavillon bietet einen Sandstrand, grosse Liegewiesen, Grillstellen und direkten Seezugang. Das Bad ist auch für Abendveranstaltungen bekannt und hat eine entspannte, lebhafte Atmosphäre.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/tiefenbrunnen.html"
+  },
+  {
+    "uid": "seb6948",
+    "name": "Strandbad Wollishofen",
+    "type": "strandbad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 700,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Tue": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Wed": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Thu": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Fri": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sat": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sun": {
+          "open": "09:00",
+          "close": "20:00"
+        }
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-20",
+      "notes": "Smaller lake beach south of Mythenquai. Closes mid-September.",
+      "version": 1
+    },
+    "description": "Das Strandbad Wollishofen liegt am südlichen Ende des Zürichsees und bietet eine familienfreundliche Atmosphäre in einem ruhigeren Umfeld als die zentraleren Strandbäder. Der Sandstrand, die Liegewiesen, Grillstellen und ein Spielplatz machen es zum idealen Ausflugsziel für Familien mit Kindern. Die ruhigere Lage macht Wollishofen zu einem Geheimtipp unter Einheimischen.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/wollishofen.html"
+  },
+  {
+    "uid": "SSD-5",
+    "name": "Wärmebad Käferberg",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "zurich",
+    "max_capacity": 70,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "11:00",
+          "close": "15:00"
+        },
+        "Tue": {
+          "open": "06:30",
+          "close": "22:00"
+        },
+        "Wed": {
+          "open": "06:30",
+          "close": "22:00"
+        },
+        "Thu": {
+          "open": "06:30",
+          "close": "22:00"
+        },
+        "Fri": {
+          "open": "06:30",
+          "close": "22:00"
+        },
+        "Sat": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "Sun": {
+          "open": "09:00",
+          "close": "18:00"
+        }
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "Warm bath (32°C). Mon: 11:00-15:00 only. Tue-Fri: early slot 06:30-08:00, then complex schedule with adult-only and swimmer-only periods through to 22:00. Sat/Sun: 09:00-16:00 (May-Sep), 09:00-18:00 (Oct-Apr). Not suitable for lane swimming.",
+      "version": 1
+    },
+    "description": "Das Wärmebad Käferberg liegt auf einer Anhöhe in Zürich-Wipkingen und ist einzigartig unter den städtischen Bädern: Das Wasser wird auf 32 Grad Celsius erwärmt, was es das ganze Jahr über besonders angenehm macht. Die Anlage bietet ein Mehrzweckbecken mit Hubboden, einen Ruheraum, eine Liegewiese sowie einen atemberaubenden Panoramablick über die Stadt Zürich. Das Bad ist besonders beliebt bei Menschen mit Bewegungseinschränkungen sowie bei allen, die ein entspanntes Schwimmerlebnis suchen.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/kaeferberg.html"
+  },
+  {
+    "uid": "WEN-1",
+    "name": "Freibad Wengen",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "wengen",
+    "max_capacity": 70,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "10:00",
+          "close": "19:00"
+        },
+        "Tue": {
+          "open": "10:00",
+          "close": "19:00"
+        },
+        "Wed": {
+          "open": "10:00",
+          "close": "19:00"
+        },
+        "Thu": {
+          "open": "10:00",
+          "close": "19:00"
+        },
+        "Fri": {
+          "open": "10:00",
+          "close": "19:00"
+        },
+        "Sat": {
+          "open": "10:00",
+          "close": "19:00"
+        },
+        "Sun": {
+          "open": "10:00",
+          "close": "19:00"
+        }
+      },
+      "seasonal_open": "2026-06-06",
+      "seasonal_close": "2026-09-07",
+      "notes": "Sonnen- und Schwimmbad Waldbort, Wengen (1274m ü.M., Bernese Oberland). Outdoor mountain pool, open only in good/warm weather. Season ~June–early Sept. Hours 10:00–19:00 daily (weather-dependent). Small capacity (70). Tel: 033 855 14 66.",
+      "version": 1
+    },
+    "description": "Das Freibad Wengen (Sonnen- und Schwimmbad Waldbort) liegt auf 1274 Metern im autofreien Bergdorf Wengen im Berner Oberland. Das kleine Freibad bietet ein beheiztes Becken mit Sprungturm und spektakulärem Blick auf Jungfrau, Mönch und Eiger. Geöffnet nur bei gutem Wetter, typischerweise Juni bis Anfang September.",
+    "official_url": "https://wengen.swiss/de/map/detail/freibad-wengen-58e45aa0-121e-40ce-ae59-0527cdfae84f.html"
+  },
+  {
+    "uid": "HUENENBERG-1",
+    "name": "Strandbad Hünenberg",
+    "type": "strandbad",
+    "seasonal": true,
+    "city": "hunenberg",
+    "max_capacity": 1000,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Tue": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Wed": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Thu": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Fri": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sat": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sun": {
+          "open": "09:00",
+          "close": "20:00"
+        }
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-20",
+      "notes": "Strandbad Hünenberg (Kanton Zug), lake beach on Zugersee. Season: Saturday before Muttertag to Bettag (mid-May to mid-September). Hours 09:00–20:00 daily with lifeguard supervision. Gastronomie also open Apr and Oct weather-permitting.",
+      "version": 1
+    },
+    "description": "Das Strandbad Hünenberg liegt direkt am Zugersee in der Gemeinde Hünenberg (Kanton Zug). Es bietet einen Seezugang, Liegewiesen, Spielgeräte, eine eingezäunte Spielwiese und einen Grillplatz. Die Gastronomie ist auch ausserhalb der Badesaison bei guter Witterung geöffnet.",
+    "official_url": "https://www.zg.ch/behoerden/gemeinden/hunenberg/de/verwaltung/sicherheit-und-umwelt/strandbad/oeffnungszeiten"
+  },
+  {
+    "uid": "BADI-1",
+    "name": "Seebad Enge",
+    "type": "seebad",
+    "seasonal": false,
+    "city": "zurich",
+    "max_capacity": 54,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "Tue": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "Wed": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "Thu": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "Fri": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "Sat": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "Sun": {
+          "open": "08:00",
+          "close": "20:00"
+        }
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "Lake bath on Zürichsee (Mythenquai 9). Summer season ~May 10–Sept 14, 08:00–20:00 daily. Winter: Winterschwimmen Mon–Thu 10:00–dusk only, max 30 persons at a time. Sauna year-round. Small capacity (54) due to limited winter access.",
+      "version": 1
+    },
+    "description": "Das Seebad Enge (auch Seebad Tonttu) liegt direkt am Zürichsee beim Arboretum und bietet als einzige Badeanstalt Zürichs Winterschwimmen an. Im Sommer ist es ein beliebtes See- und Sonnenbad mit Schwimm- und Nichtschwimmerbereich, Bar und Selbstbedienungsrestaurant. Im Winter steht das Winterschwimmen (Mon–Do, Aufenthaltsdauer max. 1 Stunde) und die Sauna im Vordergrund.",
+    "official_url": "https://www.seebadenge.ch"
+  },
+  {
+    "uid": "FREIBAD-1",
+    "name": "Entfelden",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "entfelden",
+    "max_capacity": 1300,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "07:30",
+          "close": "20:00"
+        },
+        "Tue": {
+          "open": "07:30",
+          "close": "20:00"
+        },
+        "Wed": {
+          "open": "07:30",
+          "close": "20:00"
+        },
+        "Thu": {
+          "open": "07:30",
+          "close": "20:00"
+        },
+        "Fri": {
+          "open": "07:30",
+          "close": "20:00"
+        },
+        "Sat": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "Sun": {
+          "open": "08:00",
+          "close": "20:00"
+        }
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-15",
+      "notes": "Badi Entfelden, Kanton Aargau. Has both indoor (Hallenbad) and outdoor (Freibad) pools. WS appears to track Freibad occupancy. Indoor pool open year-round (separate crowdmonitor entry not present). Freibad season ~May 10–Sept 15.",
+      "version": 1
+    },
+    "description": "Die Badi Entfelden in Oberentfelden (Kanton Aargau) bietet sowohl ein Hallenbad als auch ein Freibad mit 50-Meter-Becken, Strömungskanal, Rutschbahn und Kinderplanschbecken. Die Anlage zieht Gäste aus der gesamten Region Aarau an.",
+    "official_url": "https://badi-entfelden.ch"
+  },
+  {
+    "uid": "IMBAD-1",
+    "name": "Adliswil",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "adliswil",
+    "max_capacity": 2000,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "07:30",
+          "close": "20:00"
+        },
+        "Tue": {
+          "open": "07:30",
+          "close": "20:00"
+        },
+        "Wed": {
+          "open": "07:30",
+          "close": "20:00"
+        },
+        "Thu": {
+          "open": "07:30",
+          "close": "20:00"
+        },
+        "Fri": {
+          "open": "07:30",
+          "close": "20:00"
+        },
+        "Sat": {
+          "open": "08:00",
+          "close": "20:00"
+        },
+        "Sun": {
+          "open": "08:00",
+          "close": "20:00"
+        }
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-15",
+      "notes": "Hallen- und Freibad im Tal, Adliswil (Talstrasse 10). WS appears to track Freibad section (shows 0 in winter). Freibad season ~May 10–Sept 15. Hallenbad is open year-round (Mon–Fri 06:30–20:30, Sat–Sun 08:00–18:00) but may be tracked separately or not connected.",
+      "version": 1
+    },
+    "description": "Das Hallen- und Freibad im Tal in Adliswil bietet einen 25-Meter-Innenpool mit Sprungtürmen sowie ein weitläufiges Freibad mit 25-Meter-Becken, Strömungskanal, Rutschbahn und Kinderplanschbecken. Die Anlage liegt südlich von Zürich im Sihltal.",
+    "official_url": "https://www.adliswil.ch"
+  },
+  {
+    "uid": "MARZILI-1",
+    "name": "Bern Marzili",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "bern",
+    "max_capacity": 14999,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Tue": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Wed": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Thu": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Fri": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "Sat": {
+          "open": "09:00",
+          "close": "21:00"
+        },
+        "Sun": {
+          "open": "09:00",
+          "close": "21:00"
+        }
+      },
+      "seasonal_open": "2026-05-30",
+      "seasonal_close": "2026-08-31",
+      "notes": "Freibad Marzili, Bern (Marzilistrasse 29). Free entry. Iconic Aare river bath. Under major renovation 2025–2029; 2026 season opens 'at earliest end of May 2026' with restrictions. Normal season ~May 10–Aug 31 (Schwimmkanal until Sept 21). Peak hours Mon–Fri 07:00–21:00, Sat–Sun 09:00–21:00.",
+      "version": 1
+    },
+    "description": "Das Freibad Marzili ist Berns bekannteste Badeanstalt und liegt direkt an der Aare unterhalb des Bundeshauses. Mit Spitzenfrequenzen von über 13'000 Besuchern täglich ist es eines der meistbesuchten Freibäder der Schweiz. Eintritt gratis. 2026 teilweise eingeschränkter Betrieb wegen Gesamtsanierung (Kredit 67 Mio. CHF, Bauende 2029).",
+    "official_url": "https://www.sportamt-bern.ch/sportanlage/marzili/"
+  },
+  {
+    "uid": "WEYERMANNSHAUS-1",
+    "name": "Bern Weyermannshaus",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "bern",
+    "max_capacity": 3500,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "06:00",
+          "close": "21:00"
+        },
+        "Tue": {
+          "open": "06:00",
+          "close": "21:00"
+        },
+        "Wed": {
+          "open": "11:00",
+          "close": "21:00"
+        },
+        "Thu": {
+          "open": "06:00",
+          "close": "21:00"
+        },
+        "Fri": {
+          "open": "06:00",
+          "close": "21:00"
+        },
+        "Sat": {
+          "open": "07:00",
+          "close": "18:00"
+        },
+        "Sun": {
+          "open": "07:00",
+          "close": "18:00"
+        }
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "Schwimmbad Weyermannshaus, Bern (Stöckackerstrasse 9). Has both Hallenbad (year-round) and Freibad (season ~May 9–Sept 13). Max capacity 3500 is the combined Freibad+Hallenbad. Hallenbad hours shown. Wed restricted due to school use mornings. Freibad 2026: reopens May 10.",
+      "version": 1
+    },
+    "description": "Das Schwimmbad Weyermannshaus in Bern bietet ein ganzjährig geöffnetes Hallenbad sowie ein saisonales Freibad (gratis Eintritt). Das Hallenbad ist das Zwillingsbad des Hallenbads Wyler und bietet 25-Meter-Becken, Lehrschwimmbecken und Therapiebad.",
+    "official_url": "https://www.sportamt-bern.ch/sportanlage/freibad-weyermannshaus/"
+  },
+  {
+    "uid": "WYLERBAD-1",
+    "name": "Bern Wylerbad",
+    "type": "hallenbad",
+    "seasonal": false,
+    "city": "bern",
+    "max_capacity": 2500,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "06:00",
+          "close": "21:00"
+        },
+        "Tue": {
+          "open": "06:00",
+          "close": "21:00"
+        },
+        "Wed": {
+          "open": "11:00",
+          "close": "21:00"
+        },
+        "Thu": {
+          "open": "06:00",
+          "close": "21:00"
+        },
+        "Fri": {
+          "open": "06:00",
+          "close": "21:00"
+        },
+        "Sat": {
+          "open": "07:00",
+          "close": "18:00"
+        },
+        "Sun": {
+          "open": "07:00",
+          "close": "18:00"
+        }
+      },
+      "seasonal_open": null,
+      "seasonal_close": null,
+      "notes": "Freibad / Hallenbad Wyler, Bern (Scheibenstrasse 65). Hallenbad year-round, Freibad season ~May 10–Sept 30. Max capacity 2500 is combined. Wed morning restricted for schools. Tue closes at 18:30 due to club evening. Frühschwimmen from 06:00 with Abo only.",
+      "version": 1
+    },
+    "description": "Das Hallenbad Wyler (Wylerbad) in Bern ist das Zwillingsbad des Hallenbads Weyermannshaus. Es bietet ein 25-Meter-Becken mit 5 Bahnen, ein Lehrschwimmbecken sowie ein Therapiebad. Das dazugehörige Freibad (gratis Eintritt) ist von Mai bis Ende September geöffnet.",
+    "official_url": "https://www.sportamt-bern.ch/sportanlage/wyler/"
+  },
+  {
+    "uid": "flb6939",
+    "name": "Flussbad Oberer Letten",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 1000,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "09:00",
+          "close": "21:00"
+        },
+        "Tue": {
+          "open": "09:00",
+          "close": "21:00"
+        },
+        "Wed": {
+          "open": "09:00",
+          "close": "21:00"
+        },
+        "Thu": {
+          "open": "09:00",
+          "close": "21:00"
+        },
+        "Fri": {
+          "open": "09:00",
+          "close": "21:00"
+        },
+        "Sat": {
+          "open": "09:00",
+          "close": "21:00"
+        },
+        "Sun": {
+          "open": "09:00",
+          "close": "21:00"
+        }
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-20",
+      "notes": "Flussbad Oberer Letten (Lettensteg 10). Free entry. Limmat river bath with 400m swim canal. Guaranteed open 09:00–14:00; extended to 20:00–21:00 in good weather. Swimmers only (no young children). Season 2026: May 9–Sept 20.",
+      "version": 1
+    },
+    "description": "Das Flussbad Oberer Letten liegt im Herzen Zürichs an der Limmat und bietet einen 400 Meter langen Schwimmkanal sowie ein 2-Meter-Sprungbrett. Der Eintritt ist gratis. Das Bad ist nur für gute Schwimmer geeignet – die Strömung ist stark und der Kanal bis zu 6 Meter tief.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/oberer-letten.html"
+  },
+  {
+    "uid": "flb6940",
+    "name": "Flussbad Unterer Letten",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 800,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Tue": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Wed": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Thu": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Fri": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sat": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sun": {
+          "open": "09:00",
+          "close": "20:00"
+        }
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-20",
+      "notes": "Flussbad Unterer Letten, Zürich. Free entry. Oldest river bath in Zürich with 100m swim canal. Tue closes 20:00 (Flussbar evening). Open-air cinema Filmfluss: mid-July, closes 19:30. Season 2026: May 9–Sept 20.",
+      "version": 1
+    },
+    "description": "Das Flussbad Unterer Letten ist das älteste Flussbad Zürichs und bietet einen 100-Meter-Schwimmkanal in der Limmat sowie ein Beckenbad. Eintritt gratis. Im Sommer finden hier die Flussbar (dienstags ab 20:15 Uhr) und das Open-Air-Kino Filmfluss statt.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/unterer-letten.html"
+  },
+  {
+    "uid": "flb6941",
+    "name": "Frauenbad Stadthausquai",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 350,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "07:00",
+          "close": "19:30"
+        },
+        "Tue": {
+          "open": "07:00",
+          "close": "19:30"
+        },
+        "Wed": {
+          "open": "07:00",
+          "close": "19:30"
+        },
+        "Thu": {
+          "open": "07:00",
+          "close": "19:30"
+        },
+        "Fri": {
+          "open": "07:00",
+          "close": "19:30"
+        },
+        "Sat": {
+          "open": "07:00",
+          "close": "19:30"
+        },
+        "Sun": {
+          "open": "07:00",
+          "close": "19:30"
+        }
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-21",
+      "notes": "Frauenbad Stadthausquai, Zürich. Women-only during daytime. Historic Jugendstil bath on the Limmat with Grossmünster view. Barfussbar evenings (Tue/Thu/Fri) open to all. Season 2025: May 10–Sept 21.",
+      "version": 1
+    },
+    "description": "Das Frauenbad Stadthausquai ist ein historisches Jugendstil-Flussbad am Limmatufer im Herzen Zürichs. Tagsüber ausschliesslich für Frauen geöffnet. Es bietet ein Schwimmer- und ein Nichtschwimmerinnenbecken mit Blick auf Grossmünster und Wasserkirche. An drei Abenden pro Woche öffnet die Barfussbar auch für Männer.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/stadthausquai.html"
+  },
+  {
+    "uid": "flb8803",
+    "name": "Flussbad Unterer Letten (Flussteil)",
+    "type": "freibad",
+    "seasonal": true,
+    "city": "zurich",
+    "max_capacity": 800,
+    "opening_hours": {
+      "schedule": {
+        "Mon": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Tue": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Wed": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Thu": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Fri": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sat": {
+          "open": "09:00",
+          "close": "20:00"
+        },
+        "Sun": {
+          "open": "09:00",
+          "close": "20:00"
+        }
+      },
+      "seasonal_open": "2026-05-09",
+      "seasonal_close": "2026-09-20",
+      "notes": "River section of Flussbad Unterer Letten (Limmat drift zone). Separate crowdmonitor sensor from the Beckenbad section (flb6940). Same season and approximate hours. Swimmers only.",
+      "version": 1
+    },
+    "description": "Der Flussteil des Unteren Lettens ist die Treib-/Schwimmstrecke in der Limmat, die zum Flussbad Unterer Letten gehört. Schwimmer treiben vom Einsteigspunkt flussabwärts und verlassen das Wasser an der Ausstiegstreppe. Eintritt gratis.",
+    "official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/unterer-letten.html"
+  }
 ]
