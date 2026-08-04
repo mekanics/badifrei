@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bathinfos>
+<baths>
+<bath>
+<title>Freibad Allenmoos</title>
+<temperatureWater>27</temperatureWater>
+<poiid>fb006</poiid>
+<dateModified><![CDATA[Di., 04.08.2026 08:51]]></dateModified>
+<openClosedTextPlain><![CDATA[offen]]></openClosedTextPlain>
+<urlPage>https://www.stadt-zuerich.ch/content/web/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/allenmoos.html</urlPage>
+</bath>
+<bath>
+<title>Freibad Letzigraben</title>
+<temperatureWater>26</temperatureWater>
+<poiid>fb002</poiid>
+<dateModified><![CDATA[Di., 04.08.2026 09:06]]></dateModified>
+<openClosedTextPlain><![CDATA[offen]]></openClosedTextPlain>
+</bath>
+<bath>
+<title>Hallenbad City</title>
+<temperatureWater></temperatureWater>
+<poiid>hb001</poiid>
+<dateModified><![CDATA[Mi., 02.10.2024 10:20]]></dateModified>
+<openClosedTextPlain><![CDATA[]]></openClosedTextPlain>
+</bath>
+<bath>
+<title>Wärmebad Käferberg</title>
+<temperatureWater></temperatureWater>
+<poiid>hb007</poiid>
+<dateModified><![CDATA[So., 08.02.2026 10:42]]></dateModified>
+<openClosedTextPlain><![CDATA[offen]]></openClosedTextPlain>
+</bath>
+<bath>
+<title>Seebad Utoquai</title>
+<temperatureWater>25</temperatureWater>
+<poiid>seb6945</poiid>
+<dateModified><![CDATA[Di., 04.08.2026 08:58]]></dateModified>
+<openClosedTextPlain><![CDATA[geschlossen]]></openClosedTextPlain>
+</bath>
+<bath>
+<title>Freibad Dolder</title>
+<temperatureWater>24</temperatureWater>
+<poiid>fb016</poiid>
+<dateModified><![CDATA[Di., 04.08.2026 08:50]]></dateModified>
+<openClosedTextPlain><![CDATA[offen]]></openClosedTextPlain>
+</bath>
+<bath>
+<title>Seebad Enge</title>
+<temperatureWater>26.9</temperatureWater>
+<poiid>seb6943</poiid>
+<dateModified><![CDATA[Di., 04.08.2026 09:00]]></dateModified>
+<openClosedTextPlain><![CDATA[offen]]></openClosedTextPlain>
+</bath>
+<bath>
+<title>Broken Bath</title>
+<temperatureWater>not-a-number</temperatureWater>
+<poiid></poiid>
+<dateModified><![CDATA[bad]]></dateModified>
+<openClosedTextPlain><![CDATA[offen]]></openClosedTextPlain>
+</bath>
+</baths>
+</bathinfos>

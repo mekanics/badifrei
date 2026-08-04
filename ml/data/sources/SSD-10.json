@@ -1,0 +1,101 @@
+{
+  "uid": "SSD-10",
+  "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/utoquai.html",
+  "scraped_at": "2026-08-04",
+  "tables": [
+    {
+      "columns": [
+        "Zeitraum",
+        "Öffnungszeiten bei jedem Wetter"
+      ],
+      "rows": [
+        [
+          "11.–30. April",
+          "9–19 Uhr"
+        ],
+        [
+          "1.–8. Mai",
+          "7–19 Uhr"
+        ],
+        [
+          "9.–29. Mai",
+          "7–20 Uhr"
+        ],
+        [
+          "30. Mai–16. August",
+          "7–21 Uhr1"
+        ],
+        [
+          "17. August–6. September",
+          "7–20 Uhr1"
+        ],
+        [
+          "7.–27. September",
+          "7–19 Uhr1"
+        ],
+        [
+          "28. September–25. Oktober",
+          "9–18 Uhr1"
+        ]
+      ],
+      "raw_rows": [
+        [
+          {
+            "value": "11.–30. April"
+          },
+          {
+            "value": "9–19 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "1.–8. Mai"
+          },
+          {
+            "value": "7–19 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "9.–29. Mai"
+          },
+          {
+            "value": "7–20 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "30. Mai–16. August"
+          },
+          {
+            "value": "7–21 Uhr<sup>1</sup>"
+          }
+        ],
+        [
+          {
+            "value": "17. August–6. September"
+          },
+          {
+            "value": "7–20 Uhr<sup>1</sup>"
+          }
+        ],
+        [
+          {
+            "value": "7.–27. September"
+          },
+          {
+            "value": "7–19 Uhr<sup>1</sup>"
+          }
+        ],
+        [
+          {
+            "value": "28. September–25. Oktober"
+          },
+          {
+            "value": "9–18 Uhr<sup>1</sup>"
+          }
+        ]
+      ]
+    }
+  ]
+}

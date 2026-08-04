@@ -105,3 +105,44 @@ class TestWriteBatch:
         records = mock_conn.executemany.call_args[0][1]
         ts = records[0][0]
         assert ts.tzinfo is not None  # must be timezone-aware
+
+
+class TestWriteStatusBatch:
+    def _make_pool_mock(self, mock_conn):
+        ctx = MagicMock()
+        ctx.__aenter__ = AsyncMock(return_value=mock_conn)
+        ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_pool = MagicMock()
+        mock_pool.acquire = MagicMock(return_value=ctx)
+        return mock_pool
+
+    async def test_write_empty_returns_zero(self):
+        from collector.db import write_status_batch
+
+        assert await write_status_batch([]) == 0
+
+    async def test_write_status_rows(self):
+        from collector.db import write_status_batch
+
+        ts = datetime(2026, 8, 4, 10, 0, 0, tzinfo=timezone.utc)
+        readings = [
+            {
+                "pool_uid": "fb006",
+                "baditicker_poiid": "fb006",
+                "status_text": "offen",
+                "water_temp_c": 27.0,
+                "source_modified_at": ts,
+            }
+        ]
+        mock_conn = AsyncMock()
+        mock_pool = self._make_pool_mock(mock_conn)
+
+        with patch("collector.db.get_pool", AsyncMock(return_value=mock_pool)):
+            result = await write_status_batch(readings, timestamp=ts)
+
+        assert result == 1
+        sql = mock_conn.executemany.call_args[0][0]
+        assert "pool_status" in sql
+        records = mock_conn.executemany.call_args[0][1]
+        assert records[0][1] == "fb006"
+        assert records[0][3] == "offen"

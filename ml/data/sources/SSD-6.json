@@ -1,0 +1,304 @@
+{
+  "uid": "SSD-6",
+  "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/leimbach.html",
+  "scraped_at": "2026-08-04",
+  "tables": [
+    {
+      "columns": [
+        "Wochentag",
+        "Zeit"
+      ],
+      "rows": [
+        [
+          "Montag",
+          "6–8 Uhr | 12–21 Uhr"
+        ],
+        [
+          "Dienstag",
+          "6–8 Uhr | 12–21 Uhr"
+        ],
+        [
+          "Mittwoch",
+          "6–21 Uhr |"
+        ],
+        [
+          "Donnerstag",
+          "6–8 Uhr | 12–21 Uhr"
+        ],
+        [
+          "Freitag",
+          "6–8 Uhr | 12–21 Uhr"
+        ],
+        [
+          "Samstag",
+          "9–18 Uhr | 9–14 Uhr Familienschwimmen | 14.30–18 Uhr Sportschwimmen"
+        ],
+        [
+          "Sonntag (und Feiertage)",
+          "9–18 Uhr"
+        ]
+      ],
+      "raw_rows": [
+        [
+          {
+            "value": "Montag"
+          },
+          {
+            "value": "6–8 Uhr<br>12–21 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Dienstag"
+          },
+          {
+            "value": "6–8 Uhr<br>12–21 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Mittwoch"
+          },
+          {
+            "value": "6–21 Uhr<br>"
+          }
+        ],
+        [
+          {
+            "value": "Donnerstag"
+          },
+          {
+            "value": "6–8 Uhr<br>12–21 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Freitag"
+          },
+          {
+            "value": "6–8 Uhr<br>12–21 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Samstag"
+          },
+          {
+            "value": "9–18 Uhr<br>9–14 Uhr Familienschwimmen<br>14.30–18 Uhr Sportschwimmen"
+          }
+        ],
+        [
+          {
+            "value": "Sonntag (und Feiertage)"
+          },
+          {
+            "value": "9–18 Uhr"
+          }
+        ]
+      ]
+    },
+    {
+      "columns": [
+        "Wochentag",
+        "Zeit",
+        "Anspruchsgruppe"
+      ],
+      "rows": [
+        [
+          "Montag",
+          "12–21 Uhr",
+          "gemischt"
+        ],
+        [
+          "Dienstag",
+          "12–21 Uhr",
+          "gemischt"
+        ],
+        [
+          "Mittwoch",
+          "12–21 Uhr",
+          "Frauen"
+        ],
+        [
+          "Donnerstag",
+          "12–21 Uhr",
+          "gemischt"
+        ],
+        [
+          "Freitag",
+          "12–21 Uhr",
+          "gemischt"
+        ],
+        [
+          "Samstag",
+          "9–18 Uhr",
+          "gemischt"
+        ],
+        [
+          "Sonntag | (und Feiertage)",
+          "9–18 Uhr",
+          "gemischt"
+        ]
+      ],
+      "raw_rows": [
+        [
+          {
+            "value": "<p>Montag</p>",
+            "style": {
+              "width": "97"
+            },
+            "valign": "auto"
+          },
+          {
+            "value": "<p>12–21 Uhr</p>",
+            "style": {
+              "width": "146"
+            },
+            "valign": "auto"
+          },
+          {
+            "value": "<p>gemischt</p>",
+            "style": {
+              "width": "146"
+            },
+            "valign": "auto"
+          }
+        ],
+        [
+          {
+            "value": "<p>Dienstag</p>",
+            "style": {
+              "width": "97"
+            },
+            "valign": "auto"
+          },
+          {
+            "value": "<p>12–21 Uhr</p>",
+            "style": {
+              "width": "146"
+            },
+            "valign": "auto"
+          },
+          {
+            "value": "<p>gemischt</p>",
+            "style": {
+              "width": "146"
+            },
+            "valign": "auto"
+          }
+        ],
+        [
+          {
+            "value": "<p>Mittwoch</p>",
+            "style": {
+              "width": "97"
+            },
+            "valign": "auto"
+          },
+          {
+            "value": "<p>12–21 Uhr</p>",
+            "style": {
+              "width": "146"
+            },
+            "valign": "auto"
+          },
+          {
+            "value": "<p>Frauen</p>",
+            "style": {
+              "width": "146"
+            },
+            "valign": "auto"
+          }
+        ],
+        [
+          {
+            "value": "<p>Donnerstag</p>",
+            "style": {
+              "width": "97"
+            },
+            "valign": "auto"
+          },
+          {
+            "value": "<p>12–21 Uhr</p>",
+            "style": {
+              "width": "146"
+            },
+            "valign": "auto"
+          },
+          {
+            "value": "<p>gemischt</p>",
+            "style": {
+              "width": "146"
+            },
+            "valign": "auto"
+          }
+        ],
+        [
+          {
+            "value": "<p>Freitag</p>",
+            "style": {
+              "width": "97"
+            },
+            "valign": "auto"
+          },
+          {
+            "value": "<p>12–21 Uhr</p>",
+            "style": {
+              "width": "146"
+            },
+            "valign": "auto"
+          },
+          {
+            "value": "<p>gemischt</p>",
+            "style": {
+              "width": "146"
+            },
+            "valign": "auto"
+          }
+        ],
+        [
+          {
+            "value": "<p>Samstag</p>",
+            "style": {
+              "width": "97"
+            },
+            "valign": "auto"
+          },
+          {
+            "value": "<p>9–18 Uhr</p>",
+            "style": {
+              "width": "146"
+            },
+            "valign": "auto"
+          },
+          {
+            "value": "<p>gemischt</p>",
+            "style": {
+              "width": "146"
+            },
+            "valign": "auto"
+          }
+        ],
+        [
+          {
+            "value": "<p>Sonntag<br>(und Feiertage)</p>",
+            "style": {
+              "width": "97"
+            },
+            "valign": "auto"
+          },
+          {
+            "value": "9–18 Uhr"
+          },
+          {
+            "value": "<p>gemischt</p>",
+            "style": {
+              "width": "146"
+            },
+            "valign": "auto"
+          }
+        ]
+      ]
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 [
 	{
 		"uid": "fb006",
+		"baditicker_poiid": "fb006",
 		"name": "Freibad Allenmoos",
 		"type": "freibad",
 		"seasonal": true,
@@ -46,6 +47,7 @@
 	},
 	{
 		"uid": "fb008",
+		"baditicker_poiid": "fb008",
 		"name": "Freibad Auhof",
 		"type": "freibad",
 		"seasonal": true,
@@ -91,6 +93,7 @@
 	},
 	{
 		"uid": "fb012",
+		"baditicker_poiid": "fb012",
 		"name": "Freibad Heuried",
 		"type": "freibad",
 		"seasonal": true,
@@ -136,6 +139,7 @@
 	},
 	{
 		"uid": "LETZI-1",
+		"baditicker_poiid": "fb002",
 		"name": "Freibad Letzigraben",
 		"type": "freibad",
 		"seasonal": true,
@@ -181,6 +185,7 @@
 	},
 	{
 		"uid": "SSD-11",
+		"baditicker_poiid": "fb013",
 		"name": "Freibad Seebach",
 		"type": "freibad",
 		"seasonal": true,
@@ -226,6 +231,7 @@
 	},
 	{
 		"uid": "fb018",
+		"baditicker_poiid": "fb018",
 		"name": "Freibad Zwischen den Hölzern",
 		"type": "freibad",
 		"seasonal": true,
@@ -271,6 +277,7 @@
 	},
 	{
 		"uid": "SSD-1",
+		"baditicker_poiid": null,
 		"name": "Hallenbad Altstetten",
 		"type": "hallenbad",
 		"seasonal": false,
@@ -316,6 +323,7 @@
 	},
 	{
 		"uid": "SSD-2",
+		"baditicker_poiid": "hb005",
 		"name": "Hallenbad Blaesi",
 		"type": "hallenbad",
 		"seasonal": false,
@@ -361,6 +369,7 @@
 	},
 	{
 		"uid": "SSD-3",
+		"baditicker_poiid": "hb002",
 		"name": "Hallenbad Bungertwies",
 		"type": "hallenbad",
 		"seasonal": false,
@@ -400,6 +409,7 @@
 	},
 	{
 		"uid": "SSD-4",
+		"baditicker_poiid": "hb001",
 		"name": "Hallenbad City",
 		"type": "hallenbad",
 		"seasonal": false,
@@ -445,6 +455,7 @@
 	},
 	{
 		"uid": "SSD-6",
+		"baditicker_poiid": "hb006",
 		"name": "Hallenbad Leimbach",
 		"type": "hallenbad",
 		"seasonal": false,
@@ -490,6 +501,7 @@
 	},
 	{
 		"uid": "SSD-7",
+		"baditicker_poiid": "hb004",
 		"name": "Hallenbad Oerlikon",
 		"type": "hallenbad",
 		"seasonal": false,
@@ -535,6 +547,7 @@
 	},
 	{
 		"uid": "LIDO-1",
+		"baditicker_poiid": null,
 		"name": "Lido Luzern",
 		"type": "strandbad",
 		"seasonal": true,
@@ -542,13 +555,34 @@
 		"max_capacity": 3500,
 		"opening_hours": {
 			"schedule": {
-				"Mon": { "open": "09:30", "close": "19:30" },
-				"Tue": { "open": "09:30", "close": "19:30" },
-				"Wed": { "open": "09:30", "close": "19:30" },
-				"Thu": { "open": "09:30", "close": "19:30" },
-				"Fri": { "open": "09:30", "close": "19:30" },
-				"Sat": { "open": "09:30", "close": "19:30" },
-				"Sun": { "open": "09:30", "close": "19:30" }
+				"Mon": {
+					"open": "09:30",
+					"close": "19:30"
+				},
+				"Tue": {
+					"open": "09:30",
+					"close": "19:30"
+				},
+				"Wed": {
+					"open": "09:30",
+					"close": "19:30"
+				},
+				"Thu": {
+					"open": "09:30",
+					"close": "19:30"
+				},
+				"Fri": {
+					"open": "09:30",
+					"close": "19:30"
+				},
+				"Sat": {
+					"open": "09:30",
+					"close": "19:30"
+				},
+				"Sun": {
+					"open": "09:30",
+					"close": "19:30"
+				}
 			},
 			"seasonal_open": "2026-05-01",
 			"seasonal_close": "2026-09-30",
@@ -559,6 +593,7 @@
 	},
 	{
 		"uid": "RISCH-1",
+		"baditicker_poiid": null,
 		"name": "Schwimmbad Rotkreuz",
 		"type": "freibad",
 		"seasonal": true,
@@ -566,13 +601,34 @@
 		"max_capacity": 600,
 		"opening_hours": {
 			"schedule": {
-				"Mon": { "open": "09:00", "close": "20:00" },
-				"Tue": { "open": "09:00", "close": "20:00" },
-				"Wed": { "open": "09:00", "close": "20:00" },
-				"Thu": { "open": "09:00", "close": "20:00" },
-				"Fri": { "open": "09:00", "close": "20:00" },
-				"Sat": { "open": "09:00", "close": "20:00" },
-				"Sun": { "open": "09:00", "close": "19:00" }
+				"Mon": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Tue": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Wed": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Thu": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Fri": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Sat": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Sun": {
+					"open": "09:00",
+					"close": "19:00"
+				}
 			},
 			"seasonal_open": "2026-05-02",
 			"seasonal_close": "2026-09-27",
@@ -583,6 +639,7 @@
 	},
 	{
 		"uid": "SSD-10",
+		"baditicker_poiid": "seb6945",
 		"name": "Seebad Utoquai",
 		"type": "seebad",
 		"seasonal": true,
@@ -628,6 +685,7 @@
 	},
 	{
 		"uid": "seb6946",
+		"baditicker_poiid": "seb6946",
 		"name": "Strandbad Mythenquai",
 		"type": "strandbad",
 		"seasonal": true,
@@ -673,6 +731,7 @@
 	},
 	{
 		"uid": "seb6947",
+		"baditicker_poiid": "seb6947",
 		"name": "Strandbad Tiefenbrunnen",
 		"type": "strandbad",
 		"seasonal": true,
@@ -718,6 +777,7 @@
 	},
 	{
 		"uid": "seb6948",
+		"baditicker_poiid": "seb6948",
 		"name": "Strandbad Wollishofen",
 		"type": "strandbad",
 		"seasonal": true,
@@ -763,6 +823,7 @@
 	},
 	{
 		"uid": "SSD-5",
+		"baditicker_poiid": "hb007",
 		"name": "Wärmebad Käferberg",
 		"type": "hallenbad",
 		"seasonal": false,
@@ -808,6 +869,7 @@
 	},
 	{
 		"uid": "WEN-1",
+		"baditicker_poiid": null,
 		"name": "Freibad Wengen",
 		"type": "freibad",
 		"seasonal": true,
@@ -815,13 +877,34 @@
 		"max_capacity": 70,
 		"opening_hours": {
 			"schedule": {
-				"Mon": { "open": "10:00", "close": "19:00" },
-				"Tue": { "open": "10:00", "close": "19:00" },
-				"Wed": { "open": "10:00", "close": "19:00" },
-				"Thu": { "open": "10:00", "close": "19:00" },
-				"Fri": { "open": "10:00", "close": "19:00" },
-				"Sat": { "open": "10:00", "close": "19:00" },
-				"Sun": { "open": "10:00", "close": "19:00" }
+				"Mon": {
+					"open": "10:00",
+					"close": "19:00"
+				},
+				"Tue": {
+					"open": "10:00",
+					"close": "19:00"
+				},
+				"Wed": {
+					"open": "10:00",
+					"close": "19:00"
+				},
+				"Thu": {
+					"open": "10:00",
+					"close": "19:00"
+				},
+				"Fri": {
+					"open": "10:00",
+					"close": "19:00"
+				},
+				"Sat": {
+					"open": "10:00",
+					"close": "19:00"
+				},
+				"Sun": {
+					"open": "10:00",
+					"close": "19:00"
+				}
 			},
 			"seasonal_open": "2026-06-06",
 			"seasonal_close": "2026-09-07",
@@ -832,6 +915,7 @@
 	},
 	{
 		"uid": "HUENENBERG-1",
+		"baditicker_poiid": null,
 		"name": "Strandbad Hünenberg",
 		"type": "strandbad",
 		"seasonal": true,
@@ -839,13 +923,34 @@
 		"max_capacity": 1000,
 		"opening_hours": {
 			"schedule": {
-				"Mon": { "open": "09:00", "close": "20:00" },
-				"Tue": { "open": "09:00", "close": "20:00" },
-				"Wed": { "open": "09:00", "close": "20:00" },
-				"Thu": { "open": "09:00", "close": "20:00" },
-				"Fri": { "open": "09:00", "close": "20:00" },
-				"Sat": { "open": "09:00", "close": "20:00" },
-				"Sun": { "open": "09:00", "close": "20:00" }
+				"Mon": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Tue": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Wed": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Thu": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Fri": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Sat": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Sun": {
+					"open": "09:00",
+					"close": "20:00"
+				}
 			},
 			"seasonal_open": "2026-05-09",
 			"seasonal_close": "2026-09-20",
@@ -856,6 +961,7 @@
 	},
 	{
 		"uid": "BADI-1",
+		"baditicker_poiid": "seb6943",
 		"name": "Seebad Enge",
 		"type": "seebad",
 		"seasonal": false,
@@ -863,13 +969,34 @@
 		"max_capacity": 54,
 		"opening_hours": {
 			"schedule": {
-				"Mon": { "open": "08:00", "close": "20:00" },
-				"Tue": { "open": "08:00", "close": "20:00" },
-				"Wed": { "open": "08:00", "close": "20:00" },
-				"Thu": { "open": "08:00", "close": "20:00" },
-				"Fri": { "open": "08:00", "close": "20:00" },
-				"Sat": { "open": "08:00", "close": "20:00" },
-				"Sun": { "open": "08:00", "close": "20:00" }
+				"Mon": {
+					"open": "08:00",
+					"close": "20:00"
+				},
+				"Tue": {
+					"open": "08:00",
+					"close": "20:00"
+				},
+				"Wed": {
+					"open": "08:00",
+					"close": "20:00"
+				},
+				"Thu": {
+					"open": "08:00",
+					"close": "20:00"
+				},
+				"Fri": {
+					"open": "08:00",
+					"close": "20:00"
+				},
+				"Sat": {
+					"open": "08:00",
+					"close": "20:00"
+				},
+				"Sun": {
+					"open": "08:00",
+					"close": "20:00"
+				}
 			},
 			"seasonal_open": null,
 			"seasonal_close": null,
@@ -880,6 +1007,7 @@
 	},
 	{
 		"uid": "FREIBAD-1",
+		"baditicker_poiid": null,
 		"name": "Entfelden",
 		"type": "freibad",
 		"seasonal": true,
@@ -887,13 +1015,34 @@
 		"max_capacity": 1300,
 		"opening_hours": {
 			"schedule": {
-				"Mon": { "open": "07:30", "close": "20:00" },
-				"Tue": { "open": "07:30", "close": "20:00" },
-				"Wed": { "open": "07:30", "close": "20:00" },
-				"Thu": { "open": "07:30", "close": "20:00" },
-				"Fri": { "open": "07:30", "close": "20:00" },
-				"Sat": { "open": "08:00", "close": "20:00" },
-				"Sun": { "open": "08:00", "close": "20:00" }
+				"Mon": {
+					"open": "07:30",
+					"close": "20:00"
+				},
+				"Tue": {
+					"open": "07:30",
+					"close": "20:00"
+				},
+				"Wed": {
+					"open": "07:30",
+					"close": "20:00"
+				},
+				"Thu": {
+					"open": "07:30",
+					"close": "20:00"
+				},
+				"Fri": {
+					"open": "07:30",
+					"close": "20:00"
+				},
+				"Sat": {
+					"open": "08:00",
+					"close": "20:00"
+				},
+				"Sun": {
+					"open": "08:00",
+					"close": "20:00"
+				}
 			},
 			"seasonal_open": "2026-05-09",
 			"seasonal_close": "2026-09-15",
@@ -904,6 +1053,7 @@
 	},
 	{
 		"uid": "IMBAD-1",
+		"baditicker_poiid": null,
 		"name": "Adliswil",
 		"type": "freibad",
 		"seasonal": true,
@@ -911,13 +1061,34 @@
 		"max_capacity": 2000,
 		"opening_hours": {
 			"schedule": {
-				"Mon": { "open": "07:30", "close": "20:00" },
-				"Tue": { "open": "07:30", "close": "20:00" },
-				"Wed": { "open": "07:30", "close": "20:00" },
-				"Thu": { "open": "07:30", "close": "20:00" },
-				"Fri": { "open": "07:30", "close": "20:00" },
-				"Sat": { "open": "08:00", "close": "20:00" },
-				"Sun": { "open": "08:00", "close": "20:00" }
+				"Mon": {
+					"open": "07:30",
+					"close": "20:00"
+				},
+				"Tue": {
+					"open": "07:30",
+					"close": "20:00"
+				},
+				"Wed": {
+					"open": "07:30",
+					"close": "20:00"
+				},
+				"Thu": {
+					"open": "07:30",
+					"close": "20:00"
+				},
+				"Fri": {
+					"open": "07:30",
+					"close": "20:00"
+				},
+				"Sat": {
+					"open": "08:00",
+					"close": "20:00"
+				},
+				"Sun": {
+					"open": "08:00",
+					"close": "20:00"
+				}
 			},
 			"seasonal_open": "2026-05-09",
 			"seasonal_close": "2026-09-15",
@@ -928,6 +1099,7 @@
 	},
 	{
 		"uid": "MARZILI-1",
+		"baditicker_poiid": null,
 		"name": "Bern Marzili",
 		"type": "freibad",
 		"seasonal": true,
@@ -935,13 +1107,34 @@
 		"max_capacity": 14999,
 		"opening_hours": {
 			"schedule": {
-				"Mon": { "open": "07:00", "close": "21:00" },
-				"Tue": { "open": "07:00", "close": "21:00" },
-				"Wed": { "open": "07:00", "close": "21:00" },
-				"Thu": { "open": "07:00", "close": "21:00" },
-				"Fri": { "open": "07:00", "close": "21:00" },
-				"Sat": { "open": "09:00", "close": "21:00" },
-				"Sun": { "open": "09:00", "close": "21:00" }
+				"Mon": {
+					"open": "07:00",
+					"close": "21:00"
+				},
+				"Tue": {
+					"open": "07:00",
+					"close": "21:00"
+				},
+				"Wed": {
+					"open": "07:00",
+					"close": "21:00"
+				},
+				"Thu": {
+					"open": "07:00",
+					"close": "21:00"
+				},
+				"Fri": {
+					"open": "07:00",
+					"close": "21:00"
+				},
+				"Sat": {
+					"open": "09:00",
+					"close": "21:00"
+				},
+				"Sun": {
+					"open": "09:00",
+					"close": "21:00"
+				}
 			},
 			"seasonal_open": "2026-05-30",
 			"seasonal_close": "2026-08-31",
@@ -952,6 +1145,7 @@
 	},
 	{
 		"uid": "WEYERMANNSHAUS-1",
+		"baditicker_poiid": null,
 		"name": "Bern Weyermannshaus",
 		"type": "hallenbad",
 		"seasonal": false,
@@ -959,13 +1153,34 @@
 		"max_capacity": 3500,
 		"opening_hours": {
 			"schedule": {
-				"Mon": { "open": "06:00", "close": "21:00" },
-				"Tue": { "open": "06:00", "close": "21:00" },
-				"Wed": { "open": "11:00", "close": "21:00" },
-				"Thu": { "open": "06:00", "close": "21:00" },
-				"Fri": { "open": "06:00", "close": "21:00" },
-				"Sat": { "open": "07:00", "close": "18:00" },
-				"Sun": { "open": "07:00", "close": "18:00" }
+				"Mon": {
+					"open": "06:00",
+					"close": "21:00"
+				},
+				"Tue": {
+					"open": "06:00",
+					"close": "21:00"
+				},
+				"Wed": {
+					"open": "11:00",
+					"close": "21:00"
+				},
+				"Thu": {
+					"open": "06:00",
+					"close": "21:00"
+				},
+				"Fri": {
+					"open": "06:00",
+					"close": "21:00"
+				},
+				"Sat": {
+					"open": "07:00",
+					"close": "18:00"
+				},
+				"Sun": {
+					"open": "07:00",
+					"close": "18:00"
+				}
 			},
 			"seasonal_open": null,
 			"seasonal_close": null,
@@ -976,6 +1191,7 @@
 	},
 	{
 		"uid": "WYLERBAD-1",
+		"baditicker_poiid": null,
 		"name": "Bern Wylerbad",
 		"type": "hallenbad",
 		"seasonal": false,
@@ -983,13 +1199,34 @@
 		"max_capacity": 2500,
 		"opening_hours": {
 			"schedule": {
-				"Mon": { "open": "06:00", "close": "21:00" },
-				"Tue": { "open": "06:00", "close": "21:00" },
-				"Wed": { "open": "11:00", "close": "21:00" },
-				"Thu": { "open": "06:00", "close": "21:00" },
-				"Fri": { "open": "06:00", "close": "21:00" },
-				"Sat": { "open": "07:00", "close": "18:00" },
-				"Sun": { "open": "07:00", "close": "18:00" }
+				"Mon": {
+					"open": "06:00",
+					"close": "21:00"
+				},
+				"Tue": {
+					"open": "06:00",
+					"close": "21:00"
+				},
+				"Wed": {
+					"open": "11:00",
+					"close": "21:00"
+				},
+				"Thu": {
+					"open": "06:00",
+					"close": "21:00"
+				},
+				"Fri": {
+					"open": "06:00",
+					"close": "21:00"
+				},
+				"Sat": {
+					"open": "07:00",
+					"close": "18:00"
+				},
+				"Sun": {
+					"open": "07:00",
+					"close": "18:00"
+				}
 			},
 			"seasonal_open": null,
 			"seasonal_close": null,
@@ -1000,6 +1237,7 @@
 	},
 	{
 		"uid": "flb6939",
+		"baditicker_poiid": "flb6939",
 		"name": "Flussbad Oberer Letten",
 		"type": "freibad",
 		"seasonal": true,
@@ -1007,13 +1245,34 @@
 		"max_capacity": 1000,
 		"opening_hours": {
 			"schedule": {
-				"Mon": { "open": "09:00", "close": "21:00" },
-				"Tue": { "open": "09:00", "close": "21:00" },
-				"Wed": { "open": "09:00", "close": "21:00" },
-				"Thu": { "open": "09:00", "close": "21:00" },
-				"Fri": { "open": "09:00", "close": "21:00" },
-				"Sat": { "open": "09:00", "close": "21:00" },
-				"Sun": { "open": "09:00", "close": "21:00" }
+				"Mon": {
+					"open": "09:00",
+					"close": "21:00"
+				},
+				"Tue": {
+					"open": "09:00",
+					"close": "21:00"
+				},
+				"Wed": {
+					"open": "09:00",
+					"close": "21:00"
+				},
+				"Thu": {
+					"open": "09:00",
+					"close": "21:00"
+				},
+				"Fri": {
+					"open": "09:00",
+					"close": "21:00"
+				},
+				"Sat": {
+					"open": "09:00",
+					"close": "21:00"
+				},
+				"Sun": {
+					"open": "09:00",
+					"close": "21:00"
+				}
 			},
 			"seasonal_open": "2026-05-09",
 			"seasonal_close": "2026-09-20",
@@ -1024,6 +1283,7 @@
 	},
 	{
 		"uid": "flb6940",
+		"baditicker_poiid": "flb6940",
 		"name": "Flussbad Unterer Letten",
 		"type": "freibad",
 		"seasonal": true,
@@ -1031,13 +1291,34 @@
 		"max_capacity": 800,
 		"opening_hours": {
 			"schedule": {
-				"Mon": { "open": "09:00", "close": "20:00" },
-				"Tue": { "open": "09:00", "close": "20:00" },
-				"Wed": { "open": "09:00", "close": "20:00" },
-				"Thu": { "open": "09:00", "close": "20:00" },
-				"Fri": { "open": "09:00", "close": "20:00" },
-				"Sat": { "open": "09:00", "close": "20:00" },
-				"Sun": { "open": "09:00", "close": "20:00" }
+				"Mon": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Tue": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Wed": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Thu": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Fri": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Sat": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Sun": {
+					"open": "09:00",
+					"close": "20:00"
+				}
 			},
 			"seasonal_open": "2026-05-09",
 			"seasonal_close": "2026-09-20",
@@ -1048,6 +1329,7 @@
 	},
 	{
 		"uid": "flb6941",
+		"baditicker_poiid": "flb6941",
 		"name": "Frauenbad Stadthausquai",
 		"type": "freibad",
 		"seasonal": true,
@@ -1055,13 +1337,34 @@
 		"max_capacity": 350,
 		"opening_hours": {
 			"schedule": {
-				"Mon": { "open": "07:00", "close": "19:30" },
-				"Tue": { "open": "07:00", "close": "19:30" },
-				"Wed": { "open": "07:00", "close": "19:30" },
-				"Thu": { "open": "07:00", "close": "19:30" },
-				"Fri": { "open": "07:00", "close": "19:30" },
-				"Sat": { "open": "07:00", "close": "19:30" },
-				"Sun": { "open": "07:00", "close": "19:30" }
+				"Mon": {
+					"open": "07:00",
+					"close": "19:30"
+				},
+				"Tue": {
+					"open": "07:00",
+					"close": "19:30"
+				},
+				"Wed": {
+					"open": "07:00",
+					"close": "19:30"
+				},
+				"Thu": {
+					"open": "07:00",
+					"close": "19:30"
+				},
+				"Fri": {
+					"open": "07:00",
+					"close": "19:30"
+				},
+				"Sat": {
+					"open": "07:00",
+					"close": "19:30"
+				},
+				"Sun": {
+					"open": "07:00",
+					"close": "19:30"
+				}
 			},
 			"seasonal_open": "2026-05-09",
 			"seasonal_close": "2026-09-21",
@@ -1072,6 +1375,7 @@
 	},
 	{
 		"uid": "flb8803",
+		"baditicker_poiid": "flb8803",
 		"name": "Flussbad Unterer Letten (Flussteil)",
 		"type": "freibad",
 		"seasonal": true,
@@ -1079,13 +1383,34 @@
 		"max_capacity": 800,
 		"opening_hours": {
 			"schedule": {
-				"Mon": { "open": "09:00", "close": "20:00" },
-				"Tue": { "open": "09:00", "close": "20:00" },
-				"Wed": { "open": "09:00", "close": "20:00" },
-				"Thu": { "open": "09:00", "close": "20:00" },
-				"Fri": { "open": "09:00", "close": "20:00" },
-				"Sat": { "open": "09:00", "close": "20:00" },
-				"Sun": { "open": "09:00", "close": "20:00" }
+				"Mon": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Tue": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Wed": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Thu": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Fri": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Sat": {
+					"open": "09:00",
+					"close": "20:00"
+				},
+				"Sun": {
+					"open": "09:00",
+					"close": "20:00"
+				}
 			},
 			"seasonal_open": "2026-05-09",
 			"seasonal_close": "2026-09-20",

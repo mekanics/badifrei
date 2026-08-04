@@ -6,16 +6,20 @@ import os
 import signal
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
 from threading import Thread
 
 from collector.config import settings
 from collector.db import write_batch, close_pool
+from collector.status import run_status_poller
 from collector.ws_client import connect_and_stream
 
 # ── Deduplication state ────────────────────────────────────────────────────
 
 _last_state: dict[str, int] = {}
 _last_write_time: datetime | None = None
+
+POOL_METADATA_PATH = Path(__file__).parent.parent / "ml" / "pool_metadata.json"
 
 
 def should_write(
@@ -70,6 +74,9 @@ class Metrics:
         self.errors = 0
         self.last_write: datetime | None = None
         self.running = False
+        self.status_polls = 0
+        self.last_status_poll: datetime | None = None
+
 
 metrics = Metrics()
 
@@ -84,6 +91,12 @@ class HealthHandler(BaseHTTPRequestHandler):
                 "errors": metrics.errors,
                 "last_write": metrics.last_write.isoformat() if metrics.last_write else None,
                 "running": metrics.running,
+                "status_polls": metrics.status_polls,
+                "last_status_poll": (
+                    metrics.last_status_poll.isoformat()
+                    if metrics.last_status_poll
+                    else None
+                ),
             }).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
@@ -114,10 +127,14 @@ def handle_sigterm(*_):
     _shutdown.set()
 
 
+def _load_pools() -> list[dict]:
+    return json.loads(POOL_METADATA_PATH.read_text(encoding="utf-8"))
+
+
 async def run_collector():
     global _last_state, _last_write_time
     metrics.running = True
-    logger.info("Starting collector...")
+    logger.info("Starting occupancy collector...")
 
     async for readings in connect_and_stream():
         if _shutdown.is_set():
@@ -137,8 +154,33 @@ async def run_collector():
             logger.error(f"DB write error: {e}")
 
     metrics.running = False
-    await close_pool()
-    logger.info("Collector stopped.")
+    logger.info("Occupancy collector stopped.")
+
+
+def _on_status_success(written: int) -> None:
+    metrics.status_polls += 1
+    metrics.last_status_poll = datetime.now(timezone.utc)
+
+
+def _on_status_error(_: Exception) -> None:
+    metrics.errors += 1
+
+
+async def run_all():
+    pools = _load_pools()
+    try:
+        await asyncio.gather(
+            run_collector(),
+            run_status_poller(
+                pools,
+                shutdown=_shutdown,
+                on_success=_on_status_success,
+                on_error=_on_status_error,
+            ),
+        )
+    finally:
+        await close_pool()
+        logger.info("Collector stopped.")
 
 
 def main():
@@ -149,7 +191,7 @@ def main():
     health_port = int(os.getenv("HEALTH_PORT", "8080"))
     start_health_server(health_port)
 
-    asyncio.run(run_collector())
+    asyncio.run(run_all())
 
 
 if __name__ == "__main__":

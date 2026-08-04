@@ -22,3 +22,15 @@ def test_config_ws_url_from_env(monkeypatch):
 
     importlib.reload(cfg)
     assert cfg.settings.ws_url == "wss://test.example.com/api"
+
+
+def test_config_has_baditicker_url():
+    from collector.config import settings
+
+    assert settings.baditicker_url.startswith("https://")
+
+
+def test_config_status_poll_seconds_default():
+    from collector.config import settings
+
+    assert settings.status_poll_seconds == 900

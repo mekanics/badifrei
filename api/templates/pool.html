@@ -134,11 +134,51 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
       data-capacity="{{ pool.max_capacity }}" style="margin-left:auto"></span>
   </div>
 
+  {% if active_closure %}
+  <div class="notice-closed" role="status">
+    Geschlossen{% if active_closure.end_label %} bis {{ active_closure.end_label }}{% endif %}
+    ({{ active_closure.reason }})
+  </div>
+  {% endif %}
+
   <div class="pool-info-grid">
     <div class="pool-info-block">
       <h2 class="section-h2">Öffnungszeiten</h2>
+      {% if hours_periods_view and hours_periods_view.current %}
+      <div class="hours-period-current">
+        <div class="hours-period-label">Aktueller Zeitraum · {{ hours_periods_view.current.label }}</div>
+        <div class="hours-period-times">
+          Bei jedem Wetter: {{ hours_periods_view.current.always }}
+          {% if hours_periods_view.current.fair %}
+          <div class="fair-weather">Nur bei schönem Wetter: {{ hours_periods_view.current.fair }}</div>
+          {% endif %}
+        </div>
+      </div>
+      {% if hours_periods_view.all | length > 1 %}
+      <details class="hours-all-periods">
+        <summary>Alle Zeiträume</summary>
+        <table class="hours-table-periods">
+          <thead>
+            <tr>
+              <th>Zeitraum</th>
+              <th>Bei jedem Wetter</th>
+              {% if hours_periods_view.has_fair_weather %}<th>Nur bei schönem Wetter</th>{% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in hours_periods_view.all %}
+            <tr>
+              <td>{{ row.label }}</td>
+              <td>{{ row.always }}</td>
+              {% if hours_periods_view.has_fair_weather %}<td>{{ row.fair or '—' }}</td>{% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </details>
+      {% endif %}
+      {% elif pool.opening_hours %}
       {% set oh = pool.opening_hours %}
-      {% if oh %}
       {% set days = [("Mon","Mo"),("Tue","Di"),("Wed","Mi"),("Thu","Do"),("Fri","Fr"),("Sat","Sa"),("Sun","So")] %}
       <table class="hours-table">
         <tbody>
@@ -156,10 +196,13 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
         </tbody>
       </table>
       {% if oh.seasonal_open and oh.seasonal_close %}
-      <p class="seasonal-note">🏊 Saison: {{ oh.seasonal_open | date_de }} – {{ oh.seasonal_close | date_de }}</p>
+      <p class="seasonal-note">Saison: {{ oh.seasonal_open | date_de }} – {{ oh.seasonal_close | date_de }}</p>
       {% endif %}
       {% else %}
       <p class="pool-info-muted">Öffnungszeiten nicht verfügbar.</p>
+      {% endif %}
+      {% if hours_confidence == 'unverified' and hours_scraped_at %}
+      <p class="seasonal-note">Angaben ohne Gewähr · Stand {{ hours_scraped_at }}</p>
       {% endif %}
     </div>
 

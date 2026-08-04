@@ -1,0 +1,50 @@
+{
+  "uid": "flb6941",
+  "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/stadthausquai.html",
+  "scraped_at": "2026-08-04",
+  "tables": [
+    {
+      "columns": [
+        "Zeitraum",
+        "Öffnungszeiten bei jedem Wetter",
+        "Öffnungszeiten nur bei schönem Wetter"
+      ],
+      "rows": [
+        [
+          "9. Mai–6. September",
+          "7–14 Uhr |",
+          "14–19.30 Uhr"
+        ],
+        [
+          "7.–20. September",
+          "7–14 Uhr",
+          "14–19 Uhr"
+        ]
+      ],
+      "raw_rows": [
+        [
+          {
+            "value": "9. Mai–6. September"
+          },
+          {
+            "value": "7–14 Uhr<br>"
+          },
+          {
+            "value": "14–19.30 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "7.–20. September"
+          },
+          {
+            "value": "7–14 Uhr"
+          },
+          {
+            "value": "14–19 Uhr"
+          }
+        ]
+      ]
+    }
+  ]
+}

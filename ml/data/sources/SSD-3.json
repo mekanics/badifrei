@@ -1,0 +1,101 @@
+{
+  "uid": "SSD-3",
+  "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/bungertwies.html",
+  "scraped_at": "2026-08-04",
+  "tables": [
+    {
+      "columns": [
+        "Wochentag",
+        "Zeit"
+      ],
+      "rows": [
+        [
+          "Montag1",
+          "12–13.30 Uhr | 16–19 Uhr"
+        ],
+        [
+          "Dienstag",
+          "12–13.30 Uhr | 16–19 Uhr"
+        ],
+        [
+          "Mittwoch2",
+          "12–14 Uhr | 14–16 Uhr Kinderspielnachmittag | 16–19 Uhr"
+        ],
+        [
+          "Donnerstag",
+          "12.30–19 Uhr"
+        ],
+        [
+          "Freitag",
+          "kein öffentliches Schwimmen"
+        ],
+        [
+          "Samstag",
+          "kein öffentliches Schwimmen"
+        ],
+        [
+          "Sonntag | (und Feiertage3)",
+          "9–16 Uhr"
+        ]
+      ],
+      "raw_rows": [
+        [
+          {
+            "value": "Montag<sup>1</sup>"
+          },
+          {
+            "value": "12–13.30 Uhr <br>16–19 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Dienstag"
+          },
+          {
+            "value": "12–13.30 Uhr  <br>16–19 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Mittwoch<sup>2</sup>"
+          },
+          {
+            "value": "12–14 Uhr<br>14–16 Uhr Kinderspielnachmittag<br>16–19 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Donnerstag"
+          },
+          {
+            "value": "12.30–19 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Freitag"
+          },
+          {
+            "value": "kein öffentliches Schwimmen"
+          }
+        ],
+        [
+          {
+            "value": "Samstag"
+          },
+          {
+            "value": "kein öffentliches Schwimmen"
+          }
+        ],
+        [
+          {
+            "value": "Sonntag<br>(und Feiertage<sup>3</sup>)"
+          },
+          {
+            "value": "9–16 Uhr"
+          }
+        ]
+      ]
+    }
+  ]
+}

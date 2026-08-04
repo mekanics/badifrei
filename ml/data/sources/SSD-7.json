@@ -1,0 +1,101 @@
+{
+  "uid": "SSD-7",
+  "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/oerlikon.html",
+  "scraped_at": "2026-08-04",
+  "tables": [
+    {
+      "columns": [
+        "Wochentag",
+        "Zeit"
+      ],
+      "rows": [
+        [
+          "Montag",
+          "6–20 Uhr"
+        ],
+        [
+          "Dienstag",
+          "6–20 Uhr"
+        ],
+        [
+          "Mittwoch",
+          "6–22 Uhr | 14–16 Uhr Kinderspielnachmittag"
+        ],
+        [
+          "Donnerstag",
+          "6–20 Uhr"
+        ],
+        [
+          "Freitag",
+          "6–22 Uhr"
+        ],
+        [
+          "Samstag",
+          "6–22 Uhr"
+        ],
+        [
+          "Sonntag",
+          "6–22 Uhr"
+        ]
+      ],
+      "raw_rows": [
+        [
+          {
+            "value": "Montag"
+          },
+          {
+            "value": "6–20 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Dienstag"
+          },
+          {
+            "value": "6–20 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Mittwoch"
+          },
+          {
+            "value": "6–22 Uhr<br>14–16 Uhr Kinderspielnachmittag"
+          }
+        ],
+        [
+          {
+            "value": "Donnerstag"
+          },
+          {
+            "value": "6–20 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Freitag"
+          },
+          {
+            "value": "6–22 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Samstag"
+          },
+          {
+            "value": "6–22 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Sonntag"
+          },
+          {
+            "value": "6–22 Uhr"
+          }
+        ]
+      ]
+    }
+  ]
+}

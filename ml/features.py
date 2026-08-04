@@ -267,19 +267,24 @@ def add_weather_features(
         )
         df = df.merge(weather_cols, on=merge_on, how="left")
 
-    # Fill NaN weather with sensible defaults
-    df["temperature_c"] = df["temperature_c"].fillna(15.0)
-    df["precipitation_mm"] = df["precipitation_mm"].fillna(0.0)
-    df["weathercode"] = df["weathercode"].fillna(0.0)
+    # Keep weathercode through opening-hours features so fair_weather can use
+    # the same predicate as is_fair_weather(). Defaults are applied later in
+    # build_features AFTER add_opening_hours_features — filling here would make
+    # resolve_frame treat synthetic 15°C/0mm as "known" weather.
+    if "weathercode" not in df.columns:
+        df["weathercode"] = np.nan
 
-    # is_rainy: weathercode >= 51 (drizzle / rain threshold in WMO codes)
-    df["is_rainy"] = (df["weathercode"] >= 51).astype(int)
+    # is_rainy: weathercode >= 51 (drizzle / rain threshold in WMO codes).
+    # Leave NaN where weathercode is missing so resolve_frame can tell unknown
+    # from "known clear sky".
+    df["is_rainy"] = np.where(
+        df["weathercode"].isna(), np.nan, (df["weathercode"] >= 51).astype(float)
+    )
 
-    # temp_x_outdoor: temperature * outdoor flag (pool_type encoded 1 = freibad)
+    # temp_x_outdoor uses temperature when present; NaN → 0 until defaults fill
     is_outdoor = (df["pool_type"] == POOL_TYPE_ENCODING["freibad"]).astype(float)
-    df["temp_x_outdoor"] = df["temperature_c"] * is_outdoor
+    df["temp_x_outdoor"] = df["temperature_c"].fillna(0.0) * is_outdoor
 
-    df = df.drop(columns=["weathercode"])
     return df
 
 
@@ -330,17 +335,23 @@ def build_features(
     if weather_df is not None:
         df = add_weather_features(df, weather_df, metadata=metadata)
     else:
-        # Always populate weather columns so FEATURE_COLUMNS is fully resolvable.
-        # When weather is unavailable, use sensible defaults rather than relying
-        # on a downstream fillna(0) that would silently use wrong values.
-        df["temperature_c"] = 15.0
-        df["precipitation_mm"] = 0.0
-        df["is_rainy"] = 0
-        is_outdoor = (df["pool_type"] == POOL_TYPE_ENCODING["freibad"]).astype(float)
-        df["temp_x_outdoor"] = 15.0 * is_outdoor
+        # Leave weather as NaN so resolve_frame treats it as unknown (fair-weather
+        # intervals stay open for training). Defaults for the model come after.
+        df["temperature_c"] = np.nan
+        df["precipitation_mm"] = np.nan
+        df["weathercode"] = np.nan
+        df["is_rainy"] = np.nan
+        df["temp_x_outdoor"] = 0.0
     df = add_opening_hours_features(df, metadata)
+    # Model-facing defaults — applied AFTER opening-hours so fair_weather does
+    # not see synthetic 15°C / 0mm as real observations.
+    df["temperature_c"] = df["temperature_c"].fillna(15.0)
+    df["precipitation_mm"] = df["precipitation_mm"].fillna(0.0)
+    df["is_rainy"] = df["is_rainy"].fillna(0).astype(int)
+    is_outdoor = (df["pool_type"] == POOL_TYPE_ENCODING["freibad"]).astype(float)
+    df["temp_x_outdoor"] = df["temperature_c"] * is_outdoor
     # Drop helper columns not used as model features
-    df = df.drop(columns=["date"], errors="ignore")
+    df = df.drop(columns=["date", "weathercode"], errors="ignore")
     return df
 
 
@@ -455,128 +466,44 @@ def add_opening_hours_features(
     Adds columns: is_open, minutes_since_open, minutes_until_close.
     Requires hour_of_day and day_of_week columns (from add_time_features).
 
-    Implementation: builds a schedule lookup table (31 pools × 7 days ≈ 217
-    rows), merges it into df via a join, then computes all three columns with
-    vectorized numpy operations. No Python-level row iteration.
+    Delegates to ``ml.opening_hours.resolve_frame``, which understands periods,
+    split intervals, closures, and weather-conditional hours while staying
+    loop-free over the training frame.
+
+    When *pool_metadata* is provided (tests / overrides), schedules are built
+    from that dict's legacy ``opening_hours`` shapes instead of the on-disk
+    generated file.
     """
-    df = df.copy()
-    if pool_metadata is None:
-        pool_metadata = load_pool_metadata()
+    from ml.opening_hours import _legacy_to_schedule, load_schedules, resolve_frame
 
-    # --- 1. Build schedule lookup table (tiny — one row per pool×day) ---
-    # open_min / close_min = -1 sentinel means "pool closed this day"
-    schedule_rows: list[dict] = []
-    # uid -> (open_ordinal, close_ordinal) for pools with a seasonal window
-    seasonal_dict: dict[str, tuple[int, int]] = {}
+    if df.empty:
+        out = df.copy()
+        out["is_open"] = pd.Series(dtype=int)
+        out["minutes_since_open"] = pd.Series(dtype=int)
+        out["minutes_until_close"] = pd.Series(dtype=int)
+        return out
 
-    for uid, meta in pool_metadata.items():
-        oh = meta.get("opening_hours")
-        if oh is None:
-            # No metadata → treat as always open, no seasonal restriction
-            for dow_idx in range(7):
-                schedule_rows.append(
-                    {
-                        "pool_uid": uid,
-                        "day_of_week": dow_idx,
-                        "open_min": 0,
-                        "close_min": 1440,
-                    }
-                )
-            continue
+    if pool_metadata is not None:
+        schedules = {}
+        for uid, meta in pool_metadata.items():
+            oh = meta.get("opening_hours")
+            if oh is None:
+                from ml.opening_hours import Interval, Period, PoolSchedule
 
-        # Seasonal window (e.g. Freibäder May–Sep)
-        so_str = oh.get("seasonal_open")
-        sc_str = oh.get("seasonal_close")
-        if so_str and sc_str:
-            try:
-                seasonal_dict[uid] = (
-                    datetime.date.fromisoformat(so_str).toordinal(),
-                    datetime.date.fromisoformat(sc_str).toordinal(),
-                )
-            except (ValueError, TypeError):
-                pass
-
-        # Per-weekday schedule
-        schedule = oh.get("schedule", {})
-        for dow_idx, day_name in enumerate(_DAY_NAMES):
-            day_sched = schedule.get(day_name)
-            if not day_sched:
-                schedule_rows.append(
-                    {
-                        "pool_uid": uid,
-                        "day_of_week": dow_idx,
-                        "open_min": -1,
-                        "close_min": -1,
-                    }
+                schedules[uid] = PoolSchedule(
+                    uid=uid,
+                    periods=(
+                        Period(
+                            start=None,
+                            end=None,
+                            days=frozenset(range(7)),
+                            intervals=(Interval(0, 1440, "always"),),
+                        ),
+                    ),
+                    confidence="unverified",
                 )
             else:
-                try:
-                    oh_h, oh_m = map(int, day_sched["open"].split(":"))
-                    oc_h, oc_m = map(int, day_sched["close"].split(":"))
-                    schedule_rows.append(
-                        {
-                            "pool_uid": uid,
-                            "day_of_week": dow_idx,
-                            "open_min": oh_h * 60 + oh_m,
-                            "close_min": oc_h * 60 + oc_m,
-                        }
-                    )
-                except (KeyError, ValueError):
-                    schedule_rows.append(
-                        {
-                            "pool_uid": uid,
-                            "day_of_week": dow_idx,
-                            "open_min": 0,
-                            "close_min": 1440,
-                        }
-                    )
-
-    schedule_lut = pd.DataFrame(schedule_rows)
-
-    # --- 2. Join schedule into df (O(n), no Python loops) ---
-    df = df.merge(schedule_lut, on=["pool_uid", "day_of_week"], how="left")
-    df["open_min"] = df["open_min"].fillna(0).astype(int)
-    df["close_min"] = df["close_min"].fillna(1440).astype(int)
-
-    # --- 3. Seasonal check ---
-    # Use calendar dates instead of timestamp integer units. Pandas versions
-    # differ in the unit exposed by astype("int64"), which can corrupt ordinals.
-    if "date" in df.columns:
-        local_dates = pd.to_datetime(df["date"]).dt.date
+                schedules[uid] = _legacy_to_schedule(uid, oh)
     else:
-        dt_series = pd.to_datetime(df["time"])
-        if dt_series.dt.tz is not None:
-            dt_series = dt_series.dt.tz_convert("Europe/Zurich")
-        local_dates = dt_series.dt.date
-    row_ordinal = local_dates.map(lambda d: d.toordinal()).astype("int64")
-
-    if seasonal_dict:
-        so_map = {uid: v[0] for uid, v in seasonal_dict.items()}
-        sc_map = {uid: v[1] for uid, v in seasonal_dict.items()}
-        so_series = df["pool_uid"].map(so_map)
-        sc_series = df["pool_uid"].map(sc_map)
-        has_window = so_series.notna()
-        in_season: pd.Series = ~has_window | (
-            (row_ordinal >= so_series.fillna(0).astype("int64"))
-            & (row_ordinal <= sc_series.fillna(10**8).astype("int64"))
-        )
-    else:
-        in_season = pd.Series(True, index=df.index)
-
-    # --- 4. Compute the three output columns (vectorized) ---
-    current_min = df["hour_of_day"] * 60
-    closed_day = df["open_min"] == -1
-
-    is_open_mask = (
-        in_season
-        & ~closed_day
-        & (current_min >= df["open_min"])
-        & (current_min < df["close_min"])
-    )
-
-    df["is_open"] = is_open_mask.astype(int)
-    df["minutes_since_open"] = np.where(is_open_mask, current_min - df["open_min"], 0)
-    df["minutes_until_close"] = np.where(is_open_mask, df["close_min"] - current_min, 0)
-
-    df = df.drop(columns=["open_min", "close_min"], errors="ignore")
-    return df
+        schedules = load_schedules()
+    return resolve_frame(df, schedules)

@@ -3,7 +3,9 @@
 import asyncio
 import json
 import logging
+import math
 import os
+from collections.abc import Iterable
 from contextlib import asynccontextmanager
 from urllib.parse import urlparse
 
@@ -138,21 +140,40 @@ def date_parser(date_str: str):
     return date_parser_raw(date_str).date()
 
 
+def _schedules():
+    """Lazy-load PoolSchedule map (module-level cache)."""
+    from ml.opening_hours import load_schedules
+
+    if not hasattr(_schedules, "_cache") or _schedules._cache is None:
+        _schedules._cache = load_schedules()
+    return _schedules._cache
+
+
+_schedules._cache = None  # type: ignore[attr-defined]
+
+
+def _schedule_for_pool(pool: dict):
+    """Return the PoolSchedule for a pool, building a one-off from legacy hours."""
+    from ml.opening_hours import load_schedules, _legacy_to_schedule
+
+    uid = pool.get("uid")
+    schedules = _schedules()
+    if uid in schedules:
+        return schedules[uid]
+    oh = pool.get("opening_hours")
+    if oh:
+        return _legacy_to_schedule(uid or "unknown", oh)
+    return None
+
+
 def _is_off_season(opening_hours: dict | None, day) -> bool:
+    """Legacy helper kept for call sites; prefers the deep module when possible."""
+    from ml.opening_hours import is_off_season, _legacy_to_schedule
+
     if not opening_hours:
         return False
-    import datetime as dt
-
-    seasonal_open_str = opening_hours.get("seasonal_open")
-    seasonal_close_str = opening_hours.get("seasonal_close")
-    if not (seasonal_open_str and seasonal_close_str):
-        return False
-    try:
-        season_open = dt.date.fromisoformat(seasonal_open_str)
-        season_close = dt.date.fromisoformat(seasonal_close_str)
-    except (ValueError, TypeError):
-        return False
-    return not (season_open <= day <= season_close)
+    schedule = _legacy_to_schedule("tmp", opening_hours)
+    return is_off_season(schedule, day)
 
 
 def _schedule_for_day(opening_hours: dict | None, day):
@@ -183,18 +204,34 @@ def _classify_prediction_day(
     model_available: bool,
 ) -> dict:
     """Classify prediction availability for a pool on a Zurich-local date."""
-    opening_hours = pool.get("opening_hours")
-    if _is_off_season(opening_hours, day):
-        prediction_status = "off_season"
-        open_hours_count = 0
-    else:
-        open_hours_count = _count_open_hours(_schedule_for_day(opening_hours, day))
-        if open_hours_count == 0:
-            prediction_status = "closed_all_day"
-        elif not model_available:
-            prediction_status = "no_model"
+    from ml.opening_hours import count_open_hours, is_off_season
+
+    schedule = _schedule_for_pool(pool)
+    if schedule is not None:
+        if is_off_season(schedule, day):
+            prediction_status = "off_season"
+            open_hours_count = 0
         else:
-            prediction_status = "ok"
+            open_hours_count = count_open_hours(schedule, day)
+            if open_hours_count == 0:
+                prediction_status = "closed_all_day"
+            elif not model_available:
+                prediction_status = "no_model"
+            else:
+                prediction_status = "ok"
+    else:
+        opening_hours = pool.get("opening_hours")
+        if _is_off_season(opening_hours, day):
+            prediction_status = "off_season"
+            open_hours_count = 0
+        else:
+            open_hours_count = _count_open_hours(_schedule_for_day(opening_hours, day))
+            if open_hours_count == 0:
+                prediction_status = "closed_all_day"
+            elif not model_available:
+                prediction_status = "no_model"
+            else:
+                prediction_status = "ok"
 
     return {
         "model_available": model_available,
@@ -465,6 +502,50 @@ async def pool_detail(request: Request, pool_uid: str):
     related_pools, related_pools_scope = _compute_related_pools(pool, pools, limit=8)
     related_pools_heading = _related_pools_label(related_pools_scope, pool)
 
+    # Active full closure (Revision / event) for the detail-page banner
+    active_closure = None
+    hours_confidence = "unverified"
+    hours_scraped_at = None
+    hours_periods_view = None
+    try:
+        from ml.opening_hours import DE_MONTHS, resolve
+
+        schedule = _schedule_for_pool(pool)
+        if schedule is not None:
+            hours_confidence = schedule.confidence
+            if schedule.scraped_at is not None:
+                hours_scraped_at = (
+                    f"{schedule.scraped_at.day}. "
+                    f"{DE_MONTHS[schedule.scraped_at.month - 1]} "
+                    f"{schedule.scraped_at.year}"
+                )
+            now_zurich = datetime.now(ZURICH_TZ)
+            weather_hint = None
+            if db_pool is not None:
+                city = pool.get("city", "zurich")
+                weather_by_city = await _fetch_city_weather_hints(
+                    db_pool, now_zurich, cities={city}
+                )
+                weather_hint = weather_by_city.get(city)
+            resolution = resolve(schedule, now_zurich, weather=weather_hint)
+            if resolution.state.value == "closed_exception":
+                # Find the active closure for the end label
+                for closure in schedule.closures:
+                    if closure.scope == "full" and closure.active_at(now_zurich):
+                        # end is exclusive — show the inclusive last closed day
+                        inclusive = (closure.end - timedelta(minutes=1)).date()
+                        active_closure = {
+                            "reason": closure.reason,
+                            "end_label": (
+                                f"{inclusive.day}. "
+                                f"{DE_MONTHS[inclusive.month - 1]}"
+                            ),
+                        }
+                        break
+            hours_periods_view = _build_periods_view(schedule, now_zurich.date())
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("hours/closure block failed for %s: %s", pool_uid, exc)
+
     return templates.TemplateResponse(
         request,
         "pool.html",
@@ -478,8 +559,66 @@ async def pool_detail(request: Request, pool_uid: str):
             "weekly_insights": weekly_insights,
             "related_pools": related_pools,
             "related_pools_heading": related_pools_heading,
+            "active_closure": active_closure,
+            "hours_confidence": hours_confidence,
+            "hours_scraped_at": hours_scraped_at,
+            "hours_periods_view": hours_periods_view,
         },
     )
+
+
+def _build_periods_view(schedule, today):
+    """Build a template-friendly view of date-scoped periods (Sommerbad shape).
+
+    Returns None when the schedule is the flat weekday shape (no dated periods),
+    so the legacy weekday table can still render.
+    """
+    from ml.opening_hours import DE_MONTHS, DAY_NAMES
+
+    dated = [p for p in schedule.periods if p.start is not None and p.end is not None]
+    if not dated:
+        return None
+
+    def _fmt_date(d):
+        return f"{d.day}. {DE_MONTHS[d.month - 1]}"
+
+    def _fmt_interval(interval):
+        open_s = f"{interval.open_min // 60:02d}:{interval.open_min % 60:02d}"
+        close_s = f"{interval.close_min // 60:02d}:{interval.close_min % 60:02d}"
+        return open_s, close_s, interval.condition
+
+    def _period_row(period):
+        always = []
+        fair = []
+        for interval in period.intervals:
+            open_s, close_s, cond = _fmt_interval(interval)
+            label = f"{open_s}–{close_s}"
+            if cond == "fair_weather":
+                fair.append(label)
+            else:
+                always.append(label)
+        return {
+            "label": f"{_fmt_date(period.start)}–{_fmt_date(period.end)}",
+            "always": ", ".join(always) if always else "—",
+            "fair": ", ".join(fair) if fair else None,
+            "days": sorted(DAY_NAMES[d] for d in period.days),
+        }
+
+    ordered = sorted(dated, key=lambda p: p.start)
+    rows = [_period_row(p) for p in ordered]
+    current = None
+    for period, row in zip(ordered, rows):
+        if period.start <= today <= period.end:
+            current = row
+            break
+    if current is None and rows:
+        current = rows[0]
+    has_fair = any(r["fair"] for r in rows)
+    return {
+        "current": current,
+        "all": rows,
+        "has_fair_weather": has_fair,
+    }
 
 
 def _compute_related_pools(
@@ -773,84 +912,143 @@ _DE_MONTHS = [
 _DE_DAYS_SHORT = ["Mo.", "Di.", "Mi.", "Do.", "Fr.", "Sa.", "So."]
 
 
-def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
+def _compute_pool_is_open(
+    pool: dict,
+    now_zurich: "datetime",
+    observation=None,
+    weather=None,
+) -> dict:
     """Compute is_open status for a pool given current Zürich time.
 
     Returns dict with keys:
-      is_open (bool), next_open (str|None), opens_seasonal (str|None)
+      is_open, next_open, opens_seasonal, state, reason, confidence, ...
 
     opens_seasonal is set (e.g. "ab 9. Mai") when the pool is outside its
     seasonal window — next_open is None in that case.
     next_open is a time string (e.g. "09:00") for in-season daily closures.
     """
-    import datetime as dt
-    from ml.features import _DAY_NAMES
+    from ml.opening_hours import (
+        resolve,
+        resolution_to_api_dict,
+        use_observed_override,
+        _legacy_to_schedule,
+    )
 
-    opening_hours = pool.get("opening_hours")
-    if not opening_hours:
-        return {"is_open": True, "next_open": None, "opens_seasonal": None}
+    schedule = _schedule_for_pool(pool)
+    if schedule is None:
+        oh = pool.get("opening_hours")
+        if not oh:
+            return {
+                "is_open": True,
+                "next_open": None,
+                "opens_seasonal": None,
+                "state": "unknown",
+                "reason": None,
+                "confidence": "unverified",
+            }
+        schedule = _legacy_to_schedule(pool.get("uid", "unknown"), oh)
 
-    today = now_zurich.date()
+    obs = observation if use_observed_override() else None
+    return resolution_to_api_dict(
+        resolve(schedule, now_zurich, observation=obs, weather=weather)
+    )
 
-    # ── Seasonal window check (before daily schedule) ───────────────────────
-    seasonal_open_str = opening_hours.get("seasonal_open")
-    seasonal_close_str = opening_hours.get("seasonal_close")
-    if seasonal_open_str and seasonal_close_str:
+
+def _coerce_weather_value(value):
+    """Normalize DB/pandas weather cells: NaN → None."""
+    if value is None:
+        return None
+    try:
+        if isinstance(value, float) and math.isnan(value):
+            return None
+    except TypeError:
+        pass
+    return value
+
+
+def _weather_hint_from_values(temp, precip, code):
+    """Build WeatherHint or None when every field is missing."""
+    from ml.opening_hours import WeatherHint
+
+    temp = _coerce_weather_value(temp)
+    precip = _coerce_weather_value(precip)
+    code = _coerce_weather_value(code)
+    if temp is None and precip is None and code is None:
+        return None
+    return WeatherHint(
+        temperature_c=float(temp) if temp is not None else None,
+        precipitation_mm=float(precip) if precip is not None else None,
+        weathercode=int(code) if code is not None else None,
+    )
+
+
+async def _fetch_city_weather_hints(
+    db_pool,
+    now_zurich: datetime,
+    cities: Iterable[str] | None = None,
+) -> dict:
+    """Load current-hour WeatherHint per city, fetching when the cache is empty.
+
+    ``hourly_weather`` stores Open-Meteo rows in **UTC** date/hour, so the
+    lookup uses ``now_zurich`` converted to UTC.
+
+    When *cities* is provided and a city has no current-hour row, calls
+    ``fetch_weather_batch`` (mem → DB → Open-Meteo) so fair-weather Sommerbäder
+    are not stuck closed on a cold cache.
+    """
+    from ml.weather import CITY_COORDS, fetch_weather_batch
+
+    now_utc = now_zurich.astimezone(timezone.utc)
+    lookup_date = now_utc.date()
+    lookup_hour = now_utc.hour
+
+    wanted = {c for c in (cities or []) if c in CITY_COORDS}
+
+    hints: dict = {}
+    try:
+        rows = await db_pool.fetch(
+            """
+            SELECT city, temperature_c, precipitation_mm, weathercode
+            FROM hourly_weather
+            WHERE date = $1::date AND hour = $2
+            """,
+            lookup_date,
+            lookup_hour,
+        )
+        for row in rows:
+            city = row["city"]
+            if wanted and city not in wanted:
+                continue
+            hint = _weather_hint_from_values(
+                row["temperature_c"],
+                row["precipitation_mm"],
+                row["weathercode"],
+            )
+            if hint is not None:
+                hints[city] = hint
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("hourly_weather lookup failed: %s", exc)
+
+    for city in sorted(wanted - set(hints.keys())):
         try:
-            season_open = dt.date.fromisoformat(seasonal_open_str)
-            season_close = dt.date.fromisoformat(seasonal_close_str)
-            if not (season_open <= today <= season_close):
-                # Off-season — show the opening date, not a daily time
-                label = f"ab {season_open.day}. {_DE_MONTHS[season_open.month - 1]}"
-                return {"is_open": False, "next_open": None, "opens_seasonal": label}
-        except (ValueError, TypeError):
-            pass  # malformed date — fall through to daily schedule
-
-    # ── In-season: check daily opening hours (minute-accurate) ──────────────
-    day_of_week = now_zurich.weekday()  # 0=Mon
-    hour = now_zurich.hour
-    day_name = _DAY_NAMES[day_of_week]
-    schedule = opening_hours.get("schedule", {})
-    day_sched = schedule.get(day_name)
-
-    is_open = False
-    if day_sched:
-        try:
-            open_h, open_m = map(int, day_sched["open"].split(":"))
-            close_h, close_m = map(int, day_sched["close"].split(":"))
-            open_minutes = open_h * 60 + open_m
-            close_minutes = close_h * 60 + close_m
-            current_minutes = now_zurich.hour * 60 + now_zurich.minute
-            is_open = open_minutes <= current_minutes < close_minutes
-        except (KeyError, ValueError):
-            is_open = True  # defensive: treat as open on parse error
-
-    next_open = None
-    if not is_open:
-
-        # Check if still today and opens later (offset=0)
-        today_sched = schedule.get(_DAY_NAMES[day_of_week])
-        if today_sched:
-            open_h, open_m = map(int, today_sched["open"].split(":"))
-            if hour < open_h or (hour == open_h and now_zurich.minute < open_m):
-                next_open = today_sched["open"]  # same day → time only
-
-        # Find next open day ahead
-        if not next_open:
-            for offset in range(1, 8):
-                check_dow = (day_of_week + offset) % 7
-                day_sched = schedule.get(_DAY_NAMES[check_dow])
-                if day_sched:
-                    t = day_sched.get("open", "")
-                    if offset == 1:
-                        next_open = t  # tomorrow → time only
-                    else:
-                        next_open = (
-                            f"{_DE_DAYS_SHORT[check_dow]} {t}"  # e.g. "So. 09:00"
-                        )
-                    break
-
-    return {"is_open": bool(is_open), "next_open": next_open, "opens_seasonal": None}
+            df = await fetch_weather_batch([lookup_date], city=city)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("weather ensure-fetch failed for city=%s: %s", city, exc)
+            continue
+        if df is None or getattr(df, "empty", True):
+            continue
+        match = df[df["hour"] == lookup_hour]
+        if match.empty:
+            continue
+        rec = match.iloc[0]
+        hint = _weather_hint_from_values(
+            rec["temperature_c"],
+            rec["precipitation_mm"],
+            rec["weathercode"],
+        )
+        if hint is not None:
+            hints[city] = hint
+    return hints
 
 
 @app.get("/api/current", tags=["dashboard"])
@@ -872,14 +1070,51 @@ async def current_occupancy(request: Request):
             FROM pool_occupancy
             ORDER BY pool_uid, time DESC
             """)
+
+        observations: dict = {}
+        try:
+            from ml.opening_hours import observation_from_status_text
+
+            status_rows = await db_pool.fetch("""
+                SELECT DISTINCT ON (pool_uid)
+                    pool_uid, status_text, source_modified_at, observed_at
+                FROM pool_status
+                ORDER BY pool_uid, observed_at DESC
+                """)
+            for srow in status_rows:
+                observations[srow["pool_uid"]] = observation_from_status_text(
+                    srow["status_text"],
+                    observed_at=srow["observed_at"],
+                    source_modified_at=srow["source_modified_at"],
+                )
+        except Exception:
+            # pool_status may not exist yet (pre-migration); schedule still works
+            observations = {}
+
+        cities = {
+            pools_by_uid.get(row["pool_uid"], {}).get("city", "zurich") for row in rows
+        }
+        weather_by_city = await _fetch_city_weather_hints(
+            db_pool, now_zurich, cities=cities
+        )
+
         result = []
         for row in rows:
             item = dict(row)
             pool = pools_by_uid.get(item["pool_uid"], {})
-            status = _compute_pool_is_open(pool, now_zurich)
+            city = pool.get("city", "zurich")
+            status = _compute_pool_is_open(
+                pool,
+                now_zurich,
+                observation=observations.get(item["pool_uid"]),
+                weather=weather_by_city.get(city),
+            )
             item["is_open"] = status["is_open"]
             item["next_open"] = status["next_open"]
             item["opens_seasonal"] = status["opens_seasonal"]
+            item["state"] = status.get("state")
+            item["reason"] = status.get("reason")
+            item["confidence"] = status.get("confidence")
             result.append(item)
         return result
     except Exception:

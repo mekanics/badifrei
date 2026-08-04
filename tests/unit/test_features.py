@@ -411,6 +411,28 @@ class TestWeatherFeatures:
         for col in FEATURE_COLUMNS:
             assert col in result.columns
 
+    def test_missing_weather_does_not_close_fair_weather_afternoons(self):
+        """Defaults must not masquerade as known 15°C weather for is_open labels."""
+        from ml.features import build_features
+
+        # fb006: always 09–14, fair_weather 14–21 in summer
+        df = make_df(n=24, pool_uid="fb006", start="2026-08-04")
+        result = build_features(df)
+        afternoon = result[result["hour_of_day"] == 15]
+        assert len(afternoon) == 1
+        assert afternoon.iloc[0]["is_open"] == 1
+
+    def test_weathercode_thunderstorm_closes_fair_weather_via_build_features(self):
+        from ml.features import build_features
+
+        df = make_df(n=24, pool_uid="fb006", start="2026-08-04")
+        weather = make_weather_df(
+            temperature_c=24.0, precipitation_mm=0.0, weathercode=95
+        )
+        result = build_features(df, weather_df=weather)
+        afternoon = result[result["hour_of_day"] == 15]
+        assert afternoon.iloc[0]["is_open"] == 0
+
 
 # Mock opening hours metadata for tests
 _MOCK_OPENING_HOURS = {

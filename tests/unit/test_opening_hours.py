@@ -245,6 +245,120 @@ class TestComputePoolIsOpen:
         assert result["opens_seasonal"] is not None
         assert "Mai" in result["opens_seasonal"]
 
+    def test_fb006_afternoon_opens_with_fair_weather_hint(self):
+        """P1: hourly_weather must reach resolve() for Sommerbad afternoons."""
+        from api.main import _compute_pool_is_open
+        from ml.opening_hours import WeatherHint
+
+        pool = {"uid": "fb006", "city": "zurich"}
+        fair = WeatherHint(temperature_c=24, precipitation_mm=0.0, weathercode=1)
+        result = _compute_pool_is_open(
+            pool, _zurich(2026, 8, 4, 15, 0), weather=fair
+        )
+        assert result["is_open"] is True
+
+    def test_fb006_afternoon_closed_without_weather(self):
+        from api.main import _compute_pool_is_open
+
+        pool = {"uid": "fb006", "city": "zurich"}
+        result = _compute_pool_is_open(pool, _zurich(2026, 8, 4, 15, 0))
+        assert result["is_open"] is False
+
+
+class TestFetchCityWeatherHints:
+    """Badge path must ensure weather when hourly_weather is empty."""
+
+    @staticmethod
+    def _weather_df(temp=24.0, precip=0.0, code=1):
+        import pandas as pd
+        from datetime import date
+
+        return pd.DataFrame(
+            {
+                "date": [date(2026, 8, 4)] * 24,
+                "hour": list(range(24)),
+                "temperature_c": [temp] * 24,
+                "precipitation_mm": [precip] * 24,
+                "weathercode": [code] * 24,
+            }
+        )
+
+    async def test_empty_cache_fetches_and_opens_fb006_afternoon(self):
+        from unittest.mock import AsyncMock, patch
+
+        from api.main import _compute_pool_is_open, _fetch_city_weather_hints
+
+        db_pool = AsyncMock()
+        db_pool.fetch = AsyncMock(return_value=[])
+        now = _zurich(2026, 8, 4, 15, 0)  # 13:00 UTC
+
+        with patch(
+            "ml.weather.fetch_weather_batch",
+            new_callable=AsyncMock,
+            return_value=self._weather_df(temp=24.0, precip=0.0, code=1),
+        ) as mock_fetch:
+            hints = await _fetch_city_weather_hints(
+                db_pool, now, cities={"zurich"}
+            )
+            mock_fetch.assert_awaited()
+
+        assert "zurich" in hints
+        result = _compute_pool_is_open(
+            {"uid": "fb006", "city": "zurich"}, now, weather=hints["zurich"]
+        )
+        assert result["is_open"] is True
+
+    async def test_empty_cache_storm_keeps_fb006_closed(self):
+        from unittest.mock import AsyncMock, patch
+
+        from api.main import _compute_pool_is_open, _fetch_city_weather_hints
+
+        db_pool = AsyncMock()
+        db_pool.fetch = AsyncMock(return_value=[])
+        now = _zurich(2026, 8, 4, 15, 0)
+
+        with patch(
+            "ml.weather.fetch_weather_batch",
+            new_callable=AsyncMock,
+            return_value=self._weather_df(temp=24.0, precip=0.0, code=95),
+        ):
+            hints = await _fetch_city_weather_hints(
+                db_pool, now, cities={"zurich"}
+            )
+
+        result = _compute_pool_is_open(
+            {"uid": "fb006", "city": "zurich"}, now, weather=hints["zurich"]
+        )
+        assert result["is_open"] is False
+
+    async def test_db_hit_skips_fetch(self):
+        from unittest.mock import AsyncMock, patch
+
+        from api.main import _fetch_city_weather_hints
+
+        db_pool = AsyncMock()
+        db_pool.fetch = AsyncMock(
+            return_value=[
+                {
+                    "city": "zurich",
+                    "temperature_c": 22.0,
+                    "precipitation_mm": 0.0,
+                    "weathercode": 1,
+                }
+            ]
+        )
+        now = _zurich(2026, 8, 4, 15, 0)
+
+        with patch(
+            "ml.weather.fetch_weather_batch", new_callable=AsyncMock
+        ) as mock_fetch:
+            hints = await _fetch_city_weather_hints(
+                db_pool, now, cities={"zurich"}
+            )
+            mock_fetch.assert_not_called()
+
+        assert hints["zurich"].temperature_c == 22.0
+
 
 class TestClassifyPredictionDay:
     """Unit tests for prediction status metadata."""

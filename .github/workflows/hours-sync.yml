@@ -1,0 +1,49 @@
+name: Hours sync
+
+on:
+  schedule:
+    # Twice weekly — prose closures are announced days ahead
+    - cron: "15 6 * * 1,4"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v9.0.0
+
+      - run: uv sync --frozen --extra dev
+
+      - name: Scrape revision closures
+        run: uv run python scripts/scrape_closures.py
+
+      - name: Scrape opening-hours tables
+        run: uv run python scripts/scrape_hours.py
+
+      - name: Verify generated file matches source fragments
+        run: uv run pytest tests/unit/test_generated_hours.py -v
+
+      - name: Open or update PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore/hours-sync
+          delete-branch: false
+          title: "chore: sync opening hours from stadt-zuerich.ch"
+          body: |
+            Automated sync of Zürich pool opening hours and Revision closures.
+
+            - Source fragments: `ml/data/sources/`
+            - Generated claims: `ml/data/opening_hours.generated.json`
+
+            Review the diff carefully. Model-extracted event closures (if any)
+            must cite a sentence present in the committed fragment.
+          commit-message: "chore: sync opening hours from stadt-zuerich.ch"
+          add-paths: |
+            ml/data/opening_hours.generated.json
+            ml/data/sources/
