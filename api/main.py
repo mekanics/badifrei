@@ -138,10 +138,31 @@ def date_parser(date_str: str):
     return date_parser_raw(date_str).date()
 
 
+def _get_schema_version(opening_hours: dict | None) -> int:
+    """Return schema version (1 or 2) from opening_hours dict."""
+    if not opening_hours:
+        return 1
+    return opening_hours.get("version", 1)
+
+
 def _is_off_season(opening_hours: dict | None, day) -> bool:
     if not opening_hours:
         return False
     import datetime as dt
+
+    version = _get_schema_version(opening_hours)
+    if version == 2:
+        for season in opening_hours.get("seasons", []):
+            s_from = season.get("from")
+            s_to = season.get("to")
+            if s_from is None and s_to is None:
+                return False
+            try:
+                if dt.date.fromisoformat(s_from) <= day <= dt.date.fromisoformat(s_to):
+                    return False
+            except (ValueError, TypeError):
+                continue
+        return True
 
     seasonal_open_str = opening_hours.get("seasonal_open")
     seasonal_close_str = opening_hours.get("seasonal_close")
@@ -155,18 +176,59 @@ def _is_off_season(opening_hours: dict | None, day) -> bool:
     return not (season_open <= day <= season_close)
 
 
+def _get_active_season(opening_hours: dict, day):
+    """Return the active season dict for a given date (v2 only)."""
+    import datetime as dt
+    for season in opening_hours.get("seasons", []):
+        s_from = season.get("from")
+        s_to = season.get("to")
+        if s_from is None and s_to is None:
+            return season
+        try:
+            if dt.date.fromisoformat(s_from) <= day <= dt.date.fromisoformat(s_to):
+                return season
+        except (ValueError, TypeError):
+            continue
+    return None
+
+
 def _schedule_for_day(opening_hours: dict | None, day):
     if not opening_hours:
         return {"open": "00:00", "close": "24:00"}
     from ml.features import _DAY_NAMES
 
+    version = _get_schema_version(opening_hours)
     day_name = _DAY_NAMES[day.weekday()]
+
+    if version == 2:
+        active_season = _get_active_season(opening_hours, day)
+        if active_season is None:
+            return None
+        blocks = active_season.get("schedule", {}).get(day_name)
+        return blocks
+
     return opening_hours.get("schedule", {}).get(day_name)
 
 
-def _count_open_hours(day_schedule: dict | None) -> int:
+def _count_open_hours(day_schedule) -> int:
     if not day_schedule:
         return 0
+
+    if isinstance(day_schedule, list):
+        open_hours = set()
+        for block in day_schedule:
+            try:
+                open_h, open_m = map(int, block["open"].split(":"))
+                close_h, close_m = map(int, block["close"].split(":"))
+                open_min = open_h * 60 + open_m
+                close_min = close_h * 60 + close_m
+                for hour in range(24):
+                    if open_min <= hour * 60 < close_min:
+                        open_hours.add(hour)
+            except (KeyError, ValueError):
+                continue
+        return len(open_hours)
+
     try:
         open_h, open_m = map(int, day_schedule["open"].split(":"))
         close_h, close_m = map(int, day_schedule["close"].split(":"))
@@ -183,7 +245,24 @@ def _classify_prediction_day(
     model_available: bool,
 ) -> dict:
     """Classify prediction availability for a pool on a Zurich-local date."""
+    import datetime as dt
     opening_hours = pool.get("opening_hours")
+
+    # Check v2 temporary closures
+    if opening_hours and _get_schema_version(opening_hours) == 2:
+        for closure in opening_hours.get("temporary_closures", []):
+            try:
+                c_from = dt.date.fromisoformat(closure["from"])
+                c_to = dt.date.fromisoformat(closure["to"])
+                if c_from <= day <= c_to:
+                    return {
+                        "model_available": model_available,
+                        "prediction_status": "closed_all_day",
+                        "open_hours_count": 0,
+                    }
+            except (ValueError, TypeError):
+                continue
+
     if _is_off_season(opening_hours, day):
         prediction_status = "off_season"
         open_hours_count = 0
@@ -703,6 +782,15 @@ def _build_opening_hours_summary(opening_hours: dict | None) -> str | None:
     """
     if not opening_hours:
         return None
+
+    version = _get_schema_version(opening_hours)
+    if version == 2:
+        return _build_summary_v2(opening_hours)
+    return _build_summary_v1(opening_hours)
+
+
+def _build_summary_v1(opening_hours: dict) -> str | None:
+    """Legacy v1 summary builder."""
     schedule = opening_hours.get("schedule")
     if not schedule:
         return None
@@ -718,7 +806,6 @@ def _build_opening_hours_summary(opening_hours: dict | None) -> str | None:
         "Sun": "So",
     }
 
-    # Build list of (day_key, open, close) for days that are open
     entries = []
     for day in _DAY_ORDER:
         s = schedule.get(day)
@@ -728,22 +815,18 @@ def _build_opening_hours_summary(opening_hours: dict | None) -> str | None:
     if not entries:
         return None
 
-    # Group consecutive days with identical hours
     groups = []
     i = 0
     while i < len(entries):
         day, open_t, close_t = entries[i]
-        # Find run of same hours
         j = i + 1
         while j < len(entries) and entries[j][1] == open_t and entries[j][2] == close_t:
-            # Only group if consecutive in _DAY_ORDER
             idx_prev = _DAY_ORDER.index(entries[j - 1][0])
             idx_curr = _DAY_ORDER.index(entries[j][0])
             if idx_curr == idx_prev + 1:
                 j += 1
             else:
                 break
-        # entries[i..j-1] are a group
         start_day = _DAY_DE[entries[i][0]]
         end_day = _DAY_DE[entries[j - 1][0]]
         if start_day == end_day:
@@ -754,6 +837,89 @@ def _build_opening_hours_summary(opening_hours: dict | None) -> str | None:
         i = j
 
     return ". ".join(groups) + "."
+
+
+def _build_summary_v2(opening_hours: dict) -> str | None:
+    """V2 summary builder with season support and multiple time blocks."""
+    import datetime as dt
+
+    seasons = opening_hours.get("seasons", [])
+    if not seasons:
+        return None
+
+    _DAY_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    _DAY_DE = {
+        "Mon": "Mo",
+        "Tue": "Di",
+        "Wed": "Mi",
+        "Thu": "Do",
+        "Fri": "Fr",
+        "Sat": "Sa",
+        "Sun": "So",
+    }
+
+    today = dt.date.today()
+    season = None
+    for s in seasons:
+        s_from = s.get("from")
+        s_to = s.get("to")
+        if s_from is None and s_to is None:
+            season = s
+            break
+        try:
+            if dt.date.fromisoformat(s_from) <= today <= dt.date.fromisoformat(s_to):
+                season = s
+                break
+        except (ValueError, TypeError):
+            continue
+    if not season:
+        season = seasons[0]
+
+    schedule = season.get("schedule", {})
+    entries = []
+    for day in _DAY_ORDER:
+        blocks = schedule.get(day)
+        if blocks:
+            time_str = " und ".join(f"{b['open']}–{b['close']}" for b in blocks)
+            entries.append((day, time_str))
+
+    if not entries:
+        return None
+
+    groups = []
+    i = 0
+    while i < len(entries):
+        day, time_str = entries[i]
+        j = i + 1
+        while j < len(entries) and entries[j][1] == time_str:
+            idx_prev = _DAY_ORDER.index(entries[j - 1][0])
+            idx_curr = _DAY_ORDER.index(entries[j][0])
+            if idx_curr == idx_prev + 1:
+                j += 1
+            else:
+                break
+        start_day = _DAY_DE[entries[i][0]]
+        end_day = _DAY_DE[entries[j - 1][0]]
+        if start_day == end_day:
+            label = start_day
+        else:
+            label = f"{start_day}–{end_day}"
+        groups.append(f"{label}: {time_str} Uhr")
+        i = j
+
+    summary = ". ".join(groups) + "."
+
+    for closure in opening_hours.get("temporary_closures", []):
+        try:
+            c_from = dt.date.fromisoformat(closure["from"])
+            c_to = dt.date.fromisoformat(closure["to"])
+            if c_from <= today <= c_to:
+                summary = f"Geschlossen bis {c_to.day}. {_DE_MONTHS[c_to.month - 1]}. {summary}"
+                break
+        except (ValueError, TypeError):
+            continue
+
+    return summary
 
 
 _DE_MONTHS = [
@@ -777,22 +943,103 @@ def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
     """Compute is_open status for a pool given current Zürich time.
 
     Returns dict with keys:
-      is_open (bool), next_open (str|None), opens_seasonal (str|None)
-
-    opens_seasonal is set (e.g. "ab 9. Mai") when the pool is outside its
-    seasonal window — next_open is None in that case.
-    next_open is a time string (e.g. "09:00") for in-season daily closures.
+      is_open (bool), next_open (str|None), opens_seasonal (str|None), closure_reason (str|None)
     """
     import datetime as dt
     from ml.features import _DAY_NAMES
 
     opening_hours = pool.get("opening_hours")
     if not opening_hours:
-        return {"is_open": True, "next_open": None, "opens_seasonal": None}
+        return {"is_open": True, "next_open": None, "opens_seasonal": None, "closure_reason": None}
 
     today = now_zurich.date()
+    version = _get_schema_version(opening_hours)
 
-    # ── Seasonal window check (before daily schedule) ───────────────────────
+    if version == 2:
+        return _compute_pool_is_open_v2(opening_hours, now_zurich, today, _DAY_NAMES)
+    return _compute_pool_is_open_v1(opening_hours, now_zurich, today, _DAY_NAMES)
+
+
+def _compute_pool_is_open_v2(opening_hours: dict, now_zurich: "datetime", today, _DAY_NAMES) -> dict:
+    """V2: supports temporary closures, seasons, special events, multiple blocks."""
+    import datetime as dt
+
+    for closure in opening_hours.get("temporary_closures", []):
+        try:
+            c_from = dt.date.fromisoformat(closure["from"])
+            c_to = dt.date.fromisoformat(closure["to"])
+            if c_from <= today <= c_to:
+                return {
+                    "is_open": False,
+                    "next_open": None,
+                    "opens_seasonal": None,
+                    "closure_reason": closure.get("reason", "temporary_closure"),
+                }
+        except (ValueError, TypeError):
+            continue
+
+    active_season = _get_active_season(opening_hours, today)
+    if not active_season:
+        return {"is_open": False, "next_open": None, "opens_seasonal": None, "closure_reason": "off_season"}
+
+    day_of_week = now_zurich.weekday()
+    day_name = _DAY_NAMES[day_of_week]
+    blocks = active_season.get("schedule", {}).get(day_name)
+
+    if blocks is None:
+        return {"is_open": False, "next_open": None, "opens_seasonal": None, "closure_reason": None}
+
+    is_open = False
+    current_min = now_zurich.hour * 60 + now_zurich.minute
+    for block in blocks:
+        try:
+            open_h, open_m = map(int, block["open"].split(":"))
+            close_h, close_m = map(int, block["close"].split(":"))
+            open_min = open_h * 60 + open_m
+            close_min = close_h * 60 + close_m
+            if open_min <= current_min < close_min:
+                is_open = True
+                break
+        except (KeyError, ValueError):
+            continue
+
+    next_open = None
+    if not is_open:
+        for block in blocks:
+            try:
+                open_h, open_m = map(int, block["open"].split(":"))
+                open_min = open_h * 60 + open_m
+                if current_min < open_min:
+                    next_open = block["open"]
+                    break
+            except (KeyError, ValueError):
+                continue
+
+        if not next_open:
+            for offset in range(1, 8):
+                check_dow = (day_of_week + offset) % 7
+                check_day = _DAY_NAMES[check_dow]
+                check_blocks = active_season.get("schedule", {}).get(check_day)
+                if check_blocks:
+                    t = check_blocks[0].get("open", "")
+                    if offset == 1:
+                        next_open = t
+                    else:
+                        next_open = f"{_DE_DAYS_SHORT[check_dow]} {t}"
+                    break
+
+    return {
+        "is_open": is_open,
+        "next_open": next_open,
+        "opens_seasonal": None,
+        "closure_reason": None,
+    }
+
+
+def _compute_pool_is_open_v1(opening_hours: dict, now_zurich: "datetime", today, _DAY_NAMES) -> dict:
+    """Legacy v1 implementation."""
+    import datetime as dt
+
     seasonal_open_str = opening_hours.get("seasonal_open")
     seasonal_close_str = opening_hours.get("seasonal_close")
     if seasonal_open_str and seasonal_close_str:
@@ -800,14 +1047,12 @@ def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
             season_open = dt.date.fromisoformat(seasonal_open_str)
             season_close = dt.date.fromisoformat(seasonal_close_str)
             if not (season_open <= today <= season_close):
-                # Off-season — show the opening date, not a daily time
                 label = f"ab {season_open.day}. {_DE_MONTHS[season_open.month - 1]}"
-                return {"is_open": False, "next_open": None, "opens_seasonal": label}
+                return {"is_open": False, "next_open": None, "opens_seasonal": label, "closure_reason": None}
         except (ValueError, TypeError):
-            pass  # malformed date — fall through to daily schedule
+            pass
 
-    # ── In-season: check daily opening hours (minute-accurate) ──────────────
-    day_of_week = now_zurich.weekday()  # 0=Mon
+    day_of_week = now_zurich.weekday()
     hour = now_zurich.hour
     day_name = _DAY_NAMES[day_of_week]
     schedule = opening_hours.get("schedule", {})
@@ -823,19 +1068,16 @@ def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
             current_minutes = now_zurich.hour * 60 + now_zurich.minute
             is_open = open_minutes <= current_minutes < close_minutes
         except (KeyError, ValueError):
-            is_open = True  # defensive: treat as open on parse error
+            is_open = True
 
     next_open = None
     if not is_open:
-
-        # Check if still today and opens later (offset=0)
         today_sched = schedule.get(_DAY_NAMES[day_of_week])
         if today_sched:
             open_h, open_m = map(int, today_sched["open"].split(":"))
             if hour < open_h or (hour == open_h and now_zurich.minute < open_m):
-                next_open = today_sched["open"]  # same day → time only
+                next_open = today_sched["open"]
 
-        # Find next open day ahead
         if not next_open:
             for offset in range(1, 8):
                 check_dow = (day_of_week + offset) % 7
@@ -843,14 +1085,12 @@ def _compute_pool_is_open(pool: dict, now_zurich: "datetime") -> dict:
                 if day_sched:
                     t = day_sched.get("open", "")
                     if offset == 1:
-                        next_open = t  # tomorrow → time only
+                        next_open = t
                     else:
-                        next_open = (
-                            f"{_DE_DAYS_SHORT[check_dow]} {t}"  # e.g. "So. 09:00"
-                        )
+                        next_open = f"{_DE_DAYS_SHORT[check_dow]} {t}"
                     break
 
-    return {"is_open": bool(is_open), "next_open": next_open, "opens_seasonal": None}
+    return {"is_open": bool(is_open), "next_open": next_open, "opens_seasonal": None, "closure_reason": None}
 
 
 @app.get("/api/current", tags=["dashboard"])
