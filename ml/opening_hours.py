@@ -32,6 +32,15 @@ STALENESS_DAYS = 14
 
 DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 DAY_INDEX = {name: i for i, name in enumerate(DAY_NAMES)}
+SCHEMA_DAY_URL = {
+    0: "https://schema.org/Monday",
+    1: "https://schema.org/Tuesday",
+    2: "https://schema.org/Wednesday",
+    3: "https://schema.org/Thursday",
+    4: "https://schema.org/Friday",
+    5: "https://schema.org/Saturday",
+    6: "https://schema.org/Sunday",
+}
 DE_MONTHS = [
     "Jan",
     "Feb",
@@ -336,7 +345,9 @@ def load_schedules(
             try:
                 schedule = _parse_generated_schedule(uid, generated[uid])
             except Exception as exc:  # noqa: BLE001
-                logger.error("Bad generated schedule for %s: %s; falling back", uid, exc)
+                logger.error(
+                    "Bad generated schedule for %s: %s; falling back", uid, exc
+                )
                 oh = pool.get("opening_hours") or {}
                 schedule = _legacy_to_schedule(uid, oh)
         elif pool.get("opening_hours"):
@@ -352,9 +363,9 @@ def load_schedules(
                         holidays_follow=schedule.holidays_follow,
                         last_entry_offset_min=gen.last_entry_offset_min
                         or schedule.last_entry_offset_min,
-                        confidence=gen.confidence
-                        if gen.closures
-                        else schedule.confidence,
+                        confidence=(
+                            gen.confidence if gen.closures else schedule.confidence
+                        ),
                         scraped_at=gen.scraped_at or schedule.scraped_at,
                     )
                 except Exception as exc:  # noqa: BLE001
@@ -412,9 +423,7 @@ def _next_season_open(schedule: PoolSchedule, day: dt.date) -> dt.date | None:
     return earliest.replace(year=day.year + 1)
 
 
-def _active_full_closure(
-    schedule: PoolSchedule, when: dt.datetime
-) -> Closure | None:
+def _active_full_closure(schedule: PoolSchedule, when: dt.datetime) -> Closure | None:
     for closure in schedule.closures:
         if closure.scope == "full" and closure.active_at(when):
             return closure
@@ -433,9 +442,7 @@ def _observation_is_fresh(
     return (when - stamp) <= max_age
 
 
-def _format_next_open(
-    schedule: PoolSchedule, when: dt.datetime
-) -> str | None:
+def _format_next_open(schedule: PoolSchedule, when: dt.datetime) -> str | None:
     """Return a display string for the next opening time from the schedule."""
     day = when.date()
     current_min = when.hour * 60 + when.minute
@@ -766,22 +773,12 @@ def resolve_frame(
             if "temperature_c" in out.columns
             else pd.Series(np.nan, index=out.index)
         )
-        code = (
-            out["weathercode"] if has_code else pd.Series(np.nan, index=out.index)
-        )
+        code = out["weathercode"] if has_code else pd.Series(np.nan, index=out.index)
         rainy = out["is_rainy"] if has_rainy else pd.Series(np.nan, index=out.index)
 
-        known = (
-            known
-            | precip.notna()
-            | code.notna()
-            | rainy.notna()
-            | temp.notna()
-        )
+        known = known | precip.notna() | code.notna() | rainy.notna() | temp.notna()
         # Match is_fair_weather: precip < 0.2, temp >= 16 or null, code < 61 or null
-        computed = (precip.isna() | (precip < 0.2)) & (
-            temp.isna() | (temp >= 16)
-        )
+        computed = (precip.isna() | (precip < 0.2)) & (temp.isna() | (temp >= 16))
         if has_code:
             computed = computed & (code.isna() | (code < 61))
         elif has_rainy:
@@ -845,3 +842,117 @@ def is_off_season(schedule: PoolSchedule, day: dt.date) -> bool:
     if not _has_any_season(schedule):
         return False
     return not any(p.covers(day) for p in schedule.periods)
+
+
+def _minutes_to_hhmmss(minutes: int) -> str:
+    """Format minutes-from-midnight as schema.org HH:MM:SS."""
+    if minutes >= 1440:
+        return "23:59:00"
+    return f"{minutes // 60:02d}:{minutes % 60:02d}:00"
+
+
+def _fmt_clock(minutes: int) -> str:
+    return f"{minutes // 60:02d}:{minutes % 60:02d}"
+
+
+def opening_hours_jsonld(schedule: PoolSchedule) -> list[dict]:
+    """Build Hours JSON-LD (Guaranteed hours + full Closures only).
+
+    See docs/adr/ADR-001-guaranteed-hours-in-structured-data.md. Conditional
+    (fair_weather) intervals are never emitted as opens/closes.
+    """
+    specs: list[dict] = []
+    for period in schedule.periods:
+        dated = period.start is not None and period.end is not None
+        for day_idx in sorted(period.days):
+            for interval in period.intervals:
+                if interval.condition != "always":
+                    continue
+                spec: dict = {
+                    "@type": "OpeningHoursSpecification",
+                    "dayOfWeek": SCHEMA_DAY_URL[day_idx],
+                    "opens": _minutes_to_hhmmss(interval.open_min),
+                    "closes": _minutes_to_hhmmss(interval.close_min),
+                }
+                if dated:
+                    spec["validFrom"] = period.start.isoformat()  # type: ignore[union-attr]
+                    spec["validThrough"] = period.end.isoformat()  # type: ignore[union-attr]
+                specs.append(spec)
+
+    for closure in schedule.closures:
+        if closure.scope != "full":
+            continue
+        start = _to_zurich(closure.start)
+        end = _to_zurich(closure.end)
+        inclusive_end = (end - dt.timedelta(minutes=1)).date()
+        specs.append(
+            {
+                "@type": "OpeningHoursSpecification",
+                "opens": "00:00:00",
+                "closes": "00:00:00",
+                "validFrom": start.date().isoformat(),
+                "validThrough": inclusive_end.isoformat(),
+            }
+        )
+    return specs
+
+
+def opening_hours_faq_text(schedule: PoolSchedule, pool_name: str) -> str:
+    """German FAQ answer matching Guaranteed hours + Conditional hours prose."""
+    always_pairs: set[tuple[int, int]] = set()
+    fair_closes: set[str] = set()
+    season_start: dt.date | None = None
+    season_end: dt.date | None = None
+
+    for period in schedule.periods:
+        if period.start is not None and (
+            season_start is None or period.start < season_start
+        ):
+            season_start = period.start
+        if period.end is not None and (season_end is None or period.end > season_end):
+            season_end = period.end
+        for interval in period.intervals:
+            if interval.condition == "always":
+                always_pairs.add((interval.open_min, interval.close_min))
+            else:
+                fair_closes.add(_fmt_clock(interval.close_min))
+
+    if not always_pairs and not fair_closes:
+        return (
+            f"Die aktuellen Öffnungszeiten von {pool_name} findest du auf dieser Seite."
+        )
+    if not always_pairs:
+        return (
+            f"{pool_name} hat wetterabhängige Öffnungszeiten; "
+            f"aktuelle Hinweise findest du auf dieser Seite."
+        )
+
+    pairs = sorted(always_pairs)
+    if len(pairs) == 1:
+        open_m, close_m = pairs[0]
+        guaranteed = f"von {_fmt_clock(open_m)} bis {_fmt_clock(close_m)} Uhr"
+    else:
+        parts = [f"{_fmt_clock(o)}–{_fmt_clock(c)} Uhr" for o, c in pairs]
+        guaranteed = ", ".join(parts)
+
+    text = f"{pool_name} ist während der Saison täglich {guaranteed} sicher geöffnet."
+    if fair_closes:
+        closes = sorted(fair_closes)
+        if len(closes) == 1:
+            fair_phrase = f"bis {closes[0]} Uhr"
+        else:
+            # "bis 20:00 oder 21:00 Uhr" — Uhr only once at the end
+            fair_phrase = "bis " + " oder ".join(closes) + " Uhr"
+        text += (
+            f" Bei schönem Wetter kann es je nach Saisonabschnitt {fair_phrase} "
+            f"geöffnet bleiben; aktuelle Hinweise und Schliesszeiten findest du "
+            f"auf dieser Seite."
+        )
+    elif season_start is not None and season_end is not None:
+        text += (
+            f" Saison: {season_start.day}. {DE_MONTHS[season_start.month - 1]} "
+            f"bis {season_end.day}. {DE_MONTHS[season_end.month - 1]}."
+        )
+    else:
+        text += " Aktuelle Hinweise findest du auf dieser Seite."
+    return text

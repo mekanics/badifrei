@@ -1,11 +1,60 @@
-# Glossary — Opening Hours
+# badifrei — Glossary
 
-| Term | Meaning |
-|---|---|
-| **Schedule** | The published claim: which intervals a pool is open, by date period and weekday. Slow-moving, lives in git. |
-| **Interval** | One contiguous open span within a day, with a `condition` (`always` \| `fair_weather`). |
-| **Period** | A date range plus weekday set, holding intervals. Replaces the flat `schedule` map. |
-| **Closure** | A dated exception that overrides the schedule (Revision, event). `scope: full` closes the pool; `scope: partial` does not. |
-| **Observation** | What the Baditicker feed reported at a timestamp. Asserts nothing about the future. Lives in TimescaleDB (`pool_status`). |
-| **Resolution** | The derived answer for one pool at one instant: state, close times, reason, source. |
-| **Confidence** | Provenance grade of a schedule: `official_structured`, `official_prose`, `unverified`. |
+> Definitions of the domain terms used across badifrei documentation and code.
+> When in doubt, link here rather than redefine a term in place.
+>
+> Tag legend: **(CH)** Stadt Zürich / Swiss pool domain · **(seo)** structured-data /
+> search presentation
+
+## C
+
+**Closure** _(CH)_ — A dated exception that overrides the Schedule (Revision,
+event). Scope `full` closes the pool; `partial` does not change whole-pool open
+state.
+
+**Conditional hours** _(CH)_ _(seo)_ — Published Interval(s) that apply only
+under fair weather (`condition: fair_weather`). Shown in UI and FAQ prose; never
+asserted as unconditional open/close in structured data. Distinct from a
+Resolution whose state is *open conditional* (live, weather-resolved). See
+[ADR-001](./adr/ADR-001-guaranteed-hours-in-structured-data.md).
+
+**Confidence** — Provenance grade of a Schedule: `official_structured`,
+`official_prose`, or `unverified`.
+
+## G
+
+**Guaranteed hours** _(CH)_ _(seo)_ — Published Interval(s) that apply regardless
+of weather (`condition: always`). The only open windows asserted in Hours
+JSON-LD. See [ADR-001](./adr/ADR-001-guaranteed-hours-in-structured-data.md).
+
+## H
+
+**Hours JSON-LD** _(seo)_ — The derived list of schema.org
+`OpeningHoursSpecification` objects for one pool, built from Guaranteed hours
+plus full Closures. Not a separate store of truth — always derived from the
+Schedule. See [ADR-001](./adr/ADR-001-guaranteed-hours-in-structured-data.md).
+
+## I
+
+**Interval** — One contiguous open span within a day, classified as either
+Guaranteed hours or Conditional hours.
+
+## O
+
+**Observation** — What the Baditicker feed reported at a timestamp. Asserts
+nothing about the future; used only when fresh to override a Resolution.
+
+## P
+
+**Period** — A date range plus weekday set, holding Intervals. The Schedule’s
+unit of season structure (replaces a single flat weekday map).
+
+## R
+
+**Resolution** — The derived answer for one pool at one instant: open state,
+close times, reason, and source (observation, closure, or schedule).
+
+## S
+
+**Schedule** — The published claim: which Intervals a pool is open, by Period
+and weekday, plus Closures. Slow-moving; reviewed in git before deploy.

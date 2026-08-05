@@ -507,12 +507,21 @@ async def pool_detail(request: Request, pool_uid: str):
     hours_confidence = "unverified"
     hours_scraped_at = None
     hours_periods_view = None
+    hours_jsonld: list = []
+    hours_faq = opening_hours_summary
     try:
-        from ml.opening_hours import DE_MONTHS, resolve
+        from ml.opening_hours import (
+            DE_MONTHS,
+            opening_hours_faq_text,
+            opening_hours_jsonld,
+            resolve,
+        )
 
         schedule = _schedule_for_pool(pool)
         if schedule is not None:
             hours_confidence = schedule.confidence
+            hours_jsonld = opening_hours_jsonld(schedule)
+            hours_faq = opening_hours_faq_text(schedule, pool["name"])
             if schedule.scraped_at is not None:
                 hours_scraped_at = (
                     f"{schedule.scraped_at.day}. "
@@ -537,14 +546,26 @@ async def pool_detail(request: Request, pool_uid: str):
                         active_closure = {
                             "reason": closure.reason,
                             "end_label": (
-                                f"{inclusive.day}. "
-                                f"{DE_MONTHS[inclusive.month - 1]}"
+                                f"{inclusive.day}. " f"{DE_MONTHS[inclusive.month - 1]}"
                             ),
                         }
                         break
             hours_periods_view = _build_periods_view(schedule, now_zurich.date())
     except Exception as exc:  # noqa: BLE001
         logger.warning("hours/closure block failed for %s: %s", pool_uid, exc)
+
+    # Description parity: mention Conditional hours when the periods table does
+    city_key = pool.get("city", "zurich")
+    city_label = CITY_DISPLAY.get(city_key, city_key.title())
+    schema_description = (
+        f"{str(pool.get('type', 'Schwimmbad')).title()} in {city_label}"
+        f" – aktuelle Auslastung und Tagesprognose auf badifrei.ch."
+    )
+    if hours_periods_view and hours_periods_view.get("has_fair_weather"):
+        schema_description += (
+            " Bei schönem Wetter teilweise verlängerte Öffnungszeiten "
+            "(siehe Öffnungszeiten auf dieser Seite)."
+        )
 
     return templates.TemplateResponse(
         request,
@@ -556,6 +577,9 @@ async def pool_detail(request: Request, pool_uid: str):
             "today_prediction_status": today_status["prediction_status"],
             "quietest_hour": quietest_hour,
             "opening_hours_summary": opening_hours_summary,
+            "hours_jsonld": hours_jsonld,
+            "hours_faq": hours_faq,
+            "schema_description": schema_description,
             "weekly_insights": weekly_insights,
             "related_pools": related_pools,
             "related_pools_heading": related_pools_heading,
