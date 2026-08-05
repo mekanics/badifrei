@@ -897,12 +897,57 @@ def opening_hours_jsonld(schedule: PoolSchedule) -> list[dict]:
     return specs
 
 
-def opening_hours_faq_text(schedule: PoolSchedule, pool_name: str) -> str:
-    """German FAQ answer matching Guaranteed hours + Conditional hours prose."""
-    always_pairs: set[tuple[int, int]] = set()
+def _fmt_closure_end_label(closure: Closure) -> str:
+    inclusive = (_to_zurich(closure.end) - dt.timedelta(minutes=1)).date()
+    return f"{inclusive.day}. {DE_MONTHS[inclusive.month - 1]}"
+
+
+def _active_full_closures(schedule: PoolSchedule, when: dt.datetime) -> list[Closure]:
+    when = _to_zurich(when)
+    return [c for c in schedule.closures if c.scope == "full" and c.active_at(when)]
+
+
+def _next_full_closure(schedule: PoolSchedule, when: dt.datetime) -> Closure | None:
+    when = _to_zurich(when)
+    upcoming = [
+        c for c in schedule.closures if c.scope == "full" and _to_zurich(c.start) > when
+    ]
+    if not upcoming:
+        return None
+    return min(upcoming, key=lambda c: c.start)
+
+
+def _faq_upcoming_closure_suffix(schedule: PoolSchedule, when: dt.datetime) -> str:
+    """Mention the next upcoming full Closure (not currently active)."""
+    closure = _next_full_closure(schedule, when)
+    if closure is None:
+        return ""
+    start_d = _to_zurich(closure.start).date()
+    return (
+        f" Hinweis: {closure.reason} vom "
+        f"{start_d.day}. {DE_MONTHS[start_d.month - 1]} bis "
+        f"{_fmt_closure_end_label(closure)}."
+    )
+
+
+def opening_hours_faq_text(
+    schedule: PoolSchedule,
+    pool_name: str,
+    *,
+    when: dt.datetime | None = None,
+) -> str:
+    """German FAQ answer matching Guaranteed hours + Conditional hours prose.
+
+    Uses the SEO “sicher geöffnet” pattern only when every open weekday shares
+    the same single always window. Weekday-varying Hallenbäder point at the
+    page instead of inventing a false “täglich” soup. An active full Closure
+    leads the answer so we never claim open during Revision.
+    """
     fair_closes: set[str] = set()
     season_start: dt.date | None = None
     season_end: dt.date | None = None
+    # day_idx → set of always (open_min, close_min) windows that day
+    day_always: dict[int, set[tuple[int, int]]] = {i: set() for i in range(7)}
 
     for period in schedule.periods:
         if period.start is not None and (
@@ -911,48 +956,84 @@ def opening_hours_faq_text(schedule: PoolSchedule, pool_name: str) -> str:
             season_start = period.start
         if period.end is not None and (season_end is None or period.end > season_end):
             season_end = period.end
+        always_here = [
+            (i.open_min, i.close_min)
+            for i in period.intervals
+            if i.condition == "always"
+        ]
         for interval in period.intervals:
-            if interval.condition == "always":
-                always_pairs.add((interval.open_min, interval.close_min))
-            else:
+            if interval.condition == "fair_weather":
                 fair_closes.add(_fmt_clock(interval.close_min))
+        if not always_here:
+            continue
+        for day_idx in period.days:
+            day_always[day_idx].update(always_here)
 
-    if not always_pairs and not fair_closes:
+    active_days = {d: frozenset(wins) for d, wins in day_always.items() if wins}
+    has_fair = bool(fair_closes)
+    now = when if when is not None else dt.datetime.now(ZURICH_TZ)
+
+    active = _active_full_closures(schedule, now)
+    if active:
+        closure = min(active, key=lambda c: c.end)
         return (
-            f"Die aktuellen Öffnungszeiten von {pool_name} findest du auf dieser Seite."
+            f"{pool_name} ist derzeit geschlossen ({closure.reason} bis "
+            f"{_fmt_closure_end_label(closure)}). "
+            f"Übliche Öffnungszeiten finden Sie auf dieser Seite."
         )
-    if not always_pairs:
-        return (
+
+    upcoming_note = _faq_upcoming_closure_suffix(schedule, now)
+
+    if not active_days and not has_fair:
+        base = (
+            f"Die aktuellen Öffnungszeiten von {pool_name} finden Sie auf dieser Seite."
+        )
+        return base + upcoming_note
+    if not active_days:
+        base = (
             f"{pool_name} hat wetterabhängige Öffnungszeiten; "
-            f"aktuelle Hinweise findest du auf dieser Seite."
+            f"aktuelle Hinweise finden Sie auf dieser Seite."
         )
+        return base + upcoming_note
 
-    pairs = sorted(always_pairs)
-    if len(pairs) == 1:
-        open_m, close_m = pairs[0]
-        guaranteed = f"von {_fmt_clock(open_m)} bis {_fmt_clock(close_m)} Uhr"
-    else:
-        parts = [f"{_fmt_clock(o)}–{_fmt_clock(c)} Uhr" for o, c in pairs]
-        guaranteed = ", ".join(parts)
+    patterns = set(active_days.values())
+    uniform_single = len(patterns) == 1 and len(next(iter(patterns))) == 1
 
-    text = f"{pool_name} ist während der Saison täglich {guaranteed} sicher geöffnet."
-    if fair_closes:
+    def _fair_suffix() -> str:
+        if not fair_closes:
+            return ""
         closes = sorted(fair_closes)
         if len(closes) == 1:
             fair_phrase = f"bis {closes[0]} Uhr"
         else:
-            # "bis 20:00 oder 21:00 Uhr" — Uhr only once at the end
             fair_phrase = "bis " + " oder ".join(closes) + " Uhr"
-        text += (
+        return (
             f" Bei schönem Wetter kann es je nach Saisonabschnitt {fair_phrase} "
-            f"geöffnet bleiben; aktuelle Hinweise und Schliesszeiten findest du "
+            f"geöffnet bleiben; aktuelle Hinweise und Schliesszeiten finden Sie "
             f"auf dieser Seite."
         )
-    elif season_start is not None and season_end is not None:
+
+    if not uniform_single:
+        text = (
+            f"Die Öffnungszeiten von {pool_name} variieren nach Wochentag; "
+            f"aktuelle Zeiten finden Sie auf dieser Seite."
+        )
+        return text + _fair_suffix() + upcoming_note
+
+    open_m, close_m = next(iter(next(iter(patterns))))
+    guaranteed = f"von {_fmt_clock(open_m)} bis {_fmt_clock(close_m)} Uhr"
+    day_word = "täglich" if set(active_days) == set(range(7)) else "an Öffnungstagen"
+    text = (
+        f"{pool_name} ist während der Saison {day_word} {guaranteed} sicher geöffnet."
+    )
+    fair = _fair_suffix()
+    if fair:
+        return text + fair + upcoming_note
+    if season_start is not None and season_end is not None:
         text += (
             f" Saison: {season_start.day}. {DE_MONTHS[season_start.month - 1]} "
             f"bis {season_end.day}. {DE_MONTHS[season_end.month - 1]}."
         )
     else:
-        text += " Aktuelle Hinweise findest du auf dieser Seite."
-    return text
+        text += " Aktuelle Hinweise finden Sie auf dieser Seite."
+    return text + upcoming_note

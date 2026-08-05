@@ -520,15 +520,17 @@ async def pool_detail(request: Request, pool_uid: str):
         schedule = _schedule_for_pool(pool)
         if schedule is not None:
             hours_confidence = schedule.confidence
+            now_zurich = datetime.now(ZURICH_TZ)
             hours_jsonld = opening_hours_jsonld(schedule)
-            hours_faq = opening_hours_faq_text(schedule, pool["name"])
+            hours_faq = opening_hours_faq_text(
+                schedule, pool["name"], when=now_zurich
+            )
             if schedule.scraped_at is not None:
                 hours_scraped_at = (
                     f"{schedule.scraped_at.day}. "
                     f"{DE_MONTHS[schedule.scraped_at.month - 1]} "
                     f"{schedule.scraped_at.year}"
                 )
-            now_zurich = datetime.now(ZURICH_TZ)
             weather_hint = None
             if db_pool is not None:
                 city = pool.get("city", "zurich")

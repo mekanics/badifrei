@@ -12,9 +12,9 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
 {% set _name = pool.name %}
 {% set _needs_type = _type and not _name.lower().startswith(_type.lower()) %}
 {% set _prefix = _type + ' ' if _needs_type else '' %}
-{% block description %}{{ _prefix }}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{% endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sieh vor dem Besuch, wie voll es ist →{% endblock %}
+{% block description %}{{ _prefix }}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{% endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sehen Sie vor dem Besuch, wie voll es ist →{% endblock %}
 {% block og_url_path %}/bad/{{ pool.uid }}{% endblock %}
-{% block og_description %}{{ _prefix }}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{% endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sieh vor dem Besuch, wie voll es ist →{% endblock %}
+{% block og_description %}{{ _prefix }}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{% endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sehen Sie vor dem Besuch, wie voll es ist →{% endblock %}
 {% block twitter_description %}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{% endif %}: Live-Auslastung & aktuelle Besucherzahlen | badifrei.ch{% endblock %}
 {% block canonical_path %}/bad/{{ pool.uid }}{% endblock %}
 {% block structured_data %}
@@ -46,7 +46,7 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
       "name": {{ ("Wann ist " ~ pool.name ~ " am wenigsten voll?") | tojson }},
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": {% if quietest_hour is not none %}{{ ("Laut aktueller Prognose ist " ~ pool.name ~ " heute um " ~ ("%02d" | format(quietest_hour)) ~ ":00 Uhr am wenigsten besucht. Die Auslastungsprognose auf badifrei.ch wird täglich aktualisiert.") | tojson }}{% else %}{{ "Aktuelle Prognosedaten sind momentan nicht verfügbar. Prüfe die Auslastungskurve auf dieser Seite für aktuelle Informationen." | tojson }}{% endif %}
+        "text": {% if quietest_hour is not none %}{{ ("Laut aktueller Prognose ist " ~ pool.name ~ " heute um " ~ ("%02d" | format(quietest_hour)) ~ ":00 Uhr am wenigsten besucht. Die Auslastungsprognose auf badifrei.ch wird täglich aktualisiert.") | tojson }}{% else %}{{ "Aktuelle Prognosedaten sind momentan nicht verfügbar. Prüfen Sie die Auslastungskurve auf dieser Seite für aktuelle Informationen." | tojson }}{% endif %}
       }
     },
     {
@@ -62,7 +62,7 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
       "name": {{ ("Wann hat " ~ pool.name ~ " geöffnet?") | tojson }},
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": {{ (hours_faq or "Die aktuellen Öffnungszeiten findest du auf dieser Seite.") | tojson }}
+        "text": {{ (hours_faq or "Die aktuellen Öffnungszeiten finden Sie auf dieser Seite.") | tojson }}
       }
     }
   ]

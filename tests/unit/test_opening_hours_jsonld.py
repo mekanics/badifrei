@@ -177,11 +177,17 @@ class TestOpeningHoursJsonld:
 
 class TestOpeningHoursFaqText:
     def test_fair_weather_wording(self):
-        text = opening_hours_faq_text(_fair_weather_schedule(), "Freibad Allenmoos")
+        text = opening_hours_faq_text(
+            _fair_weather_schedule(),
+            "Freibad Allenmoos",
+            when=_when(2026, 8, 4, 12),
+        )
         assert "sicher" in text
+        assert "täglich" in text
         assert "09:00" in text and "14:00" in text
         assert "schönem Wetter" in text
         assert "20:00" in text and "21:00" in text
+        assert "finden Sie" in text
         # Must not claim 21:00 as the unconditional close
         assert "bis 21:00 Uhr sicher" not in text
 
@@ -197,7 +203,30 @@ class TestOpeningHoursFaqText:
                 ),
             ),
         )
-        text = opening_hours_faq_text(schedule, "Hallenbad Test")
+        text = opening_hours_faq_text(
+            schedule, "Hallenbad Test", when=_when(2026, 8, 4, 12)
+        )
         assert "sicher" in text
         assert "schönem Wetter" not in text
         assert "06:30" in text
+
+    def test_weekday_varying_does_not_claim_taeglich_soup(self):
+        """Käferberg-style schedules must not invent a false daily union of windows."""
+        schedules = load_schedules()
+        # Outside Revision (2026-07-27–2026-08-17) so FAQ describes usual hours.
+        text = opening_hours_faq_text(
+            schedules["SSD-6"], "Hallenbad Käferberg", when=_when(2026, 9, 1, 12)
+        )
+        assert "variieren nach Wochentag" in text
+        assert "täglich" not in text
+        assert "06:00–08:00" not in text
+        assert "finden Sie" in text
+
+    def test_active_closure_leads_faq(self):
+        schedules = load_schedules()
+        text = opening_hours_faq_text(
+            schedules["SSD-4"], "Hallenbad City", when=_when(2026, 8, 4, 12)
+        )
+        assert "derzeit geschlossen" in text
+        assert "Revision" in text
+        assert "sicher geöffnet" not in text
