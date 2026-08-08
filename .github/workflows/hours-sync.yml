@@ -30,7 +30,7 @@ jobs:
         run: uv run pytest tests/unit/test_generated_hours.py -v
 
       - name: Open or update PR
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: chore/hours-sync
           delete-branch: false
