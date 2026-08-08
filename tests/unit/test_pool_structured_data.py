@@ -89,7 +89,7 @@ class TestPoolStructuredDataJson:
         hours_q = next(q for q in faq["mainEntity"] if "geöffnet" in q["name"])
         answer = hours_q["acceptedAnswer"]["text"]
         assert "sicher" in answer
-        assert "finden Sie" in answer
+        assert "findest du" in answer
 
     def test_ssd4_scripts_parse_with_closure_spec(self):
         html = _render_pool_html("SSD-4")
