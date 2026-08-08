@@ -118,9 +118,11 @@ def render_llms_txt(*, pools: list[dict]) -> str:
             "historical occupancy, time features, and weather. Models are "
             "retrained weekly. Forecast horizon is approximately 8 hours.",
             "",
-            "badifrei.ch does **not** publish real-time admission prices, "
-            "water temperature, or lane availability. For official pool "
-            "details, visit the respective city sports department websites.",
+            "Where available, pool detail pages show live water temperature "
+            "(Baditicker) and city air temperature (Open-Meteo). badifrei.ch "
+            "does **not** publish real-time admission prices or lane "
+            "availability. For official pool details, visit the respective "
+            "city sports department websites.",
             "",
         ]
     )
@@ -280,6 +282,26 @@ def render_pool_markdown(
         if occupancy.get("state"):
             lines.append(f"- State: {occupancy['state']}")
         lines.append(f"- Sensor time: {_format_sensor_time(occupancy.get('time'))}")
+
+    if occupancy is not None:
+        water = occupancy.get("water_temp_c")
+        air = occupancy.get("air_temp_c")
+        if water is not None:
+            try:
+                water_i = int(round(float(water)))
+            except (TypeError, ValueError):
+                water_i = water
+            lines.append(f"- Wassertemperatur: {water_i}°C")
+        if air is not None:
+            try:
+                air_i = int(round(float(air)))
+            except (TypeError, ValueError):
+                air_i = air
+            cond = occupancy.get("condition_label")
+            if cond:
+                lines.append(f"- Lufttemperatur: {air_i}°C ({cond})")
+            else:
+                lines.append(f"- Lufttemperatur: {air_i}°C")
 
     hours_detail_md = adapt_faq_for_markdown(opening_hours_detail, html_url=html_url)
 

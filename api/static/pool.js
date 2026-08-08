@@ -32,16 +32,54 @@ function updateFavicon(occupancyPct) {
 	link.href = url
 }
 
+function renderWeatherTemps(item) {
+	const el = document.getElementById('detail-weather-temps')
+	if (!el) return
+	const water = item.water_temp_c
+	const air = item.air_temp_c
+	if (water == null && air == null) {
+		// Successful poll with no temps — clear so we don't show stale values.
+		el.hidden = true
+		el.textContent = ''
+		return
+	}
+	const parts = []
+	if (water != null) {
+		parts.push(`<strong>${Math.round(water)}°</strong> <span class="temps-label">Wasser</span>`)
+	}
+	if (water != null && air != null) {
+		parts.push('<span class="temps-sep">·</span>')
+	}
+	if (air != null) {
+		parts.push(`<strong>${Math.round(air)}°</strong> <span class="temps-label">Luft</span>`)
+		// Label/emoji from API (single source of truth with weather_display.py).
+		if (item.condition_emoji) {
+			const label = item.condition_label || ''
+			parts.push(
+				`<span aria-hidden="true">${item.condition_emoji}</span>` + `<span class="visually-hidden">${label}</span>`
+			)
+		}
+	}
+	el.innerHTML = parts.join(' ')
+	el.hidden = false
+}
+
 async function refreshLiveCount() {
 	const el = document.getElementById('detail-live-count')
-	if (!el) return
-	const uid = el.dataset.uid
+	const tempsEl = document.getElementById('detail-weather-temps')
+	const uid = (el && el.dataset.uid) || (tempsEl && tempsEl.dataset.uid)
+	if (!uid) return
 	try {
 		const res = await fetch('/api/current')
 		if (!res.ok) return
 		const data = await res.json()
 		const item = data.find(d => d.pool_uid === uid)
-		if (!item || item.current_fill == null) {
+		if (!item) return
+
+		if (tempsEl) renderWeatherTemps(item)
+
+		if (!el) return
+		if (item.current_fill == null) {
 			el.hidden = true
 			el.textContent = ''
 			return
@@ -57,8 +95,11 @@ async function refreshLiveCount() {
 		el.hidden = false
 		updateFavicon(p)
 	} catch (e) {
-		el.hidden = true
-		el.textContent = ''
+		// Occupancy: hide on failure (previous behaviour). Temps: leave last/SSR values.
+		if (el) {
+			el.hidden = true
+			el.textContent = ''
+		}
 	}
 }
 

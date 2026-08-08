@@ -123,8 +123,27 @@ endif %}: Live-Auslastung & aktuelle Besucherzahlen. Schau vor dem Besuch, wie v
   <div class="pool-detail-header">
     <h1>{{ pool.name }}</h1>
     <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>
-    <span class="detail-live-count" id="detail-live-count" data-uid="{{ pool.uid }}" style="margin-left:auto"
-      hidden></span>
+    <span class="detail-weather-temps" id="detail-weather-temps" data-uid="{{ pool.uid }}" {% if not weather_temps
+      %}hidden{% endif %}>
+      {% if weather_temps %}
+      {% if weather_temps.water_temp_c is not none %}
+      <strong>{{ weather_temps.water_temp_c|round|int }}°</strong>
+      <span class="temps-label">Wasser</span>
+      {% if weather_temps.air_temp_c is not none %}
+      <span class="temps-sep">·</span>
+      {% endif %}
+      {% endif %}
+      {% if weather_temps.air_temp_c is not none %}
+      <strong>{{ weather_temps.air_temp_c|round|int }}°</strong>
+      <span class="temps-label">Luft</span>
+      {% if weather_temps.condition_emoji %}
+      <span aria-hidden="true">{{ weather_temps.condition_emoji }}</span>
+      <span class="visually-hidden">{{ weather_temps.condition_label }}</span>
+      {% endif %}
+      {% endif %}
+      {% endif %}
+    </span>
+    <span class="detail-live-count" id="detail-live-count" data-uid="{{ pool.uid }}" hidden></span>
   </div>
 
   {% if active_closure %}
@@ -314,7 +333,7 @@ endif %}: Live-Auslastung & aktuelle Besucherzahlen. Schau vor dem Besuch, wie v
 
   .pool-info-grid {
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: minmax(max-content, 1fr) 2fr;
     gap: 1.25rem;
   }
 

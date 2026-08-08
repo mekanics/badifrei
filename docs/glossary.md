@@ -67,3 +67,14 @@ close times, reason, and source (observation, closure, or schedule).
 
 **Schedule** — The published claim: which Intervals a pool is open, by Period
 and weekday, plus Closures. Slow-moving; reviewed in git before deploy.
+
+**Wassertemperatur (water temperature)** _(CH)_ — Per-pool water temperature from
+the Baditicker feed (`pool_status.water_temp_c`). Available for outdoor pools
+only; all `hallenbad` entries publish it empty. Displayed only when both
+water-temp freshness gates pass. Distinct from **air temperature**, which is
+city-level from `hourly_weather` and identical across all pools in a city.
+
+**Water-temp freshness gates** — `observed_at` within 60 minutes (collector
+alive) **and** `source_modified_at` within 7 days (city still maintaining).
+Deliberately not a single short `source_modified_at` cutoff: measured Baditicker
+update gaps reach 23.4 h in peak season.

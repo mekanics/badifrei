@@ -86,6 +86,36 @@ class TestRenderPoolMarkdown:
         assert "1000" in body
         assert "Freibad Letzigraben" in body
 
+    def test_includes_water_and_air_temps(self):
+        occ = {
+            "pool_uid": "fb006",
+            "current_fill": 100,
+            "max_space": 200,
+            "occupancy_pct": 50,
+            "time": NOW,
+            "is_open": True,
+            "state": "open_guaranteed",
+            "reason": None,
+            "water_temp_c": 26.0,
+            "air_temp_c": 21.5,
+            "condition_label": "Klar",
+            "condition_emoji": "☀️",
+        }
+        body = render_pool_markdown(
+            pool={"uid": "fb006", "name": "Freibad Allenmoos", "city": "zurich"},
+            occupancy=occ,
+            today_predictions=[0.0] * 24,
+            prediction_status={
+                "model_available": True,
+                "prediction_status": "ok",
+                "open_hours_count": 10,
+            },
+            as_of=AS_OF,
+            now_zurich=NOW,
+        )
+        assert "Wassertemperatur: 26°C" in body
+        assert "Lufttemperatur: 22°C (Klar)" in body
+
     def test_keine_daten_when_occupancy_null(self):
         occ = {
             "pool_uid": "SSD-4",
@@ -237,6 +267,9 @@ class TestRenderLlmsTxt:
         assert "https://badifrei.ch/index.md" in body
         assert "max 4,500" not in body
         assert "LETZI-1" not in body  # full list lives on index.md
+        assert "live water temperature" in body
+        assert "does **not** publish real-time admission prices" in body
+        assert "water temperature, or lane availability" not in body
 
 
 class TestAdaptFaqForMarkdown:
@@ -246,7 +279,7 @@ class TestAdaptFaqForMarkdown:
             html_url="https://badifrei.ch/bad/fb006",
         )
         assert out == (
-            "Hinweise findest du auf der HTML-Seite " "(https://badifrei.ch/bad/fb006)."
+            "Hinweise findest du auf der HTML-Seite (https://badifrei.ch/bad/fb006)."
         )
 
     def test_none_passthrough(self):

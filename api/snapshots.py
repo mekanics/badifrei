@@ -5,12 +5,29 @@ from __future__ import annotations
 import logging
 import math
 from collections.abc import Iterable
+from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from api.catalog import ZURICH_TZ, get_pools
 from api.prediction_days import _schedule_for_pool
+from api.water_temperature import fresh_water_temp
+from api.weather_display import weather_condition
+
+if TYPE_CHECKING:
+    from ml.opening_hours import Observation
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class LatestStatus:
+    """One pool_status row: Observation for hours resolution + raw water temp."""
+
+    observation: Observation | None
+    water_temp_c: float | None
+    observed_at: datetime | None
+    source_modified_at: datetime | None
 
 
 def _compute_pool_is_open(
@@ -75,14 +92,14 @@ def _weather_hint_from_values(temp, precip, code):
     )
 
 
-async def _fetch_latest_observation(db_pool, pool_uid: str):
-    """Latest Baditicker Observation for one pool, or None if unavailable."""
+async def _fetch_latest_status(db_pool, pool_uid: str) -> LatestStatus | None:
+    """Latest pool_status row: Observation + water temp from a single query."""
     try:
         from ml.opening_hours import observation_from_status_text
 
         srow = await db_pool.fetchrow(
             """
-            SELECT status_text, source_modified_at, observed_at
+            SELECT status_text, water_temp_c, source_modified_at, observed_at
             FROM pool_status
             WHERE pool_uid = $1
             ORDER BY observed_at DESC
@@ -92,13 +109,24 @@ async def _fetch_latest_observation(db_pool, pool_uid: str):
         )
         if srow is None:
             return None
-        return observation_from_status_text(
-            srow["status_text"],
+        return LatestStatus(
+            observation=observation_from_status_text(
+                srow["status_text"],
+                observed_at=srow["observed_at"],
+                source_modified_at=srow["source_modified_at"],
+            ),
+            water_temp_c=srow["water_temp_c"],
             observed_at=srow["observed_at"],
             source_modified_at=srow["source_modified_at"],
         )
     except Exception:  # noqa: BLE001
         return None
+
+
+async def _fetch_latest_observation(db_pool, pool_uid: str):
+    """Latest Baditicker Observation for one pool, or None if unavailable."""
+    status = await _fetch_latest_status(db_pool, pool_uid)
+    return status.observation if status is not None else None
 
 
 def _coerce_live_max_space(value) -> int | None:
@@ -202,9 +230,11 @@ def _merge_current_pool_items(
     observations: dict,
     weather_by_city: dict,
     now_zurich: datetime,
+    water_temps: dict | None = None,
     compute_status=_compute_pool_is_open,
 ) -> list[dict]:
     """One /api/current row per known pool; occupancy fields null when absent."""
+    water_temps = water_temps or {}
     result: list[dict] = []
     for pool in pools:
         uid = pool["uid"]
@@ -222,11 +252,12 @@ def _merge_current_pool_items(
                 "time": None,
             }
         city = pool.get("city", "zurich")
+        hint = weather_by_city.get(city)
         status = compute_status(
             pool,
             now_zurich,
             observation=observations.get(uid),
-            weather=weather_by_city.get(city),
+            weather=hint,
         )
         item["is_open"] = status["is_open"]
         item["next_open"] = status["next_open"]
@@ -234,6 +265,14 @@ def _merge_current_pool_items(
         item["state"] = status.get("state")
         item["reason"] = status.get("reason")
         item["confidence"] = status.get("confidence")
+        item["water_temp_c"] = water_temps.get(uid)
+        air = hint.temperature_c if hint is not None else None
+        code = hint.weathercode if hint is not None else None
+        item["air_temp_c"] = air
+        item["weathercode"] = code
+        condition = weather_condition(code)
+        item["condition_label"] = condition[0] if condition else None
+        item["condition_emoji"] = condition[1] if condition else None
         result.append(item)
     return result
 
@@ -262,25 +301,37 @@ async def load_current_snapshot(db_pool) -> list[dict]:
         occupancy_by_uid = {row["pool_uid"]: dict(row) for row in rows}
 
         observations: dict = {}
+        water_temps: dict = {}
         try:
             from ml.opening_hours import observation_from_status_text
 
             status_rows = await db_pool.fetch(
                 """
                 SELECT DISTINCT ON (pool_uid)
-                    pool_uid, status_text, source_modified_at, observed_at
+                    pool_uid, status_text, water_temp_c,
+                    source_modified_at, observed_at
                 FROM pool_status
                 ORDER BY pool_uid, observed_at DESC
                 """
             )
             for srow in status_rows:
-                observations[srow["pool_uid"]] = observation_from_status_text(
+                uid = srow["pool_uid"]
+                observations[uid] = observation_from_status_text(
                     srow["status_text"],
                     observed_at=srow["observed_at"],
                     source_modified_at=srow["source_modified_at"],
                 )
+                gated = fresh_water_temp(
+                    srow["water_temp_c"],
+                    observed_at=srow["observed_at"],
+                    source_modified_at=srow["source_modified_at"],
+                    now=now_zurich,
+                )
+                if gated is not None:
+                    water_temps[uid] = gated
         except Exception:
             observations = {}
+            water_temps = {}
 
         cities = {p.get("city", "zurich") for p in pools}
         weather_by_city = await _fetch_city_weather_hints(
@@ -293,6 +344,7 @@ async def load_current_snapshot(db_pool) -> list[dict]:
             observations=observations,
             weather_by_city=weather_by_city,
             now_zurich=now_zurich,
+            water_temps=water_temps,
         )
     except Exception:
         return []
@@ -319,8 +371,22 @@ async def load_pool_snapshot(db_pool, pool: dict) -> dict | None:
             pool_uid,
         )
         occupancy_by_uid = {pool_uid: dict(row)} if row is not None else {}
-        observation = await _fetch_latest_observation(db_pool, pool_uid)
-        observations = {pool_uid: observation} if observation is not None else {}
+        latest = await _fetch_latest_status(db_pool, pool_uid)
+        observations = (
+            {pool_uid: latest.observation}
+            if latest is not None and latest.observation is not None
+            else {}
+        )
+        water_temps: dict = {}
+        if latest is not None:
+            gated = fresh_water_temp(
+                latest.water_temp_c,
+                observed_at=latest.observed_at,
+                source_modified_at=latest.source_modified_at,
+                now=now_zurich,
+            )
+            if gated is not None:
+                water_temps[pool_uid] = gated
         city = pool.get("city", "zurich")
         weather_by_city = await _fetch_city_weather_hints(
             db_pool, now_zurich, cities={city}
@@ -331,6 +397,7 @@ async def load_pool_snapshot(db_pool, pool: dict) -> dict | None:
             observations=observations,
             weather_by_city=weather_by_city,
             now_zurich=now_zurich,
+            water_temps=water_temps,
         )
         return items[0] if items else None
     except Exception:
