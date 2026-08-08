@@ -29,6 +29,12 @@ JSON-LD. See [ADR-001](./adr/ADR-001-guaranteed-hours-in-structured-data.md).
 
 ## H
 
+**Hours display view** — Derived UI projection of a Schedule for the pool detail
+page. Not stored. Two shapes: seasonal periods (date ranges with nested weekday
+hour groups) and weekday table (Mo–So cells that may hold multiple Intervals).
+Built only from the Schedule — never from the legacy flat `pool_metadata` map
+when a generated Schedule exists.
+
 **Hours JSON-LD** _(seo)_ — The derived list of schema.org
 `OpeningHoursSpecification` objects for one pool, built from Guaranteed hours
 plus full Closures. Not a separate store of truth — always derived from the
@@ -46,8 +52,10 @@ nothing about the future; used only when fresh to override a Resolution.
 
 ## P
 
-**Period** — A date range plus weekday set, holding Intervals. The Schedule’s
-unit of season structure (replaces a single flat weekday map).
+**Period** — A weekday set holding Intervals, optionally bounded by a date range.
+Dated Periods model Sommerbad season sections; an evergreen Period (`start` and
+`end` both unset) models year-round Hallenbad tables. The Schedule’s unit of
+structure (replaces a single flat weekday map).
 
 ## R
 

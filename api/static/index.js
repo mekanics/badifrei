@@ -293,6 +293,12 @@ async function fetchOccupancy() {
 				}
 				bar.style.width = Math.min(pct, 100) + '%'
 				bar.className = 'occupancy-bar ' + (pct <= 50 ? 'green' : pct <= 80 ? 'yellow' : 'red')
+			} else if (item && item.is_open === false) {
+				// Closed with no fill (e.g. Revision) — status badge carries the message
+				label.textContent = '—'
+				if (guestCount) guestCount.textContent = ''
+				bar.style.width = '0%'
+				bar.className = 'occupancy-bar grey'
 			} else {
 				label.textContent = 'Keine Daten'
 				if (guestCount) guestCount.textContent = ''

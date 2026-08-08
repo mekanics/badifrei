@@ -855,6 +855,280 @@ def _fmt_clock(minutes: int) -> str:
     return f"{minutes // 60:02d}:{minutes % 60:02d}"
 
 
+DE_DAY_LABELS = ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
+
+
+@dataclass(frozen=True)
+class DayHoursCell:
+    day_index: int
+    day_label_de: str
+    always: tuple[str, ...]
+    fair: tuple[str, ...]
+    closed: bool
+
+
+@dataclass(frozen=True)
+class SeasonalDayGroup:
+    """Weekday subset + hours inside one date-ranged season section."""
+
+    days_label: str  # "Mo–Fr", "Sa–So", "täglich", …
+    always: str
+    fair: str | None
+
+
+@dataclass(frozen=True)
+class SeasonalPeriodGroup:
+    """One season date range, with weekday groups nested underneath."""
+
+    label: str  # date range only, e.g. "9. Mai–15. Sep"
+    start: dt.date
+    end: dt.date
+    day_groups: tuple[SeasonalDayGroup, ...]
+
+    @property
+    def is_uniform_daily(self) -> bool:
+        """True when every weekday shares one always/fair pattern."""
+        return len(self.day_groups) == 1 and self.day_groups[0].days_label == "täglich"
+
+    @property
+    def has_fair_weather(self) -> bool:
+        return any(g.fair for g in self.day_groups)
+
+
+@dataclass(frozen=True)
+class HoursDisplayView:
+    """Derived detail-page projection of a Schedule (not stored)."""
+
+    kind: Literal["seasonal_periods", "weekday_table"]
+    has_fair_weather: bool
+    current: SeasonalPeriodGroup | None = None
+    all_periods: tuple[SeasonalPeriodGroup, ...] = ()
+    days: tuple[DayHoursCell, ...] = ()
+
+
+def _merge_display_windows(windows: list[tuple[int, int]]) -> tuple[str, ...]:
+    """Merge abutting same-condition windows for display; never across gaps."""
+    if not windows:
+        return ()
+    ordered = sorted(windows)
+    merged: list[list[int]] = [[ordered[0][0], ordered[0][1]]]
+    for open_m, close_m in ordered[1:]:
+        if open_m == merged[-1][1]:
+            merged[-1][1] = close_m
+        else:
+            merged.append([open_m, close_m])
+    return tuple(f"{_fmt_clock(o)}–{_fmt_clock(c)}" for o, c in merged)
+
+
+def _fmt_days_de(days: frozenset[int]) -> str:
+    """Compact German weekday range: täglich, Mo–Fr, Sa–So, Mo/Mi/Fr."""
+    if not days:
+        return ""
+    if set(days) == set(range(7)):
+        return "täglich"
+    ordered = sorted(days)
+    groups: list[tuple[int, int]] = []
+    start = prev = ordered[0]
+    for day_idx in ordered[1:]:
+        if day_idx == prev + 1:
+            prev = day_idx
+            continue
+        groups.append((start, prev))
+        start = prev = day_idx
+    groups.append((start, prev))
+    parts: list[str] = []
+    for a, b in groups:
+        if a == b:
+            parts.append(DE_DAY_LABELS[a])
+        else:
+            parts.append(f"{DE_DAY_LABELS[a]}–{DE_DAY_LABELS[b]}")
+    return ", ".join(parts)
+
+
+def _fmt_date_range_de(start: dt.date, end: dt.date) -> str:
+    return (
+        f"{start.day}. {DE_MONTHS[start.month - 1]}–"
+        f"{end.day}. {DE_MONTHS[end.month - 1]}"
+    )
+
+
+def _day_group_from_period(period: Period) -> SeasonalDayGroup:
+    always_wins: list[tuple[int, int]] = []
+    fair_wins: list[tuple[int, int]] = []
+    for interval in period.intervals:
+        pair = (interval.open_min, interval.close_min)
+        if interval.condition == "fair_weather":
+            fair_wins.append(pair)
+        else:
+            always_wins.append(pair)
+    always = _merge_display_windows(always_wins)
+    fair = _merge_display_windows(fair_wins)
+    return SeasonalDayGroup(
+        days_label=_fmt_days_de(period.days),
+        always=", ".join(always) if always else "—",
+        fair=", ".join(fair) if fair else None,
+    )
+
+
+def _group_dated_periods(dated: list[Period]) -> tuple[SeasonalPeriodGroup, ...]:
+    """Collapse Periods that share the same date range; nest weekday groups."""
+    by_range: dict[tuple[dt.date, dt.date], list[Period]] = {}
+    for period in dated:
+        assert period.start is not None and period.end is not None
+        by_range.setdefault((period.start, period.end), []).append(period)
+
+    groups: list[SeasonalPeriodGroup] = []
+    for start, end in sorted(by_range.keys()):
+        periods = sorted(by_range[(start, end)], key=lambda p: min(p.days))
+        day_groups = tuple(_day_group_from_period(p) for p in periods)
+        groups.append(
+            SeasonalPeriodGroup(
+                label=_fmt_date_range_de(start, end),
+                start=start,
+                end=end,
+                day_groups=day_groups,
+            )
+        )
+    return tuple(groups)
+
+
+def hours_display_view(
+    schedule: PoolSchedule,
+    today: dt.date,
+) -> HoursDisplayView | None:
+    """Project Schedule into a detail-page Hours display view.
+
+    Dated Periods → seasonal_periods grouped by date range (weekday hours
+    nested). Evergreen Periods → weekday_table (Hallenbad). None when the
+    Schedule has no usable Periods.
+    """
+    if not schedule.periods:
+        return None
+
+    dated = [p for p in schedule.periods if p.start is not None and p.end is not None]
+    evergreen = [p for p in schedule.periods if p.start is None and p.end is None]
+    covering = [p for p in dated if p.covers(today)]
+
+    if covering or (dated and not evergreen):
+        all_groups = _group_dated_periods(dated)
+        if not all_groups:
+            return None
+        has_fair = any(g.has_fair_weather for g in all_groups)
+        if covering:
+            current = next(
+                (g for g in all_groups if g.start <= today <= g.end),
+                all_groups[0],
+            )
+        else:
+            # Off-season Sommerbad: still expose the period matrix.
+            current = all_groups[0]
+        return HoursDisplayView(
+            kind="seasonal_periods",
+            has_fair_weather=has_fair,
+            current=current,
+            all_periods=all_groups,
+        )
+
+    if dated and evergreen:
+        logger.warning(
+            "Schedule %s has dated and evergreen Periods; today=%s not in a "
+            "dated Period — using evergreen weekday_table",
+            schedule.uid,
+            today,
+        )
+
+    # Evergreen / undated Hallenbad shape (also mixed fallback when off-season)
+    always_by_day: dict[int, list[tuple[int, int]]] = {i: [] for i in range(7)}
+    fair_by_day: dict[int, list[tuple[int, int]]] = {i: [] for i in range(7)}
+    source_periods = evergreen if evergreen else schedule.periods
+    for period in source_periods:
+        if not period.covers(today):
+            continue
+        for day_idx in period.days:
+            for interval in period.intervals:
+                pair = (interval.open_min, interval.close_min)
+                if interval.condition == "fair_weather":
+                    fair_by_day[day_idx].append(pair)
+                else:
+                    always_by_day[day_idx].append(pair)
+
+    if not any(always_by_day.values()) and not any(fair_by_day.values()):
+        return None
+
+    cells: list[DayHoursCell] = []
+    has_fair = False
+    for day_idx in range(7):
+        always = _merge_display_windows(always_by_day[day_idx])
+        fair = _merge_display_windows(fair_by_day[day_idx])
+        if fair:
+            has_fair = True
+        cells.append(
+            DayHoursCell(
+                day_index=day_idx,
+                day_label_de=DE_DAY_LABELS[day_idx],
+                always=always,
+                fair=fair,
+                closed=not always and not fair,
+            )
+        )
+    return HoursDisplayView(
+        kind="weekday_table",
+        has_fair_weather=has_fair,
+        days=tuple(cells),
+    )
+
+
+def opening_hours_summary_from_schedule(
+    schedule: PoolSchedule,
+    today: dt.date,
+) -> str | None:
+    """Compact German summary from Schedule — never min/max-collapse split days."""
+    view = hours_display_view(schedule, today)
+    if view is None:
+        return None
+    if view.kind == "seasonal_periods":
+        if view.current is None:
+            return None
+        parts: list[str] = []
+        for group in view.current.day_groups:
+            chunk = f"{group.days_label}: {group.always}"
+            if group.fair:
+                chunk += f" / schönes Wetter: {group.fair}"
+            parts.append(chunk)
+        return f"{view.current.label}: {'; '.join(parts)}."
+
+    # Group consecutive weekdays with identical always+fair tuples
+    entries: list[tuple[int, tuple[str, ...], tuple[str, ...]]] = []
+    for cell in view.days:
+        if cell.closed:
+            continue
+        entries.append((cell.day_index, cell.always, cell.fair))
+    if not entries:
+        return None
+
+    groups: list[str] = []
+    i = 0
+    while i < len(entries):
+        day_i, always, fair = entries[i]
+        j = i + 1
+        while (
+            j < len(entries)
+            and entries[j][1] == always
+            and entries[j][2] == fair
+            and entries[j][0] == entries[j - 1][0] + 1
+        ):
+            j += 1
+        start_l = DE_DAY_LABELS[day_i]
+        end_l = DE_DAY_LABELS[entries[j - 1][0]]
+        label = start_l if start_l == end_l else f"{start_l}–{end_l}"
+        windows = ", ".join(always)
+        if fair:
+            windows += f" / schönes Wetter: {', '.join(fair)}"
+        groups.append(f"{label}: {windows} Uhr")
+        i = j
+    return ". ".join(groups) + "."
+
+
 def opening_hours_jsonld(schedule: PoolSchedule) -> list[dict]:
     """Build Hours JSON-LD (Guaranteed hours + full Closures only).
 

@@ -56,7 +56,7 @@ def _render_pool_html(uid: str) -> str:
         active_closure=None,
         hours_confidence=schedule.confidence,
         hours_scraped_at=None,
-        hours_periods_view=None,
+        hours_view=None,
         opening_hours_summary=None,
         weekly_insights=None,
         today_date="2026-08-04",

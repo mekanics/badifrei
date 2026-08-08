@@ -170,9 +170,28 @@ class TestOpeningHoursJsonld:
 
     def test_json_serializable(self):
         schedules = load_schedules()
-        for uid in ("fb006", "LETZI-1", "SSD-4"):
+        for uid in ("fb006", "LETZI-1", "SSD-4", "IMBAD-1"):
             raw = json.dumps(opening_hours_jsonld(schedules[uid]))
             assert isinstance(json.loads(raw), list)
+
+    def test_adliswil_weekday_split_with_season_bounds(self):
+        """JSON-LD keeps Mo–Fr / Sa–So as separate day specs (UI nesting is display-only)."""
+        specs = opening_hours_jsonld(load_schedules()["IMBAD-1"])
+        open_specs = [s for s in specs if "dayOfWeek" in s]
+        assert len(open_specs) == 7
+        by_day = {s["dayOfWeek"].rsplit("/", 1)[-1]: s for s in open_specs}
+        for day in ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"):
+            assert by_day[day]["opens"] == "07:30:00"
+            assert by_day[day]["closes"] == "20:00:00"
+            assert by_day[day]["validFrom"] == "2026-05-09"
+            assert by_day[day]["validThrough"] == "2026-09-15"
+        for day in ("Saturday", "Sunday"):
+            assert by_day[day]["opens"] == "08:00:00"
+            assert by_day[day]["closes"] == "20:00:00"
+            assert by_day[day]["validFrom"] == "2026-05-09"
+            assert by_day[day]["validThrough"] == "2026-09-15"
+        # No fair_weather invention; no duplicate date-only rows
+        assert all(s.get("opens") != "00:00:00" for s in open_specs)
 
 
 class TestOpeningHoursFaqText:

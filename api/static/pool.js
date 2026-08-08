@@ -42,16 +42,22 @@ async function refreshLiveCount() {
 		if (!res.ok) return
 		const data = await res.json()
 		const item = data.find(d => d.pool_uid === uid)
-		if (!item || item.current_fill == null) return
+		if (!item || item.current_fill == null) {
+			el.hidden = true
+			el.textContent = ''
+			return
+		}
 		const capStr = cap > 0 ? ` / ${cap}` : ''
 		const pct = item.occupancy_pct != null ? ` (${Math.round(item.occupancy_pct)}%)` : ''
 		el.textContent = `${item.current_fill}${capStr} Gäste${pct}`
 		el.className = 'detail-live-count'
 		const p = item.occupancy_pct ?? 0
 		el.classList.add(p <= 50 ? 'count-green' : p <= 80 ? 'count-yellow' : 'count-red')
+		el.hidden = false
 		updateFavicon(p)
 	} catch (e) {
-		/* silent */
+		el.hidden = true
+		el.textContent = ''
 	}
 }
 

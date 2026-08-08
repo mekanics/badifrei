@@ -118,7 +118,7 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
     <h1>{{ pool.name }}</h1>
     <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>
     <span class="detail-live-count" id="detail-live-count" data-uid="{{ pool.uid }}"
-      data-capacity="{{ pool.max_capacity }}" style="margin-left:auto"></span>
+      data-capacity="{{ pool.max_capacity }}" style="margin-left:auto" hidden></span>
   </div>
 
   {% if active_closure %}
@@ -131,39 +131,88 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
   <div class="pool-info-grid">
     <div class="pool-info-block">
       <h2 class="section-h2">Öffnungszeiten</h2>
-      {% if hours_periods_view and hours_periods_view.current %}
+      {% if hours_view and hours_view.kind == 'seasonal_periods' and hours_view.current %}
       <div class="hours-period-current">
-        <div class="hours-period-label">Aktueller Zeitraum · {{ hours_periods_view.current.label }}</div>
+        <div class="hours-period-label">Aktueller Zeitraum · {{ hours_view.current.label }}</div>
+        {% if hours_view.current.is_uniform_daily %}
         <div class="hours-period-times">
-          Bei jedem Wetter: {{ hours_periods_view.current.always }}
-          {% if hours_periods_view.current.fair %}
-          <div class="fair-weather">Nur bei schönem Wetter: {{ hours_periods_view.current.fair }}</div>
+          Bei jedem Wetter: {{ hours_view.current.day_groups[0].always }}
+          {% if hours_view.current.day_groups[0].fair %}
+          <div class="fair-weather">Nur bei schönem Wetter: {{ hours_view.current.day_groups[0].fair }}</div>
           {% endif %}
         </div>
-      </div>
-      {% if hours_periods_view.all | length > 1 %}
-      <details class="hours-all-periods">
-        <summary>Alle Zeiträume</summary>
-        <table class="hours-table-periods">
-          <thead>
-            <tr>
-              <th>Zeitraum</th>
-              <th>Bei jedem Wetter</th>
-              {% if hours_periods_view.has_fair_weather %}<th>Nur bei schönem Wetter</th>{% endif %}
-            </tr>
-          </thead>
+        {% else %}
+        <table class="hours-table hours-table-day-groups">
           <tbody>
-            {% for row in hours_periods_view.all %}
+            {% for g in hours_view.current.day_groups %}
             <tr>
-              <td>{{ row.label }}</td>
-              <td>{{ row.always }}</td>
-              {% if hours_periods_view.has_fair_weather %}<td>{{ row.fair or '—' }}</td>{% endif %}
+              <td class="day-label">{{ g.days_label }}</td>
+              <td class="day-hours">
+                {{ g.always }}
+                {% if g.fair %}
+                <div class="fair-weather">Nur bei schönem Wetter: {{ g.fair }}</div>
+                {% endif %}
+              </td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
+        {% endif %}
+      </div>
+      {% if hours_view.all_periods | length > 1 %}
+      <details class="hours-all-periods">
+        <summary>Alle Zeiträume</summary>
+        {% for period in hours_view.all_periods %}
+        <div class="hours-period-block">
+          <div class="hours-period-label">{{ period.label }}</div>
+          {% if period.is_uniform_daily %}
+          <div class="hours-period-times">
+            Bei jedem Wetter: {{ period.day_groups[0].always }}
+            {% if period.day_groups[0].fair %}
+            <div class="fair-weather">Nur bei schönem Wetter: {{ period.day_groups[0].fair }}</div>
+            {% endif %}
+          </div>
+          {% else %}
+          <table class="hours-table hours-table-day-groups">
+            <tbody>
+              {% for g in period.day_groups %}
+              <tr>
+                <td class="day-label">{{ g.days_label }}</td>
+                <td class="day-hours">
+                  {{ g.always }}
+                  {% if g.fair %}
+                  <div class="fair-weather">Nur bei schönem Wetter: {{ g.fair }}</div>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% endif %}
+        </div>
+        {% endfor %}
       </details>
       {% endif %}
+      {% elif hours_view and hours_view.kind == 'weekday_table' %}
+      <table class="hours-table">
+        <tbody>
+          {% for d in hours_view.days %}
+          <tr>
+            <td class="day-label">{{ d.day_label_de }}</td>
+            {% if d.closed %}
+            <td class="day-hours closed-day">Geschlossen</td>
+            {% else %}
+            <td class="day-hours">
+              {{ d.always | join(' · ') }}
+              {% if d.fair %}
+              <div class="fair-weather">Nur bei schönem Wetter: {{ d.fair | join(' · ') }}</div>
+              {% endif %}
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
       {% elif pool.opening_hours %}
       {% set oh = pool.opening_hours %}
       {% set days = [("Mon","Mo"),("Tue","Di"),("Wed","Mi"),("Thu","Do"),("Fri","Fr"),("Sat","Sa"),("Sun","So")] %}

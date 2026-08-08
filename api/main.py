@@ -506,14 +506,16 @@ async def pool_detail(request: Request, pool_uid: str):
     active_closure = None
     hours_confidence = "unverified"
     hours_scraped_at = None
-    hours_periods_view = None
+    hours_view = None
     hours_jsonld: list = []
     hours_faq = opening_hours_summary
     try:
         from ml.opening_hours import (
             DE_MONTHS,
+            hours_display_view,
             opening_hours_faq_text,
             opening_hours_jsonld,
+            opening_hours_summary_from_schedule,
             resolve,
         )
 
@@ -522,9 +524,13 @@ async def pool_detail(request: Request, pool_uid: str):
             hours_confidence = schedule.confidence
             now_zurich = datetime.now(ZURICH_TZ)
             hours_jsonld = opening_hours_jsonld(schedule)
-            hours_faq = opening_hours_faq_text(
-                schedule, pool["name"], when=now_zurich
+            hours_faq = opening_hours_faq_text(schedule, pool["name"], when=now_zurich)
+            hours_view = hours_display_view(schedule, now_zurich.date())
+            schedule_summary = opening_hours_summary_from_schedule(
+                schedule, now_zurich.date()
             )
+            if schedule_summary:
+                opening_hours_summary = schedule_summary
             if schedule.scraped_at is not None:
                 hours_scraped_at = (
                     f"{schedule.scraped_at.day}. "
@@ -552,7 +558,6 @@ async def pool_detail(request: Request, pool_uid: str):
                             ),
                         }
                         break
-            hours_periods_view = _build_periods_view(schedule, now_zurich.date())
     except Exception as exc:  # noqa: BLE001
         logger.warning("hours/closure block failed for %s: %s", pool_uid, exc)
 
@@ -563,7 +568,7 @@ async def pool_detail(request: Request, pool_uid: str):
         f"{str(pool.get('type', 'Schwimmbad')).title()} in {city_label}"
         f" – aktuelle Auslastung und Tagesprognose auf badifrei.ch."
     )
-    if hours_periods_view and hours_periods_view.get("has_fair_weather"):
+    if hours_view is not None and hours_view.has_fair_weather:
         schema_description += (
             " Bei schönem Wetter teilweise verlängerte Öffnungszeiten "
             "(siehe Öffnungszeiten auf dieser Seite)."
@@ -588,63 +593,9 @@ async def pool_detail(request: Request, pool_uid: str):
             "active_closure": active_closure,
             "hours_confidence": hours_confidence,
             "hours_scraped_at": hours_scraped_at,
-            "hours_periods_view": hours_periods_view,
+            "hours_view": hours_view,
         },
     )
-
-
-def _build_periods_view(schedule, today):
-    """Build a template-friendly view of date-scoped periods (Sommerbad shape).
-
-    Returns None when the schedule is the flat weekday shape (no dated periods),
-    so the legacy weekday table can still render.
-    """
-    from ml.opening_hours import DE_MONTHS, DAY_NAMES
-
-    dated = [p for p in schedule.periods if p.start is not None and p.end is not None]
-    if not dated:
-        return None
-
-    def _fmt_date(d):
-        return f"{d.day}. {DE_MONTHS[d.month - 1]}"
-
-    def _fmt_interval(interval):
-        open_s = f"{interval.open_min // 60:02d}:{interval.open_min % 60:02d}"
-        close_s = f"{interval.close_min // 60:02d}:{interval.close_min % 60:02d}"
-        return open_s, close_s, interval.condition
-
-    def _period_row(period):
-        always = []
-        fair = []
-        for interval in period.intervals:
-            open_s, close_s, cond = _fmt_interval(interval)
-            label = f"{open_s}–{close_s}"
-            if cond == "fair_weather":
-                fair.append(label)
-            else:
-                always.append(label)
-        return {
-            "label": f"{_fmt_date(period.start)}–{_fmt_date(period.end)}",
-            "always": ", ".join(always) if always else "—",
-            "fair": ", ".join(fair) if fair else None,
-            "days": sorted(DAY_NAMES[d] for d in period.days),
-        }
-
-    ordered = sorted(dated, key=lambda p: p.start)
-    rows = [_period_row(p) for p in ordered]
-    current = None
-    for period, row in zip(ordered, rows):
-        if period.start <= today <= period.end:
-            current = row
-            break
-    if current is None and rows:
-        current = rows[0]
-    has_fair = any(r["fair"] for r in rows)
-    return {
-        "current": current,
-        "all": rows,
-        "has_fair_weather": has_fair,
-    }
 
 
 def _compute_related_pools(
@@ -1077,12 +1028,63 @@ async def _fetch_city_weather_hints(
     return hints
 
 
+def _merge_current_pool_items(
+    pools: list[dict],
+    *,
+    occupancy_by_uid: dict,
+    observations: dict,
+    weather_by_city: dict,
+    now_zurich: datetime,
+    compute_status=_compute_pool_is_open,
+) -> list[dict]:
+    """One /api/current row per known pool; occupancy fields null when absent.
+
+    Cards need Schedule Resolution (e.g. Revision) even when a Hallenbad has
+    never written ``pool_occupancy`` — otherwise the UI shows only «Keine Daten».
+    """
+    result: list[dict] = []
+    for pool in pools:
+        uid = pool["uid"]
+        occ = occupancy_by_uid.get(uid)
+        if occ is not None:
+            item = dict(occ)
+            item["pool_uid"] = uid
+        else:
+            item = {
+                "pool_uid": uid,
+                "current_fill": None,
+                "max_space": None,
+                "free_space": None,
+                "occupancy_pct": None,
+                "time": None,
+            }
+        city = pool.get("city", "zurich")
+        status = compute_status(
+            pool,
+            now_zurich,
+            observation=observations.get(uid),
+            weather=weather_by_city.get(city),
+        )
+        item["is_open"] = status["is_open"]
+        item["next_open"] = status["next_open"]
+        item["opens_seasonal"] = status["opens_seasonal"]
+        item["state"] = status.get("state")
+        item["reason"] = status.get("reason")
+        item["confidence"] = status.get("confidence")
+        result.append(item)
+    return result
+
+
 @app.get("/api/current", tags=["dashboard"])
 async def current_occupancy(request: Request):
-    """Return latest occupancy reading per pool. Returns [] if DB unavailable."""
-    now_zurich = datetime.now(ZURICH_TZ)
+    """Latest occupancy + open status per known pool.
 
-    pools_by_uid = {p["uid"]: p for p in get_pools()}
+    Always one row per metadata pool. Occupancy fields are null when there is
+    no ``pool_occupancy`` row (common for Hallenbäder during Revision).
+    Returns [] only when the DB pool is unavailable.
+    """
+    now_zurich = datetime.now(ZURICH_TZ)
+    pools = get_pools()
 
     db_pool = getattr(request.app.state, "db_pool", None)
     if db_pool is None:
@@ -1096,6 +1098,7 @@ async def current_occupancy(request: Request):
             FROM pool_occupancy
             ORDER BY pool_uid, time DESC
             """)
+        occupancy_by_uid = {row["pool_uid"]: dict(row) for row in rows}
 
         observations: dict = {}
         try:
@@ -1117,32 +1120,18 @@ async def current_occupancy(request: Request):
             # pool_status may not exist yet (pre-migration); schedule still works
             observations = {}
 
-        cities = {
-            pools_by_uid.get(row["pool_uid"], {}).get("city", "zurich") for row in rows
-        }
+        cities = {p.get("city", "zurich") for p in pools}
         weather_by_city = await _fetch_city_weather_hints(
             db_pool, now_zurich, cities=cities
         )
 
-        result = []
-        for row in rows:
-            item = dict(row)
-            pool = pools_by_uid.get(item["pool_uid"], {})
-            city = pool.get("city", "zurich")
-            status = _compute_pool_is_open(
-                pool,
-                now_zurich,
-                observation=observations.get(item["pool_uid"]),
-                weather=weather_by_city.get(city),
-            )
-            item["is_open"] = status["is_open"]
-            item["next_open"] = status["next_open"]
-            item["opens_seasonal"] = status["opens_seasonal"]
-            item["state"] = status.get("state")
-            item["reason"] = status.get("reason")
-            item["confidence"] = status.get("confidence")
-            result.append(item)
-        return result
+        return _merge_current_pool_items(
+            pools,
+            occupancy_by_uid=occupancy_by_uid,
+            observations=observations,
+            weather_by_city=weather_by_city,
+            now_zurich=now_zurich,
+        )
     except Exception:
         return []
 

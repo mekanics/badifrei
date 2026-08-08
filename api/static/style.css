@@ -673,6 +673,18 @@ body {
 	font-weight: 700;
 	color: var(--accent);
 }
+.hours-period-block {
+	display: grid;
+	gap: 0.35rem;
+	margin-top: 0.75rem;
+}
+.hours-period-block + .hours-period-block {
+	padding-top: 0.75rem;
+	border-top: 1px solid var(--border);
+}
+.hours-table-day-groups {
+	margin-top: 0.25rem;
+}
 .hours-table-periods {
 	width: 100%;
 	border-collapse: collapse;
