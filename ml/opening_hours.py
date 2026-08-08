@@ -435,10 +435,16 @@ def _observation_is_fresh(
     when: dt.datetime,
     max_age: dt.timedelta,
 ) -> bool:
+    """True when the collector still confirms this status recently.
+
+    Key off ``observed_at`` (written every poll), not Baditicker
+    ``dateModified`` / ``source_modified_at``. The feed often leaves
+    ``dateModified`` stuck at the last status change while the pool stays
+    geschlossen all afternoon — confirmations must keep that override live.
+    """
     if observation is None or observation.is_open is None:
         return False
-    stamp = observation.source_modified_at or observation.observed_at
-    stamp = _to_zurich(stamp)
+    stamp = _to_zurich(observation.observed_at)
     return (when - stamp) <= max_age
 
 
@@ -902,6 +908,7 @@ class HoursDisplayView:
     kind: Literal["seasonal_periods", "weekday_table"]
     has_fair_weather: bool
     current: SeasonalPeriodGroup | None = None
+    current_covers_today: bool = True
     all_periods: tuple[SeasonalPeriodGroup, ...] = ()
     days: tuple[DayHoursCell, ...] = ()
 
@@ -1019,13 +1026,18 @@ def hours_display_view(
                 (g for g in all_groups if g.start <= today <= g.end),
                 all_groups[0],
             )
+            covers_today = True
         else:
-            # Off-season Sommerbad: still expose the period matrix.
-            current = all_groups[0]
+            # Off-season / gap: highlight the next upcoming block (or the
+            # chronologically first season when all published starts are past).
+            upcoming = [g for g in all_groups if g.start > today]
+            current = upcoming[0] if upcoming else all_groups[0]
+            covers_today = False
         return HoursDisplayView(
             kind="seasonal_periods",
             has_fair_weather=has_fair,
             current=current,
+            current_covers_today=covers_today,
             all_periods=all_groups,
         )
 
@@ -1215,7 +1227,7 @@ def opening_hours_faq_text(
     Uses the SEO “sicher geöffnet” pattern only when every open weekday shares
     the same single always window. Weekday-varying Hallenbäder point at the
     page instead of inventing a false “täglich” soup. An active full Closure
-    leads the answer so we never claim open during Revision.
+    or off-season window leads the answer so we never claim open then.
     """
     fair_closes: set[str] = set()
     season_start: dt.date | None = None
@@ -1253,6 +1265,20 @@ def opening_hours_faq_text(
         return (
             f"{pool_name} ist derzeit geschlossen ({closure.reason} bis "
             f"{_fmt_closure_end_label(closure)}). "
+            f"Übliche Öffnungszeiten finden Sie auf dieser Seite."
+        )
+
+    if is_off_season(schedule, now.date()):
+        season_open = _next_season_open(schedule, now.date())
+        if season_open is not None:
+            reopen = f"{season_open.day}. {DE_MONTHS[season_open.month - 1]}"
+            return (
+                f"{pool_name} ist derzeit geschlossen (ausserhalb der Saison, "
+                f"wieder ab {reopen}). "
+                f"Übliche Öffnungszeiten finden Sie auf dieser Seite."
+            )
+        return (
+            f"{pool_name} ist derzeit geschlossen (ausserhalb der Saison). "
             f"Übliche Öffnungszeiten finden Sie auf dieser Seite."
         )
 

@@ -126,6 +126,24 @@ class TestObservations:
         assert result.is_open is False
         assert result.state == OpenState.OBSERVED_CLOSED
 
+    def test_fresh_poll_keeps_closed_when_date_modified_aged(self):
+        """Baditicker dateModified often sticks at last status change.
+
+        Collector writes a new observed_at every poll; freshness must key off
+        that confirmation so an afternoon weather-close stays observed-closed
+        after source_modified_at ages past 60 minutes.
+        """
+        schedule = _simple_schedule()
+        obs = Observation(
+            observed_at=_when(2026, 8, 4, 16, 5),
+            source_modified_at=_when(2026, 8, 4, 15, 0),
+            is_open=False,
+        )
+        result = resolve(schedule, _when(2026, 8, 4, 16, 5), observation=obs)
+        assert result.is_open is False
+        assert result.state == OpenState.OBSERVED_CLOSED
+        assert result.source == "observed"
+
     def test_stale_observation_ignored(self):
         schedule = _simple_schedule()
         obs = Observation(
@@ -347,6 +365,8 @@ class TestResolveFrameFairWeather:
                     "weathercode": [hint.weathercode],
                 }
             )
-            frame_open = int(resolve_frame(df, {"fb-test": schedule}).iloc[0]["is_open"])
+            frame_open = int(
+                resolve_frame(df, {"fb-test": schedule}).iloc[0]["is_open"]
+            )
             scalar_open = int(resolve(schedule, when, weather=hint).is_open)
             assert frame_open == scalar_open

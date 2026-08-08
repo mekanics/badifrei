@@ -133,7 +133,7 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
       <h2 class="section-h2">Öffnungszeiten</h2>
       {% if hours_view and hours_view.kind == 'seasonal_periods' and hours_view.current %}
       <div class="hours-period-current">
-        <div class="hours-period-label">Aktueller Zeitraum · {{ hours_view.current.label }}</div>
+        <div class="hours-period-label">{% if hours_view.current_covers_today %}Aktueller Zeitraum{% else %}Nächster Zeitraum{% endif %} · {{ hours_view.current.label }}</div>
         {% if hours_view.current.is_uniform_daily %}
         <div class="hours-period-times">
           Bei jedem Wetter: {{ hours_view.current.day_groups[0].always }}

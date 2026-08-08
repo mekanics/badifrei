@@ -249,3 +249,16 @@ class TestOpeningHoursFaqText:
         assert "derzeit geschlossen" in text
         assert "Revision" in text
         assert "sicher geöffnet" not in text
+
+    def test_off_season_does_not_claim_seasonal_hours(self):
+        """Allenmoos in November must not emit in-season 'sicher geöffnet' FAQ."""
+        schedules = load_schedules()
+        text = opening_hours_faq_text(
+            schedules["fb006"],
+            "Freibad Allenmoos",
+            when=_when(2026, 11, 15, 12),
+        )
+        assert "derzeit geschlossen" in text
+        assert "sicher geöffnet" not in text
+        assert "Mai" in text
+        assert "finden Sie" in text

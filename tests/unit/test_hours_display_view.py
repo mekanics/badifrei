@@ -97,6 +97,40 @@ class TestHoursDisplayViewSeasonal:
         assert "Mo–Fr: 07:30–20:00" in summary
         assert "Sa–So: 08:00–20:00" in summary
 
+    def test_allenmoos_off_season_highlights_next_not_as_current(self):
+        """No Period covers today → next/first season block, not 'Aktuell'."""
+        schedule = load_schedules()["fb006"]
+        view = hours_display_view(schedule, date(2026, 11, 15))
+        assert view is not None
+        assert view.kind == "seasonal_periods"
+        assert view.current_covers_today is False
+        assert view.current is not None
+        assert view.current.label == "9. Mai–29. Mai"
+
+    def test_mid_season_gap_picks_upcoming_period(self):
+        schedule = PoolSchedule(
+            uid="gap-season",
+            periods=(
+                Period(
+                    start=date(2026, 5, 1),
+                    end=date(2026, 5, 31),
+                    days=frozenset(range(7)),
+                    intervals=(Interval(9 * 60, 18 * 60, "always"),),
+                ),
+                Period(
+                    start=date(2026, 7, 1),
+                    end=date(2026, 8, 31),
+                    days=frozenset(range(7)),
+                    intervals=(Interval(9 * 60, 20 * 60, "always"),),
+                ),
+            ),
+        )
+        view = hours_display_view(schedule, date(2026, 6, 15))
+        assert view is not None
+        assert view.current_covers_today is False
+        assert view.current is not None
+        assert view.current.label == "1. Jul–31. Aug"
+
 
 class TestHoursDisplayViewMerge:
     def test_gap_not_merged(self):
