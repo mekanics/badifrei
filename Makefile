@@ -3,7 +3,6 @@
 PYTHON := .venv/bin/python
 PYTEST  := .venv/bin/pytest
 RUFF    := .venv/bin/ruff
-BLACK   := .venv/bin/black
 
 test:
 	$(PYTEST) tests/unit -v
@@ -15,10 +14,10 @@ test-integration:
 	$(PYTEST) tests/integration -v -m integration
 
 lint:
-	$(RUFF) check . && $(BLACK) --check .
+	$(RUFF) check . && $(RUFF) format --check .
 
 format:
-	$(BLACK) . && $(RUFF) check --fix .
+	$(RUFF) format . && $(RUFF) check --fix .
 
 run-collector:
 	$(PYTHON) -m collector.main
