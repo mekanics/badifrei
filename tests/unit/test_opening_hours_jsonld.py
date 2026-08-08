@@ -206,7 +206,7 @@ class TestOpeningHoursFaqText:
         assert "09:00" in text and "14:00" in text
         assert "schönem Wetter" in text
         assert "20:00" in text and "21:00" in text
-        assert "finden Sie" in text
+        assert "findest du" in text
         # Must not claim 21:00 as the unconditional close
         assert "bis 21:00 Uhr sicher" not in text
 
@@ -239,7 +239,7 @@ class TestOpeningHoursFaqText:
         assert "variieren nach Wochentag" in text
         assert "täglich" not in text
         assert "06:00–08:00" not in text
-        assert "finden Sie" in text
+        assert "findest du" in text
 
     def test_active_closure_leads_faq(self):
         schedules = load_schedules()
@@ -261,7 +261,7 @@ class TestOpeningHoursFaqText:
         assert "derzeit geschlossen" in text
         assert "sicher geöffnet" not in text
         assert "Mai" in text
-        assert "finden Sie" in text
+        assert "findest du" in text
 
     def test_faq_scopes_day_set_to_current_period(self):
         """May Mo–Fr + June daily must not invent 'täglich' while still in May."""

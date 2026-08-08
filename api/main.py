@@ -58,6 +58,16 @@ from api.schemas import (  # noqa: E402
     RangePredictionItem,
 )
 from api.predictor import predictor  # noqa: E402
+from api.city_display import CITY_DISPLAY  # noqa: E402
+from api.markdown_surfaces import (  # noqa: E402
+    HOME_MD_CACHE_MAX_AGE,
+    LLMS_TXT_CACHE_MAX_AGE,
+    POOL_MD_CACHE_MAX_AGE,
+    markdown_response,
+    render_home_markdown,
+    render_llms_txt,
+    render_pool_markdown,
+)
 
 POOL_METADATA_PATH = Path(__file__).parent.parent / "ml" / "pool_metadata.json"
 TEMPLATES_PATH = Path(__file__).parent / "templates"
@@ -380,18 +390,6 @@ app.add_middleware(
 app.add_middleware(SecurityHeadersMiddleware)
 
 
-CITY_DISPLAY = {
-    "zurich": "Zürich",
-    "luzern": "Luzern",
-    "bern": "Bern",
-    "rotkreuz": "Rotkreuz",
-    "adliswil": "Adliswil",
-    "entfelden": "Entfelden",
-    "hunenberg": "Hünenberg",
-    "zug": "Zug",
-    "wengen": "Wengen",
-}
-
 # Geographic clusters used by the related-pools fallback. Cities not listed
 # are treated as their own region (no cross-city peers available).
 CITY_REGIONS: dict[str, set[str]] = {
@@ -440,6 +438,87 @@ async def dashboard_index(request: Request):
     return templates.TemplateResponse(
         request, "index.html", {"pools": pools, "cities": cities}
     )
+
+
+@app.get("/index.md", include_in_schema=False)
+async def homepage_markdown():
+    """Curated Markdown index for AI agents (no live occupancy table)."""
+    now_zurich = datetime.now(ZURICH_TZ)
+    body = render_home_markdown(pools=get_pools(), as_of=now_zurich)
+    return markdown_response(body, max_age=HOME_MD_CACHE_MAX_AGE)
+
+
+def _pool_hours_for_markdown(
+    pool: dict, *, when: datetime
+) -> tuple[str | None, str | None]:
+    """Return (summary, detail FAQ prose) for Markdown twins — schedule preferred."""
+    opening_hours_summary = _build_opening_hours_summary(pool.get("opening_hours"))
+    opening_hours_detail = None
+    try:
+        from ml.opening_hours import (
+            opening_hours_faq_text,
+            opening_hours_summary_from_schedule,
+        )
+
+        schedule = _schedule_for_pool(pool)
+        if schedule is not None:
+            schedule_summary = opening_hours_summary_from_schedule(
+                schedule, when.date()
+            )
+            if schedule_summary:
+                opening_hours_summary = schedule_summary
+            opening_hours_detail = opening_hours_faq_text(
+                schedule, pool["name"], when=when
+            )
+    except Exception:
+        logger.warning(
+            "Failed to load schedule hours for Markdown twin uid=%s",
+            pool.get("uid"),
+            exc_info=True,
+        )
+    return opening_hours_summary, opening_hours_detail
+
+
+@app.get("/bad/{pool_uid}.md", include_in_schema=False)
+async def pool_detail_markdown(request: Request, pool_uid: str):
+    """Markdown twin: live occupancy + today's forecast for remaining open hours."""
+    pools = get_pools()
+    pool = next((p for p in pools if p["uid"] == pool_uid), None)
+    if pool is None:
+        raise HTTPException(status_code=404, detail=f"Pool '{pool_uid}' not found")
+
+    now_zurich = datetime.now(tz=ZURICH_TZ)
+    today = now_zurich.date()
+    hours = [
+        datetime(today.year, today.month, today.day, h, 0, 0, tzinfo=ZURICH_TZ)
+        for h in range(24)
+    ]
+    db_pool = getattr(request.app.state, "db_pool", None)
+    model_available = predictor.is_loaded()
+    today_status = _classify_prediction_day(pool, today, model_available)
+
+    async def _safe_predict(pool_uid_, hrs, db_pool_, fallback_len):
+        try:
+            return await predictor.predict_range_batch(pool_uid_, hrs, db_pool_)
+        except Exception:
+            return [0.0] * fallback_len
+
+    today_predictions = await _safe_predict(pool_uid, hours, db_pool, 24)
+
+    occupancy = await load_pool_snapshot(request, pool)
+    hours_summary, hours_detail = _pool_hours_for_markdown(pool, when=now_zurich)
+
+    body = render_pool_markdown(
+        pool=pool,
+        occupancy=occupancy,
+        today_predictions=today_predictions,
+        prediction_status=today_status,
+        as_of=now_zurich,
+        now_zurich=now_zurich,
+        opening_hours_summary=hours_summary,
+        opening_hours_detail=hours_detail,
+    )
+    return markdown_response(body, max_age=POOL_MD_CACHE_MAX_AGE)
 
 
 @app.get("/bad/{pool_uid}", response_class=HTMLResponse, tags=["pools"])
@@ -1158,13 +1237,10 @@ def _merge_current_pool_items(
     return result
 
 
-@app.get("/api/current", tags=["dashboard"])
-async def current_occupancy(request: Request):
-    """Latest occupancy + open status per known pool.
+async def load_current_snapshot(request: Request) -> list[dict]:
+    """One occupancy+status row per known pool (used by /api/current).
 
-    Always one row per metadata pool. Occupancy fields are null when there is
-    no ``pool_occupancy`` row (common for Hallenbäder during Revision).
-    Returns [] only when the DB pool is unavailable.
+    Returns [] when the DB pool is unavailable or the query fails.
     """
     now_zurich = datetime.now(ZURICH_TZ)
     pools = get_pools()
@@ -1219,6 +1295,62 @@ async def current_occupancy(request: Request):
         return []
 
 
+async def load_pool_snapshot(request: Request, pool: dict) -> dict | None:
+    """Occupancy+status for a single pool (Markdown twins — avoid full-site scan)."""
+    now_zurich = datetime.now(ZURICH_TZ)
+    db_pool = getattr(request.app.state, "db_pool", None)
+    if db_pool is None:
+        return None
+    pool_uid = pool["uid"]
+    try:
+        row = await db_pool.fetchrow(
+            """
+            SELECT pool_uid, current_fill, max_space, free_space,
+                   ROUND((current_fill::numeric / NULLIF(max_space, 0)) * 100)
+                       AS occupancy_pct,
+                   time
+            FROM pool_occupancy
+            WHERE pool_uid = $1
+            ORDER BY time DESC
+            LIMIT 1
+            """,
+            pool_uid,
+        )
+        occupancy_by_uid = {pool_uid: dict(row)} if row is not None else {}
+        observation = await _fetch_latest_observation(db_pool, pool_uid)
+        observations = {pool_uid: observation} if observation is not None else {}
+        city = pool.get("city", "zurich")
+        weather_by_city = await _fetch_city_weather_hints(
+            db_pool, now_zurich, cities={city}
+        )
+        items = _merge_current_pool_items(
+            [pool],
+            occupancy_by_uid=occupancy_by_uid,
+            observations=observations,
+            weather_by_city=weather_by_city,
+            now_zurich=now_zurich,
+        )
+        return items[0] if items else None
+    except Exception:
+        logger.warning(
+            "Failed to load single-pool snapshot for Markdown uid=%s",
+            pool_uid,
+            exc_info=True,
+        )
+        return None
+
+
+@app.get("/api/current", tags=["dashboard"])
+async def current_occupancy(request: Request):
+    """Latest occupancy + open status per known pool.
+
+    Always one row per metadata pool. Occupancy fields are null when there is
+    no ``pool_occupancy`` row (common for Hallenbäder during Revision).
+    Returns [] only when the DB pool is unavailable.
+    """
+    return await load_current_snapshot(request)
+
+
 @app.get("/health", tags=["meta"])
 async def health():
     return {"status": "ok", "version": "0.1.0"}
@@ -1226,9 +1358,9 @@ async def health():
 
 @app.get("/llms.txt", include_in_schema=False)
 async def llms_txt():
-    llms_path = STATIC_PATH / "llms.txt"
-    content = llms_path.read_text(encoding="utf-8")
-    return PlainTextResponse(content, media_type="text/plain; charset=utf-8")
+    """Curated AI index; coverage stats derived from pool metadata."""
+    body = render_llms_txt(pools=get_pools())
+    return markdown_response(body, max_age=LLMS_TXT_CACHE_MAX_AGE)
 
 
 @app.get("/robots.txt", include_in_schema=False)

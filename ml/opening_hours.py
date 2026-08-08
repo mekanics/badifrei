@@ -1241,7 +1241,7 @@ def opening_hours_faq_text(
         return (
             f"{pool_name} ist derzeit geschlossen ({closure.reason} bis "
             f"{_fmt_closure_end_label(closure)}). "
-            f"Übliche Öffnungszeiten finden Sie auf dieser Seite."
+            f"Übliche Öffnungszeiten findest du auf dieser Seite."
         )
 
     if is_off_season(schedule, today):
@@ -1251,11 +1251,11 @@ def opening_hours_faq_text(
             return (
                 f"{pool_name} ist derzeit geschlossen (ausserhalb der Saison, "
                 f"wieder ab {reopen}). "
-                f"Übliche Öffnungszeiten finden Sie auf dieser Seite."
+                f"Übliche Öffnungszeiten findest du auf dieser Seite."
             )
         return (
             f"{pool_name} ist derzeit geschlossen (ausserhalb der Saison). "
-            f"Übliche Öffnungszeiten finden Sie auf dieser Seite."
+            f"Übliche Öffnungszeiten findest du auf dieser Seite."
         )
 
     # Day-set / "täglich" follows Periods covering *today* (same as
@@ -1299,13 +1299,13 @@ def opening_hours_faq_text(
 
     if not active_days and not has_fair:
         base = (
-            f"Die aktuellen Öffnungszeiten von {pool_name} finden Sie auf dieser Seite."
+            f"Die aktuellen Öffnungszeiten von {pool_name} findest du auf dieser Seite."
         )
         return base + upcoming_note
     if not active_days:
         base = (
             f"{pool_name} hat wetterabhängige Öffnungszeiten; "
-            f"aktuelle Hinweise finden Sie auf dieser Seite."
+            f"aktuelle Hinweise findest du auf dieser Seite."
         )
         return base + upcoming_note
 
@@ -1322,14 +1322,14 @@ def opening_hours_faq_text(
             fair_phrase = "bis " + " oder ".join(closes) + " Uhr"
         return (
             f" Bei schönem Wetter kann es je nach Saisonabschnitt {fair_phrase} "
-            f"geöffnet bleiben; aktuelle Hinweise und Schliesszeiten finden Sie "
+            f"geöffnet bleiben; aktuelle Hinweise und Schliesszeiten findest du "
             f"auf dieser Seite."
         )
 
     if not uniform_single:
         text = (
             f"Die Öffnungszeiten von {pool_name} variieren nach Wochentag; "
-            f"aktuelle Zeiten finden Sie auf dieser Seite."
+            f"aktuelle Zeiten findest du auf dieser Seite."
         )
         return text + _fair_suffix() + upcoming_note
 
@@ -1348,5 +1348,5 @@ def opening_hours_faq_text(
             f"bis {season_end.day}. {DE_MONTHS[season_end.month - 1]}."
         )
     else:
-        text += " Aktuelle Hinweise finden Sie auf dieser Seite."
+        text += " Aktuelle Hinweise findest du auf dieser Seite."
     return text + upcoming_note

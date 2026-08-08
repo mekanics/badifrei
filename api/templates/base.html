@@ -21,6 +21,7 @@
     content="{% block twitter_description %}Live-Auslastung für Schweizer Schwimmbäder: Aktuelle Besucherzahlen vor dem Besuch.{% endblock %}">
   <meta name="twitter:image" content="https://badifrei.ch/static/og-preview.jpg">
   <link rel="canonical" href="https://badifrei.ch{% block canonical_path %}/{% endblock %}">
+  {% block markdown_alternate %}{% endblock %}
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
   <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
@@ -73,6 +74,8 @@
         <p>Entwickelt mit ☕ und 🤖 — von einer KI programmiert, orchestriert von <a href="https://j2y.dev"
             target="_blank" rel="noopener" data-umami-event="footer-link-click"
             data-umami-event-link-target="j2y-dev">j2y.dev</a>.</p>
+        <p><a href="/llms.txt" data-umami-event="footer-link-click" data-umami-event-link-target="llms-txt">Für KI /
+            llms.txt</a></p>
       </div>
     </div>
 
