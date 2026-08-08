@@ -9,6 +9,31 @@
 
 ## A — C
 
+**Air temperature** — City-level Open-Meteo value from `hourly_weather` for the
+current UTC hour; identical across pools in a city; labelled `Luft` in the UI.
+Distinct from **Wassertemperatur**.
+
+**Air-temp freshness** — A live `WeatherHint` prefers `hourly_weather` rows with
+`fetched_at` within 30 minutes. Stale rows are served immediately and refreshed
+in the background (`source=live` upsert) so SSR / `/api/current` do not wait on
+Open-Meteo; missing rows still await a fetch. Distinct from
+**Water-temp freshness gates**, **Forecast freshness**, and
+**Archive-backed weather**. See [ADR-003](./adr/ADR-003-live-weather-upsert.md).
+
+**Forecast freshness** — In-lag `hourly_weather` days (not yet
+archive-eligible) are re-fetched from the Open-Meteo forecast API when
+`fetched_at` is missing or older than 6 hours. Upserts set `source=forecast`
+and must not clobber `archive` or `live` hours. Distinct from **Air-temp
+freshness** (30 minutes, current hour only). See
+[ADR-003](./adr/ADR-003-live-weather-upsert.md).
+
+**Archive-backed weather** — A full 24-hour `hourly_weather` day with every hour
+`source=archive`, for dates older than `ARCHIVE_LAG_DAYS` (~5 days UTC, aligned
+with Open-Meteo archive availability). Preferred training truth:
+`fetch_weather_batch` upserts archive over forecast/legacy/incomplete days for
+eligible dates; forecast upserts must not clobber archive.
+See [ADR-003](./adr/ADR-003-live-weather-upsert.md).
+
 **Closure** _(CH)_ — A dated exception that overrides the Schedule (Revision,
 event). Scope `full` closes the pool; `partial` does not change whole-pool open
 state.
@@ -71,8 +96,7 @@ and weekday, plus Closures. Slow-moving; reviewed in git before deploy.
 **Wassertemperatur (water temperature)** _(CH)_ — Per-pool water temperature from
 the Baditicker feed (`pool_status.water_temp_c`). Available for outdoor pools
 only; all `hallenbad` entries publish it empty. Displayed only when both
-water-temp freshness gates pass. Distinct from **air temperature**, which is
-city-level from `hourly_weather` and identical across all pools in a city.
+water-temp freshness gates pass. Distinct from **Air temperature**.
 
 **Water-temp freshness gates** — `observed_at` within 60 minutes (collector
 alive) **and** `source_modified_at` within 7 days (city still maintaining).

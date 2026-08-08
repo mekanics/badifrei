@@ -252,9 +252,7 @@ class TestComputePoolIsOpen:
 
         pool = {"uid": "fb006", "city": "zurich"}
         fair = WeatherHint(temperature_c=24, precipitation_mm=0.0, weathercode=1)
-        result = _compute_pool_is_open(
-            pool, _zurich(2026, 8, 4, 15, 0), weather=fair
-        )
+        result = _compute_pool_is_open(pool, _zurich(2026, 8, 4, 15, 0), weather=fair)
         assert result["is_open"] is True
 
     def test_fb006_afternoon_closed_without_weather(self):
@@ -266,22 +264,19 @@ class TestComputePoolIsOpen:
 
 
 class TestFetchCityWeatherHints:
-    """Badge path must ensure weather when hourly_weather is empty."""
+    """Live WeatherHint path: refresh when missing/stale; use DB when fresh."""
 
     @staticmethod
-    def _weather_df(temp=24.0, precip=0.0, code=1):
-        import pandas as pd
-        from datetime import date
+    def _live_refresh(temp=24.0, precip=0.0, code=1, fetched_at=None):
+        from datetime import timezone
 
-        return pd.DataFrame(
-            {
-                "date": [date(2026, 8, 4)] * 24,
-                "hour": list(range(24)),
-                "temperature_c": [temp] * 24,
-                "precipitation_mm": [precip] * 24,
-                "weathercode": [code] * 24,
-            }
-        )
+        return {
+            "temperature_c": temp,
+            "precipitation_mm": precip,
+            "weathercode": code,
+            "fetched_at": fetched_at
+            or datetime(2026, 8, 4, 13, 0, tzinfo=timezone.utc),
+        }
 
     async def test_empty_cache_fetches_and_opens_fb006_afternoon(self):
         from unittest.mock import AsyncMock, patch
@@ -293,14 +288,12 @@ class TestFetchCityWeatherHints:
         now = _zurich(2026, 8, 4, 15, 0)  # 13:00 UTC
 
         with patch(
-            "ml.weather.fetch_weather_batch",
+            "ml.weather.refresh_live_hour",
             new_callable=AsyncMock,
-            return_value=self._weather_df(temp=24.0, precip=0.0, code=1),
-        ) as mock_fetch:
-            hints = await _fetch_city_weather_hints(
-                db_pool, now, cities={"zurich"}
-            )
-            mock_fetch.assert_awaited()
+            return_value=self._live_refresh(temp=24.0, precip=0.0, code=1),
+        ) as mock_refresh:
+            hints = await _fetch_city_weather_hints(db_pool, now, cities={"zurich"})
+            mock_refresh.assert_awaited()
 
         assert "zurich" in hints
         result = _compute_pool_is_open(
@@ -318,24 +311,24 @@ class TestFetchCityWeatherHints:
         now = _zurich(2026, 8, 4, 15, 0)
 
         with patch(
-            "ml.weather.fetch_weather_batch",
+            "ml.weather.refresh_live_hour",
             new_callable=AsyncMock,
-            return_value=self._weather_df(temp=24.0, precip=0.0, code=95),
+            return_value=self._live_refresh(temp=24.0, precip=0.0, code=95),
         ):
-            hints = await _fetch_city_weather_hints(
-                db_pool, now, cities={"zurich"}
-            )
+            hints = await _fetch_city_weather_hints(db_pool, now, cities={"zurich"})
 
         result = _compute_pool_is_open(
             {"uid": "fb006", "city": "zurich"}, now, weather=hints["zurich"]
         )
         assert result["is_open"] is False
 
-    async def test_db_hit_skips_fetch(self):
+    async def test_fresh_db_hit_skips_refresh(self):
+        from datetime import timedelta, timezone
         from unittest.mock import AsyncMock, patch
 
         from api.snapshots import _fetch_city_weather_hints
 
+        now = _zurich(2026, 8, 4, 15, 0)
         db_pool = AsyncMock()
         db_pool.fetch = AsyncMock(
             return_value=[
@@ -344,20 +337,146 @@ class TestFetchCityWeatherHints:
                     "temperature_c": 22.0,
                     "precipitation_mm": 0.0,
                     "weathercode": 1,
+                    "fetched_at": now.astimezone(timezone.utc) - timedelta(minutes=5),
                 }
             ]
         )
-        now = _zurich(2026, 8, 4, 15, 0)
 
         with patch(
-            "ml.weather.fetch_weather_batch", new_callable=AsyncMock
-        ) as mock_fetch:
-            hints = await _fetch_city_weather_hints(
-                db_pool, now, cities={"zurich"}
-            )
-            mock_fetch.assert_not_called()
+            "ml.weather.refresh_live_hour", new_callable=AsyncMock
+        ) as mock_refresh:
+            hints = await _fetch_city_weather_hints(db_pool, now, cities={"zurich"})
+            mock_refresh.assert_not_called()
 
         assert hints["zurich"].temperature_c == 22.0
+
+    async def test_stale_fetched_at_serves_row_and_schedules_refresh(self):
+        """Stale-while-revalidate: return DB row immediately; refresh in background."""
+        import asyncio
+        from datetime import timedelta, timezone
+        from unittest.mock import AsyncMock, patch
+
+        from api.snapshots import _fetch_city_weather_hints
+
+        now = _zurich(2026, 8, 4, 15, 0)
+        db_pool = AsyncMock()
+        db_pool.fetch = AsyncMock(
+            return_value=[
+                {
+                    "city": "zurich",
+                    "temperature_c": 21.5,
+                    "precipitation_mm": 0.0,
+                    "weathercode": 1,
+                    "fetched_at": now.astimezone(timezone.utc) - timedelta(hours=2),
+                }
+            ]
+        )
+
+        with patch(
+            "ml.weather.refresh_live_hour",
+            new_callable=AsyncMock,
+            return_value=self._live_refresh(temp=29.6, precip=0.0, code=0),
+        ) as mock_refresh:
+            hints = await _fetch_city_weather_hints(db_pool, now, cities={"zurich"})
+            # Request path must not wait on Open-Meteo.
+            assert hints["zurich"].temperature_c == pytest.approx(21.5)
+            assert hints["zurich"].weathercode == 1
+            await asyncio.sleep(0)
+            mock_refresh.assert_awaited()
+
+    async def test_stale_row_schedules_refresh_without_blocking(self):
+        """Stale write-once row is served now; background refresh updates DB."""
+        import asyncio
+        from datetime import timedelta, timezone
+        from unittest.mock import AsyncMock, patch
+
+        from api.snapshots import _fetch_city_weather_hints
+
+        now = _zurich(2026, 8, 8, 21, 15)
+        db_pool = AsyncMock()
+        db_pool.fetch = AsyncMock(
+            return_value=[
+                {
+                    "city": "zurich",
+                    "temperature_c": 21.5,
+                    "precipitation_mm": 0.0,
+                    "weathercode": 1,
+                    "fetched_at": now.astimezone(timezone.utc) - timedelta(hours=6),
+                }
+            ]
+        )
+
+        with patch(
+            "ml.weather.refresh_live_hour",
+            new_callable=AsyncMock,
+            return_value=self._live_refresh(temp=29.6, precip=0.0, code=0),
+        ) as mock_refresh:
+            hints = await _fetch_city_weather_hints(db_pool, now, cities={"zurich"})
+            assert hints["zurich"].temperature_c == pytest.approx(21.5)
+            await asyncio.sleep(0)
+            mock_refresh.assert_awaited()
+
+    async def test_refresh_failure_falls_back_to_stale_row(self):
+        import asyncio
+        from datetime import timedelta, timezone
+        from unittest.mock import AsyncMock, patch
+
+        from api.snapshots import _fetch_city_weather_hints
+
+        now = _zurich(2026, 8, 4, 15, 0)
+        db_pool = AsyncMock()
+        db_pool.fetch = AsyncMock(
+            return_value=[
+                {
+                    "city": "zurich",
+                    "temperature_c": 21.5,
+                    "precipitation_mm": 0.0,
+                    "weathercode": 1,
+                    "fetched_at": now.astimezone(timezone.utc) - timedelta(hours=2),
+                }
+            ]
+        )
+
+        with patch(
+            "ml.weather.refresh_live_hour",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
+            hints = await _fetch_city_weather_hints(db_pool, now, cities={"zurich"})
+            await asyncio.sleep(0)
+
+        assert hints["zurich"].temperature_c == pytest.approx(21.5)
+        assert hints["zurich"].weathercode == 1
+
+    async def test_null_fetched_at_serves_stale_and_schedules_refresh(self):
+        import asyncio
+        from unittest.mock import AsyncMock, patch
+
+        from api.snapshots import _fetch_city_weather_hints
+
+        now = _zurich(2026, 8, 4, 15, 0)
+        db_pool = AsyncMock()
+        db_pool.fetch = AsyncMock(
+            return_value=[
+                {
+                    "city": "zurich",
+                    "temperature_c": 21.5,
+                    "precipitation_mm": 0.0,
+                    "weathercode": 1,
+                    "fetched_at": None,
+                }
+            ]
+        )
+
+        with patch(
+            "ml.weather.refresh_live_hour",
+            new_callable=AsyncMock,
+            return_value=self._live_refresh(temp=29.6, precip=0.0, code=0),
+        ) as mock_refresh:
+            hints = await _fetch_city_weather_hints(db_pool, now, cities={"zurich"})
+            assert hints["zurich"].temperature_c == pytest.approx(21.5)
+            await asyncio.sleep(0)
+            mock_refresh.assert_awaited()
 
 
 class TestClassifyPredictionDay:

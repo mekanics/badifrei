@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import math
 from collections.abc import Iterable
@@ -162,13 +163,40 @@ async def _latest_max_space(db_pool, pool_uid: str) -> int | None:
         return None
 
 
+def _schedule_live_weather_refresh(city: str, when: datetime) -> None:
+    """Kick off ``refresh_live_hour`` without blocking the request path."""
+    from ml.weather import refresh_live_hour
+
+    async def _run() -> None:
+        try:
+            await refresh_live_hour(city, when)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "background weather live refresh failed for city=%s: %s", city, exc
+            )
+
+    try:
+        asyncio.get_running_loop().create_task(_run())
+    except RuntimeError:
+        logger.warning(
+            "no running event loop; skipped background weather refresh for city=%s",
+            city,
+        )
+
+
 async def _fetch_city_weather_hints(
     db_pool,
     now_zurich: datetime,
     cities: Iterable[str] | None = None,
 ) -> dict:
-    """Load current-hour WeatherHint per city, fetching when the cache is empty."""
-    from ml.weather import CITY_COORDS, fetch_weather_batch
+    """Load current-hour WeatherHint per city.
+
+    Fresh DB rows (``fetched_at`` within live TTL) are served immediately.
+    Stale rows use stale-while-revalidate: serve the last hour and refresh in
+    the background so SSR / ``/api/current`` never wait on Open-Meteo.
+    Missing rows still await ``refresh_live_hour`` (no value to serve yet).
+    """
+    from ml.weather import CITY_COORDS, is_live_weather_stale, refresh_live_hour
 
     now_utc = now_zurich.astimezone(timezone.utc)
     lookup_date = now_utc.date()
@@ -176,11 +204,11 @@ async def _fetch_city_weather_hints(
 
     wanted = {c for c in (cities or []) if c in CITY_COORDS}
 
-    hints: dict = {}
+    rows_by_city: dict = {}
     try:
         rows = await db_pool.fetch(
             """
-            SELECT city, temperature_c, precipitation_mm, weathercode
+            SELECT city, temperature_c, precipitation_mm, weathercode, fetched_at
             FROM hourly_weather
             WHERE date = $1::date AND hour = $2
             """,
@@ -191,6 +219,15 @@ async def _fetch_city_weather_hints(
             city = row["city"]
             if wanted and city not in wanted:
                 continue
+            rows_by_city[city] = row
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("hourly_weather lookup failed: %s", exc)
+
+    hints: dict = {}
+    for city in sorted(wanted):
+        row = rows_by_city.get(city)
+        stale = row is None or is_live_weather_stale(row["fetched_at"], now=now_utc)
+        if not stale:
             hint = _weather_hint_from_values(
                 row["temperature_c"],
                 row["precipitation_mm"],
@@ -198,25 +235,32 @@ async def _fetch_city_weather_hints(
             )
             if hint is not None:
                 hints[city] = hint
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("hourly_weather lookup failed: %s", exc)
+            continue
 
-    for city in sorted(wanted - set(hints.keys())):
+        if row is not None:
+            # Stale-while-revalidate: never block the request on Open-Meteo.
+            hint = _weather_hint_from_values(
+                row["temperature_c"],
+                row["precipitation_mm"],
+                row["weathercode"],
+            )
+            if hint is not None:
+                hints[city] = hint
+            _schedule_live_weather_refresh(city, now_zurich)
+            continue
+
+        # No row yet — must await a fetch for this city/hour.
         try:
-            df = await fetch_weather_batch([lookup_date], city=city)
+            refreshed = await refresh_live_hour(city, now_zurich)
         except Exception as exc:  # noqa: BLE001
-            logger.warning("weather ensure-fetch failed for city=%s: %s", city, exc)
+            logger.warning("weather live refresh failed for city=%s: %s", city, exc)
+            refreshed = None
+        if refreshed is None:
             continue
-        if df is None or getattr(df, "empty", True):
-            continue
-        match = df[df["hour"] == lookup_hour]
-        if match.empty:
-            continue
-        rec = match.iloc[0]
         hint = _weather_hint_from_values(
-            rec["temperature_c"],
-            rec["precipitation_mm"],
-            rec["weathercode"],
+            refreshed["temperature_c"],
+            refreshed["precipitation_mm"],
+            refreshed["weathercode"],
         )
         if hint is not None:
             hints[city] = hint
