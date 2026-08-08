@@ -181,7 +181,7 @@ class TestSsd3PoolHtmlUsesSchedule:
     def test_html_shows_split_not_legacy_continuous(self):
         from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-        from api.main import _fmt_date_de, _static_ver
+        from api.templating import _fmt_date_de, _static_ver
         from ml.opening_hours import opening_hours_faq_text
 
         uid = "SSD-3"
@@ -225,7 +225,7 @@ class TestSsd3PoolHtmlUsesSchedule:
     def test_adliswil_html_one_period_two_day_rows(self):
         from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-        from api.main import _fmt_date_de, _static_ver
+        from api.templating import _fmt_date_de, _static_ver
         from ml.opening_hours import opening_hours_faq_text
 
         uid = "IMBAD-1"

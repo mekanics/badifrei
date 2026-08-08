@@ -26,7 +26,7 @@ _WHEN = datetime(2026, 8, 4, 12, 0, tzinfo=ZoneInfo("Europe/Zurich"))
 def _render_pool_html(uid: str) -> str:
     from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-    from api.main import _fmt_date_de, _static_ver
+    from api.templating import _fmt_date_de, _static_ver
 
     pool = load_pool_metadata()[uid]
     schedule = load_schedules()[uid]

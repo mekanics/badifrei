@@ -44,17 +44,17 @@ lifecycle isolation, not independent deployable products.
 
 ## Technology Stack
 
-| Layer        | Technology                     | Rationale                                |
-| ------------ | ------------------------------ | ---------------------------------------- |
-| Frontend     | Jinja2 + vanilla JS + Chart.js | SSR dashboard; no SPA framework          |
-| Backend      | FastAPI + asyncpg              | Async I/O; simple JSON + HTML routes     |
-| Collector    | Python asyncio + websockets    | Push-based CrowdMonitor feed             |
-| Database     | TimescaleDB (PostgreSQL 16)    | Time-series hypertables; SQL familiarity |
-| ML           | XGBoost + pandas               | Tabular occupancy regression             |
-| Weather      | Open-Meteo                     | Free forecast API; no key                |
-| Auth         | None                           | Public read-only product                 |
-| Hosting      | Docker Compose / Coolify       | See [COOLIFY.md](./COOLIFY.md)           |
-| Package mgmt | `uv`                           | Project standard (see root `AGENTS.md`)  |
+| Layer        | Technology                     | Rationale                                                                                                       |
+| ------------ | ------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| Frontend     | Jinja2 + vanilla JS + Chart.js | SSR dashboard; no SPA framework                                                                                 |
+| Backend      | FastAPI + asyncpg              | Async I/O; simple JSON + HTML routes; layout and DB access per [ADR-002](./adr/ADR-002-fastapi-flat-asyncpg.md) |
+| Collector    | Python asyncio + websockets    | Push-based CrowdMonitor feed                                                                                    |
+| Database     | TimescaleDB (PostgreSQL 16)    | Time-series hypertables; SQL familiarity                                                                        |
+| ML           | XGBoost + pandas               | Tabular occupancy regression                                                                                    |
+| Weather      | Open-Meteo                     | Free forecast API; no key                                                                                       |
+| Auth         | None                           | Public read-only product                                                                                        |
+| Hosting      | Docker Compose / Coolify       | See [COOLIFY.md](./COOLIFY.md)                                                                                  |
+| Package mgmt | `uv`                           | Project standard (see root `AGENTS.md`)                                                                         |
 
 ## Key Components
 
@@ -76,6 +76,9 @@ lifecycle isolation, not independent deployable products.
   `ml/models` (shared volume); optional Umami snippet via env.
 - **Data ownership**: Request/response shaping and presentation; pool catalog
   from `ml/pool_metadata.json`.
+- **Layout**: Flat FastAPI modules (`config`, `dependencies`, `routers/*`) with
+  lifespan-scoped asyncpg pool via `Depends` — see
+  [ADR-002](./adr/ADR-002-fastapi-flat-asyncpg.md).
 
 ### ml / retrain
 

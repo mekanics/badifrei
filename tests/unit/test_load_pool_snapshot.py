@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from zoneinfo import ZoneInfo
 
 import pytest
 
-from api.main import get_pools, load_pool_snapshot
+from api.catalog import get_pools
+from api.snapshots import load_pool_snapshot
 
 Z = ZoneInfo("Europe/Zurich")
 NOW = datetime(2026, 8, 8, 14, 0, tzinfo=Z)
@@ -28,18 +28,17 @@ async def test_load_pool_snapshot_uses_single_uid_query(monkeypatch):
     }
     db = AsyncMock()
     db.fetchrow = AsyncMock(return_value=row)
-    request = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(db_pool=db)))
 
     monkeypatch.setattr(
-        "api.main._fetch_latest_observation",
+        "api.snapshots._fetch_latest_observation",
         AsyncMock(return_value=None),
     )
     monkeypatch.setattr(
-        "api.main._fetch_city_weather_hints",
+        "api.snapshots._fetch_city_weather_hints",
         AsyncMock(return_value={}),
     )
 
-    item = await load_pool_snapshot(request, pool)
+    item = await load_pool_snapshot(db, pool)
     assert item is not None
     assert item["pool_uid"] == "fb006"
     assert item["occupancy_pct"] == 50
@@ -55,5 +54,4 @@ async def test_load_pool_snapshot_uses_single_uid_query(monkeypatch):
 @pytest.mark.asyncio
 async def test_load_pool_snapshot_none_without_db():
     pool = {"uid": "fb006", "name": "X", "city": "zurich"}
-    request = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(db_pool=None)))
-    assert await load_pool_snapshot(request, pool) is None
+    assert await load_pool_snapshot(None, pool) is None

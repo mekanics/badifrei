@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from api.main import _coerce_live_max_space, _latest_max_space
+from api.snapshots import _coerce_live_max_space, _latest_max_space
 
 
 class TestCoerceLiveMaxSpace:

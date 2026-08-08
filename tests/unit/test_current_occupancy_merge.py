@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from api.main import _merge_current_pool_items
+from api.snapshots import _merge_current_pool_items
 
 Z = ZoneInfo("Europe/Zurich")
 NOW = datetime(2026, 8, 7, 22, 0, tzinfo=Z)
