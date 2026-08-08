@@ -61,9 +61,11 @@ from api.predictor import predictor  # noqa: E402
 from api.city_display import CITY_DISPLAY  # noqa: E402
 from api.markdown_surfaces import (  # noqa: E402
     HOME_MD_CACHE_MAX_AGE,
+    LLMS_TXT_CACHE_MAX_AGE,
     POOL_MD_CACHE_MAX_AGE,
     markdown_response,
     render_home_markdown,
+    render_llms_txt,
     render_pool_markdown,
 )
 
@@ -1247,30 +1249,26 @@ async def load_current_snapshot(request: Request) -> list[dict]:
     if db_pool is None:
         return []
     try:
-        rows = await db_pool.fetch(
-            """
+        rows = await db_pool.fetch("""
             SELECT DISTINCT ON (pool_uid)
                 pool_uid, current_fill, max_space, free_space,
                 ROUND((current_fill::numeric / NULLIF(max_space, 0)) * 100) AS occupancy_pct,
                 time
             FROM pool_occupancy
             ORDER BY pool_uid, time DESC
-            """
-        )
+            """)
         occupancy_by_uid = {row["pool_uid"]: dict(row) for row in rows}
 
         observations: dict = {}
         try:
             from ml.opening_hours import observation_from_status_text
 
-            status_rows = await db_pool.fetch(
-                """
+            status_rows = await db_pool.fetch("""
                 SELECT DISTINCT ON (pool_uid)
                     pool_uid, status_text, source_modified_at, observed_at
                 FROM pool_status
                 ORDER BY pool_uid, observed_at DESC
-                """
-            )
+                """)
             for srow in status_rows:
                 observations[srow["pool_uid"]] = observation_from_status_text(
                     srow["status_text"],
@@ -1360,9 +1358,9 @@ async def health():
 
 @app.get("/llms.txt", include_in_schema=False)
 async def llms_txt():
-    llms_path = STATIC_PATH / "llms.txt"
-    content = llms_path.read_text(encoding="utf-8")
-    return PlainTextResponse(content, media_type="text/plain; charset=utf-8")
+    """Curated AI index; coverage stats derived from pool metadata."""
+    body = render_llms_txt(pools=get_pools())
+    return markdown_response(body, max_age=LLMS_TXT_CACHE_MAX_AGE)
 
 
 @app.get("/robots.txt", include_in_schema=False)

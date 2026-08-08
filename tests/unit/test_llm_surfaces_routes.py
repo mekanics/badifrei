@@ -72,12 +72,17 @@ class TestDiscoverability:
         assert "/llms.txt" in response.text
 
     async def test_llms_txt_points_at_md(self, client):
+        from api.main import get_pools
+
         response = await client.get("/llms.txt")
         assert response.status_code == 200
         body = response.text
+        pools = get_pools()
         assert "https://badifrei.ch/index.md" in body
-        assert "https://badifrei.ch/bad/LETZI-1.md" in body
-        assert ".md)" in body or ".md:" in body
+        assert f"{len(pools)} pools" in body
+        assert "max 4,500" not in body  # no hand-maintained capacities
+        assert "Cache-Control" in response.headers
+        assert response.headers["x-robots-tag"] == "noindex"
 
     async def test_sitemap_has_no_md_urls(self, client):
         response = await client.get("/sitemap.xml")

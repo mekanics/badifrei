@@ -12,6 +12,7 @@ from api.markdown_surfaces import (
     adapt_faq_for_markdown,
     markdown_response,
     render_home_markdown,
+    render_llms_txt,
     render_pool_markdown,
 )
 
@@ -221,6 +222,21 @@ class TestRenderPoolMarkdown:
         assert "auf dieser Seite" not in body
         assert "auf der HTML-Seite (https://badifrei.ch/bad/fb006)" in body
         assert CITY_DISPLAY["zurich"] == "Zürich"
+
+
+class TestRenderLlmsTxt:
+    def test_coverage_from_pools_not_hardcoded_capacities(self):
+        pools = [
+            {"uid": "a", "name": "A", "city": "zurich"},
+            {"uid": "b", "name": "B", "city": "bern"},
+            {"uid": "c", "name": "C", "city": "zurich"},
+        ]
+        body = render_llms_txt(pools=pools)
+        assert "3 pools across 2 Swiss cities" in body
+        assert "Zürich" in body and "Bern" in body
+        assert "https://badifrei.ch/index.md" in body
+        assert "max 4,500" not in body
+        assert "LETZI-1" not in body  # full list lives on index.md
 
 
 class TestAdaptFaqForMarkdown:

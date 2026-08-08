@@ -15,6 +15,7 @@ from api.city_display import CITY_DISPLAY
 SITE_ORIGIN = "https://badifrei.ch"
 POOL_MD_CACHE_MAX_AGE = 180
 HOME_MD_CACHE_MAX_AGE = 3600
+LLMS_TXT_CACHE_MAX_AGE = 3600
 
 
 def adapt_faq_for_markdown(text: str | None, *, html_url: str) -> str | None:
@@ -41,6 +42,87 @@ def markdown_response(body: str, *, max_age: int) -> Response:
             "Cache-Control": f"public, max-age={max_age}",
             "X-Robots-Tag": "noindex",
         },
+    )
+
+
+def render_llms_txt(*, pools: list[dict]) -> str:
+    """Curated llms.txt index: stable narrative + coverage derived from metadata.
+
+    Full pool lists live on /index.md so counts and cities stay accurate without
+    hand-maintaining capacity blurbs here.
+    """
+    n_pools = len(pools)
+    city_keys = sorted(
+        {p.get("city", "zurich") for p in pools},
+        key=lambda c: (c != "zurich", c),
+    )
+    city_labels = [CITY_DISPLAY.get(c, str(c).title()) for c in city_keys]
+    n_cities = len(city_keys)
+    if len(city_labels) == 1:
+        cities_phrase = city_labels[0]
+    elif len(city_labels) == 2:
+        cities_phrase = f"{city_labels[0]} and {city_labels[1]}"
+    else:
+        cities_phrase = ", ".join(city_labels[:-1]) + f", and {city_labels[-1]}"
+
+    return "\n".join(
+        [
+            "# badifrei.ch",
+            "",
+            "> **badifrei.ch** zeigt die aktuelle Auslastung und KI-Prognosen "
+            "für Schwimmbäder in der Schweiz.",
+            "> The site tells you how crowded a swimming pool is right now, "
+            "and forecasts occupancy for the next several hours.",
+            ">",
+            "> **Data source:** CrowdMonitor occupancy sensors by ASE "
+            "(Switzerland), updated in near-real-time.",
+            "> **ML model:** XGBoost, trained per pool, retrained weekly. "
+            "Predicts percentage occupancy up to ~8 hours ahead.",
+            f"> **Coverage:** {n_pools} pools across {n_cities} Swiss cities — "
+            f"{cities_phrase}.",
+            "> **Language:** German (de-CH). Operated independently; not "
+            "affiliated with city authorities or pool operators.",
+            "> **Limitations:** Coverage depends on sensor availability. "
+            "Seasonal outdoor pools (Freibäder, Strandbäder) are closed in "
+            "winter (approx. Oct–Apr). Sensor outages may cause temporary data "
+            "gaps. Predictions are probabilistic and not a guarantee.",
+            "> **AI-readable pages:** Prefer Markdown twins (`.md`) for live "
+            "occupancy and today's forecast without HTML chrome. Start at "
+            f"[index.md]({SITE_ORIGIN}/index.md).",
+            "",
+            "badifrei.ch is a public, free-to-use tool for residents and "
+            "visitors in Switzerland. The homepage shows all monitored pools "
+            "grouped by city, with live occupancy levels. Each pool detail "
+            "page includes current occupancy, a day-ahead forecast, opening "
+            "hours, and (where available) historical occupancy patterns.",
+            "",
+            "## Key Pages",
+            "",
+            f"- [index.md — full pool Markdown index]({SITE_ORIGIN}/index.md): "
+            f"All {n_pools} pools as `.md` links, grouped by city "
+            "(no live occupancy table).",
+            f"- [Homepage HTML]({SITE_ORIGIN}/): Live occupancy overview.",
+            f"- [Pool Markdown pattern]({SITE_ORIGIN}/bad/{{uid}}.md): "
+            "Live occupancy + today's forecast for one pool "
+            f"(example: [Freibad Allenmoos]({SITE_ORIGIN}/bad/fb006.md)).",
+            "",
+            "## Optional",
+            "",
+            f"- [Sitemap]({SITE_ORIGIN}/sitemap.xml): HTML URLs only "
+            "(Markdown twins are noindex).",
+            "",
+            "## About the data",
+            "",
+            "Occupancy data is sourced from **CrowdMonitor** infrared/radar "
+            "sensors (ASE AG). badifrei.ch trains per-pool XGBoost models on "
+            "historical occupancy, time features, and weather. Models are "
+            "retrained weekly. Forecast horizon is approximately 8 hours.",
+            "",
+            "badifrei.ch does **not** publish real-time admission prices, "
+            "water temperature, or lane availability. For official pool "
+            "details, visit the respective city sports department websites.",
+            "",
+        ]
     )
 
 
