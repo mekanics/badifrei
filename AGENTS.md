@@ -1,49 +1,63 @@
-# AGENTS.md
-
-## Project Overview
+# badi-predictor
 
 `badi-predictor` powers badifrei.ch: live occupancy and ML forecasts for Zurich pools. It collects CrowdMonitor WebSocket data, stores it in TimescaleDB, trains XGBoost models, and serves a FastAPI/Jinja2 dashboard.
 
-## Operating Rules
+**Stack:** Python 3.12 + FastAPI + TimescaleDB + XGBoost · uv
 
-These rules apply to every task in this project unless explicitly overridden. Prefer caution over speed on non-trivial work, and use judgment on trivial tasks.
+## Build & Test
 
-1. Think before coding. State assumptions explicitly. If uncertain, ask rather than guess. Present multiple interpretations when ambiguity exists, push back when a simpler approach exists, and stop when confused by naming what is unclear.
-2. Simplicity first. Write the minimum code that solves the problem. Do not add speculative features or abstractions for single-use code. If a senior engineer would call it overcomplicated, simplify.
-3. Make surgical changes. Touch only what is required, clean up only your own mess, and do not improve adjacent code, comments, or formatting. Do not refactor what is not broken; match existing style.
-4. Execute toward success criteria. Define what success means, then iterate until it is verified. Do not blindly follow steps when the goal requires adapting.
-5. Use the model only for judgment calls. Use model reasoning for classification, drafting, summarization, and extraction. Use code for routing, retries, deterministic transforms, and anything else code can answer.
-6. Treat token budgets as hard limits. Per-task budget is 4,000 tokens; per-session budget is 30,000 tokens. If approaching the budget, summarize and start fresh. Surface the breach instead of silently overrunning.
-7. Surface conflicts instead of averaging them. If two patterns contradict, pick one based on recency or evidence, explain why, and flag the other for cleanup.
-8. Read before writing. Before adding code, read exports, immediate callers, and shared utilities. If you are unsure why code is structured a certain way, ask.
-9. Make tests verify intent. Tests should encode why behavior matters, not only what it does. A test that cannot fail when business logic changes is the wrong test.
-10. Checkpoint after significant steps. Summarize what changed, what is verified, and what remains. If you lose track, stop and restate the current state.
-11. Match codebase conventions even when you disagree. Conformance beats personal taste inside this repository. If a convention seems harmful, surface it instead of silently forking it.
-12. Fail loud. Do not claim completion if anything was skipped silently. Do not say tests pass if any relevant tests were skipped. Surface uncertainty by default.
+- Install: `uv sync --extra dev` (CI: `uv sync --frozen --extra dev`)
+- Dev: `docker compose up -d` · API only: `uv run uvicorn api.main:app --reload`
+- Test: `uv run pytest tests/unit -v` · all: `uv run pytest tests/ -v` · integration: `uv run pytest tests/integration -v -m integration`
+- Lint/Format: `uv run ruff check .` · `uv run ruff format --check .` · format: `uv run ruff format . && uv run ruff check --fix .`
+- Migrate: `uv run python scripts/migrate.py`
+- Train: `uv run python scripts/train.py` · Docker: `docker compose run --rm retrain`
 
-## Runtime And Tooling
+Package manager: `uv` only (not pip/poetry/conda). Prefer `uv run ...` over Makefile `.venv/bin/*` targets unless testing Make itself.
 
-- Python version: 3.12+
-- Package manager: `uv` only; do not use `pip`, `poetry`, or `conda` for project dependencies.
-- Local dependency setup: `uv sync --extra dev`
-- CI-style dependency setup: `uv sync --frozen --extra dev`
-- Formatting/linting: Ruff and Black, both configured for line length 88.
-- Local Docker stack: `docker compose up -d`
+## House Rules
 
-## Common Commands
+These rules apply to every task in this project unless explicitly overridden.
+Bias: judgment over speed on non-trivial work.
 
-- Run unit tests: `uv run pytest tests/unit -v`
-- Run all tests: `uv run pytest tests/ -v`
-- Run integration tests: `uv run pytest tests/integration -v -m integration`
-- Run lint check: `uv run ruff check .`
-- Run Black check: `uv run black --check .`
-- Format code: `uv run black . && uv run ruff check --fix .`
-- Run DB migrations locally: `uv run python scripts/migrate.py`
-- Train model locally with default DB URL: `uv run python scripts/train.py`
-- Train model through Docker: `docker compose run --rm retrain`
-- Run API locally: `uv run uvicorn api.main:app --reload`
+---
 
-The `Makefile` wraps several commands but currently points directly at `.venv/bin/*`; prefer the `uv run ...` forms above unless you are deliberately testing the Make targets.
+## Rule 1 — Think, Then Investigate
+
+State assumptions before writing code; ask rather than guess when real ambiguity exists.
+Before fixing a bug, trace the data flow from source to symptom and form a hypothesis — no fix without investigation.
+After three failed fixes, stop and re-investigate from scratch.
+
+## Rule 2 — Read Before You Write
+
+Read the existing exports, callers, and shared utilities before adding anything — reuse beats reinvention.
+Read the whole function, not just the target line, before editing it.
+
+## Rule 3 — Boil the Lake, Not the Ocean
+
+AI-assisted time is cheap: when full test coverage, all edge cases, and every error path cost minutes more than the shortcut, do the complete thing.
+Don't boil the ocean — no rewriting entire systems or speculative abstractions for single-use code.
+
+## Rule 4 — Surgical Changes
+
+Touch only what you must; clean up only your own mess.
+Don't refactor or restyle adjacent code that isn't the cause of the problem.
+Test: would a senior engineer say this touches too much?
+
+## Rule 5 — Tests Encode Why
+
+A feature isn't done until there's a regression test that fails without the change and passes with it.
+A test that can't fail when business logic changes is wrong.
+
+## Rule 6 — Match Conventions; Surface Conflicts
+
+Conformance beats taste inside an established codebase — match existing naming, structure, and formatting.
+If a convention is genuinely harmful, or two patterns contradict each other, say so explicitly and pick the more tested one; don't fork silently or blend them into a third thing nobody uses.
+
+## Rule 7 — Fail Loud
+
+"Completed" is wrong if anything was skipped silently; "tests pass" is wrong if any were skipped or disabled.
+Default to surfacing uncertainty, not hiding it.
 
 ## Repository Map
 
@@ -54,14 +68,17 @@ The `Makefile` wraps several commands but currently points directly at `.venv/bi
 - `docker/migrations/`: numbered SQL migrations applied by `scripts/migrate.py`.
 - `tests/unit/`: unit tests that should not require a live database.
 - `tests/integration/`: integration tests that may require TimescaleDB or Compose.
-- `docs/PRD.md`: original product and system requirements.
-- `docs/TASKS.md`: TDD-first task history and implementation notes.
+- `docs/PRD.md`: product scope (authoritative).
+- `docs/SAD.md`: system architecture (authoritative).
+- `docs/glossary.md`: ubiquitous language for Schedule / hours domain.
+- `docs/adr/`: architectural decision records.
 - `docs/COOLIFY.md`: deployment and migration behavior.
 - `docs/SECURITY_REVIEW.md`: known security findings and remediation context.
+- `docs/README.md`: documentation index.
 
 ## Development Rules
 
-- Follow the existing TDD convention from `docs/TASKS.md`: write or update tests for behavior changes.
+- Follow TDD for behavior changes: write or update tests first (Red → Green → Refactor).
 - Keep API responses and frontend templates compatible with the current Jinja2 + vanilla JS setup; do not introduce a frontend framework unless explicitly requested.
 - Use existing modules for shared behavior instead of duplicating logic across `api/`, `collector/`, and `ml/`.
 - Keep migrations idempotent where possible and add new SQL files under `docker/migrations/` with the next numeric prefix.

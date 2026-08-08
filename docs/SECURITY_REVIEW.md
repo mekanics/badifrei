@@ -217,7 +217,7 @@ const SSR_PREDICTIONS = {{ today_predictions | tojson }};
 ```dockerfile
 RUN pip install uv && uv pip install --system -e ".[dev]"
 ```
-The `[dev]` extras install pytest, ruff, black, and pytest-cov into the production retrain container. These packages are unnecessary at runtime, increase the image size by ~50–100 MB, and expand the attack surface (e.g. pytest's fixture machinery, coverage instrumentation).
+The `[dev]` extras install pytest, ruff, and pytest-cov into the production retrain container. These packages are unnecessary at runtime, increase the image size by ~50–100 MB, and expand the attack surface (e.g. pytest's fixture machinery, coverage instrumentation).
 
 **Recommendation:**  
 ```dockerfile

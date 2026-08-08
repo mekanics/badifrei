@@ -1,252 +1,98 @@
-# PRD: Zürich Pool Occupancy Prediction System
+# Product Requirements Document
 
-**Version:** 1.0  
-**Status:** Draft  
-**Author:** Jarvis  
-**Date:** 2026-02-27
+**Project**: badifrei.ch (`badi-predictor`)
+**Last Updated**: 2026-08-08
+**Status**: Active
 
----
+## Vision
 
-## 1. Overview & Goals
+Swiss public pools get crowded unpredictably. Live occupancy feeds exist, but
+swimmers still cannot answer: _“Is it worth going to Käferberg at 3pm on
+Saturday?”_ badifrei.ch collects that live data, forecasts occupancy with ML,
+and presents it on a fast public site — so people can choose a quieter bath or
+a better time.
 
-### Problem
+## Target Users
 
-Zürich's public pools (Hallenbäder, Freibäder, Strandbäder) get crowded unpredictably. Swimmers show up to find packed pools, wasting a trip. There's live occupancy data available, but no way to answer: *"Is it worth going to Käferberg at 3pm on Saturday?"*
+- **Local swimmers** — Check live fill and today’s hourly forecast before
+  leaving home; prefer a quieter pool or hour.
+- **Occasional visitors / tourists** — Discover which baths are open and how
+  busy they look without knowing the local Baditicker landscape.
+- **Agents / search** — Consume honest structured data and markdown surfaces
+  (`llms.txt`, `.md` pages) for answers that match what humans see.
 
-### Solution
+## Goals
 
-A two-phase system:
-1. **Collect** real-time occupancy data continuously and store it historically
-2. **Predict** future occupancy per pool based on time patterns, day of week, and seasonality
+1. Show trustworthy live occupancy for covered baths (CrowdMonitor-backed).
+2. Provide useful hourly occupancy forecasts for the rest of the day (and
+   nearby days where the product already surfaces them).
+3. Explain opening state honestly: Schedule, Closures, Conditional vs
+   Guaranteed hours — see [glossary.md](./glossary.md) and
+   [ADR-001](./adr/ADR-001-guaranteed-hours-in-structured-data.md).
+4. Keep collection and retraining reliable with minimal ops (Compose / Coolify).
 
-### Success Criteria
+## Non-Goals
 
-- A user can query: *"What will the occupancy % at Wärmebad Käferberg be at 15:00 next Saturday?"* and get a useful prediction
-- Predictions are reasonably accurate (target: MAE < 10% occupancy)
-- Collection runs reliably 24/7 with minimal maintenance
+- User accounts, authentication, or personalized sync beyond local favorites
+- Push notifications or mobile apps
+- Admin UI for editing hours or models in production
+- Anomaly detection product surface
+- Full multi-city product expansion as a growth program (catalog already
+  includes baths outside Zürich; Zürich remains the primary focus)
+- Monetization or revenue generation
 
----
+## Features
 
-## 2. Data Source
+### Live occupancy
 
-**WebSocket endpoint:** `wss://badi-public.crowdmonitor.ch:9591/api`
+- Dashboard grouped by city with current fill / capacity and freshness
+- Pool detail page with live status and capacity from CrowdMonitor max space
 
-**Protocol:**
-1. Connect via WS
-2. Send message: `"all"`
-3. Receive JSON array (push-based, real-time updates)
+### Forecasts
 
-**Payload schema per pool:**
-```json
-{
-  "uid": "string",         // Unique pool identifier
-  "name": "string",        // Human-readable name (e.g. "Wärmebad Käferberg")
-  "currentfill": 42,       // Current number of people
-  "maxspace": 100,         // Capacity
-  "freespace": 58          // Remaining capacity
-}
-```
+- Hourly occupancy predictions per pool (XGBoost)
+- Day-range predictions and history chart for context
+- Weekly insights where the UI already computes them from prediction windows
 
-**Coverage:** 22 pools across Zürich
+### Opening hours and status
 
-**Derived field:** `occupancy_pct = currentfill / maxspace * 100`
+- Published Schedule from pool metadata (git-reviewed)
+- Resolution of open / closed / conditional from schedule, Closures, and fresh
+  Baditicker Observations
+- Hours display on pool pages; Guaranteed hours only in Hours JSON-LD
 
----
+### Discovery and SEO / LLM surfaces
 
-## 3. Data Collection Service
+- SSR pool pages under `/bad/{uid}` with structured data
+- `/llms.txt`, homepage and pool markdown (`.md`), sitemap, robots
 
-### Architecture
+### Personalization (client-only)
 
-A single long-running Python process that:
-- Maintains a persistent WebSocket connection to the crowdmonitor API
-- Receives push updates (no polling needed — it's push-based)
-- Writes each update batch to the database with a timestamp
-- Reconnects automatically on disconnect
+- Favorites stored in browser `localStorage`
 
-### Storage Strategy
+## Success Metrics
 
-**Recommended DB: TimescaleDB** (PostgreSQL extension)
+- User can open a pool page and see live occupancy plus a useful day forecast
+- Forecast quality tracked via training reports (MAE vs naive baseline;
+  stratified holdout metrics)
+- Collector and API stay healthy under normal dashboard refresh traffic
+- Structured hours do not overstate Conditional / fair-weather windows
+  ([ADR-001](./adr/ADR-001-guaranteed-hours-in-structured-data.md))
 
-**Why not plain PostgreSQL?** Works fine, but time-series queries (e.g. "give me all readings for Käferberg on Saturdays between 14:00–16:00") get slow at scale without proper indexing. TimescaleDB adds hypertables and automatic partitioning on top of Postgres — zero new mental model, just `CREATE EXTENSION timescaledb`.
+## Constraints
 
-**Why not InfluxDB?** InfluxDB is great, but its query language (Flux) is unfamiliar and it's operationally heavier. TimescaleDB speaks SQL. KISS wins.
+- Public read-only service — no auth surface without explicit product approval
+- Python 3.12+, `uv`, Docker Compose; deploy via Coolify with
+  `scripts/migrate.py` ([COOLIFY.md](./COOLIFY.md))
+- Jinja2 + vanilla JS frontend — no SPA framework unless explicitly requested
+- Architecture authority: [SAD.md](./SAD.md); security baseline:
+  [SECURITY_REVIEW.md](./SECURITY_REVIEW.md)
 
-### Schema
+## Milestones (historical)
 
-```sql
-CREATE EXTENSION IF NOT EXISTS timescaledb;
-
-CREATE TABLE pool_occupancy (
-  time          TIMESTAMPTZ     NOT NULL,
-  pool_uid      TEXT            NOT NULL,
-  pool_name     TEXT            NOT NULL,
-  current_fill  INTEGER         NOT NULL,
-  max_space     INTEGER         NOT NULL,
-  free_space    INTEGER         NOT NULL,
-  occupancy_pct DOUBLE PRECISION GENERATED ALWAYS AS 
-                (current_fill::float / NULLIF(max_space, 0) * 100) STORED
-);
-
-SELECT create_hypertable('pool_occupancy', 'time');
-CREATE INDEX ON pool_occupancy (pool_uid, time DESC);
-```
-
-### Collection Service (Python)
-
-```
-collector/
-  main.py          # Entry point, event loop
-  ws_client.py     # WebSocket connection + reconnect logic
-  db.py            # Database writer (asyncpg or psycopg3)
-  config.py        # WS URL, DB URL from env vars
-  requirements.txt
-```
-
-**Key libraries:**
-- `websockets` — async WS client
-- `asyncpg` — async Postgres driver (fast)
-- `tenacity` — retry/reconnect logic
-
-**Reconnect strategy:** Exponential backoff (1s → 2s → 4s → max 60s).
-
-**Deployment:** Single Docker container. `restart: always`.
-
----
-
-## 4. ML Prediction Approach
-
-### Model Choice: Gradient Boosted Trees (XGBoost / LightGBM)
-
-**Why?**
-- Works well on tabular data with time features
-- No need for data normalization
-- Handles missing values gracefully
-- Fast to train, fast to inference
-- Interpretable (feature importance out of the box)
-- No GPU needed
-
-### Feature Engineering
-
-| Feature | Source | Notes |
-|---|---|---|
-| `hour_of_day` | timestamp | 0–23 |
-| `day_of_week` | timestamp | 0=Mon, 6=Sun |
-| `is_weekend` | timestamp | bool |
-| `month` | timestamp | 1–12 (seasonality) |
-| `is_holiday` | calendar | Swiss/Zürich public holidays |
-| `pool_uid` | data | encoded as integer (label encode) |
-| `pool_type` | static config | Hallenbad / Freibad / Strandbad |
-| `lag_1h` | historical | Occupancy 1 hour ago at same pool |
-| `lag_1w` | historical | Occupancy same time last week |
-| `rolling_mean_7d` | historical | 7-day rolling avg at same hour/dow |
-
-**Weather features (Phase 2, optional):** Temperature and sunshine hours from Open-Meteo (free, no API key).
-
-**Minimum data needed before training:** ~4 weeks for a usable model. ~3 months for good seasonal signal.
-
-### Training Pipeline
-
-```
-ml/
-  features.py      # Feature extraction from DB
-  train.py         # XGBoost training + model save
-  evaluate.py      # MAE, RMSE, per-pool breakdown
-  predict.py       # Load model, generate predictions
-  models/          # Saved model artifacts (.pkl or .ubj)
-```
-
-**Retraining schedule:** Weekly cron job.
-
-**Target variable:** `occupancy_pct` (0–100, regression)
-
----
-
-## 5. Prediction API
-
-### Simple FastAPI service
-
-**Endpoints:**
-
-```
-GET /pools                                        # List all pools
-GET /predict?pool_uid={uid}&datetime={ISO8601}    # Single prediction
-GET /predict/range?pool_uid={uid}&date={date}     # Full day (hourly)
-```
-
-**Response example:**
-```json
-{
-  "pool_uid": "SSD-5",
-  "pool_name": "Wärmebad Käferberg",
-  "predicted_at": "2026-03-07T15:00:00+01:00",
-  "predicted_occupancy_pct": 73.4,
-  "confidence": "medium",
-  "model_version": "2026-02-24"
-}
-```
-
----
-
-## 6. Tech Stack
-
-| Component | Choice | Rationale |
-|---|---|---|
-| **Language** | Python 3.12 | Best ML ecosystem, asyncio for WS collection |
-| **Database** | TimescaleDB (on Postgres) | SQL familiarity + time-series performance |
-| **WS client** | `websockets` + `asyncio` | Lightweight, async-native |
-| **DB driver** | `asyncpg` | Fastest async Postgres driver |
-| **ML model** | XGBoost | KISS, accurate, handles tabular data well |
-| **API framework** | FastAPI | Modern, fast, auto-docs |
-| **Containerization** | Docker Compose | Collector + API + DB in one compose file |
-| **Scheduling** | `cron` or `APScheduler` | Weekly model retrain |
-
----
-
-## 7. Milestones
-
-### Phase 1 — Data Collection (Week 1–2)
-- [ ] Set up TimescaleDB + schema
-- [ ] Build WebSocket collector with reconnect logic
-- [ ] Deploy via Docker Compose
-- [ ] Verify data flowing and persisting correctly
-- [ ] Add basic alerting if collector dies
-
-**Exit criteria:** 2+ weeks of clean, continuous data
-
-### Phase 2 — First Model (Week 4–6)
-- [ ] Feature engineering pipeline
-- [ ] Train initial XGBoost model
-- [ ] Evaluate per-pool MAE/RMSE
-- [ ] Build FastAPI prediction endpoint
-
-**Exit criteria:** Working `/predict` endpoint, MAE < 15%
-
-### Phase 3 — Polish (Week 6–8)
-- [ ] Add weather features (Open-Meteo)
-- [ ] Weekly automated retraining cron
-- [ ] Model versioning + rollback
-
-**Exit criteria:** MAE < 10%, system self-maintaining
-
----
-
-## 8. Out of Scope
-
-- User accounts / auth
-- Push notifications
-- Real-time dashboard
-- Mobile app
-- Multi-city support
-- Anomaly detection
-- Admin UI
-
----
-
-## 9. Risks & Mitigations
-
-| Risk | Likelihood | Mitigation |
-|---|---|---|
-| WS API goes down / changes | Medium | Reconnect logic + alert on extended outage |
-| Insufficient data | Low (time fixes it) | Start collecting immediately |
-| Pool closures / seasonal gaps | High (Freibäder close in winter) | Flag pool type; train per pool type |
-| API schema changes | Low | Schema validation on ingest; dead-letter log |
+| Phase | Intent                       | Status    |
+| ----- | ---------------------------- | --------- |
+| 1     | Collection + TimescaleDB     | Delivered |
+| 2     | First model + prediction API | Delivered |
+| 3     | Weather features + retrain   | Delivered |
+| —     | Public dashboard + SEO/LLM   | Delivered |

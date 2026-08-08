@@ -26,7 +26,6 @@ dev = [
   "pytest-asyncio>=0.23",
   "pytest-cov>=5.0",
   "ruff>=0.3",
-  "black>=24.0",
 ]
 
 [tool.pytest.ini_options]
@@ -43,6 +42,3 @@ line-length = 88
 # F4xx (unused imports/vars) and F8xx (redefinition) are pre-existing across the codebase.
 # E402 is handled with per-site noqa. Enforce style rules (E/W) + logical errors only.
 ignore = ["F401", "F811", "F841"]
-
-[tool.black]
-line-length = 88
