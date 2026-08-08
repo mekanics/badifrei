@@ -12,41 +12,31 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
 {% set _name = pool.name %}
 {% set _needs_type = _type and not _name.lower().startswith(_type.lower()) %}
 {% set _prefix = _type + ' ' if _needs_type else '' %}
-{% block description %}{{ _prefix }}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{% endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sieh vor dem Besuch, wie voll es ist →{% endblock %}
+{% block description %}{{ _prefix }}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{%
+endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sehen Sie vor dem Besuch, wie voll es ist →{% endblock %}
 {% block og_url_path %}/bad/{{ pool.uid }}{% endblock %}
-{% block og_description %}{{ _prefix }}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{% endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sieh vor dem Besuch, wie voll es ist →{% endblock %}
-{% block twitter_description %}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{% endif %}: Live-Auslastung & aktuelle Besucherzahlen | badifrei.ch{% endblock %}
+{% block og_description %}{{ _prefix }}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{%
+endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sehen Sie vor dem Besuch, wie voll es ist →{% endblock %}
+{% block twitter_description %}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{% endif
+%}: Live-Auslastung & aktuelle Besucherzahlen | badifrei.ch{% endblock %}
 {% block canonical_path %}/bad/{{ pool.uid }}{% endblock %}
 {% block structured_data %}
-{% set day_schema = {"Mon": "Monday", "Tue": "Tuesday", "Wed": "Wednesday", "Thu": "Thursday", "Fri": "Friday", "Sat":
-"Saturday", "Sun": "Sunday"} %}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SportsActivityLocation",
-  "name": "{{ pool.name }}",
-  "description": "{{ pool.type | title }} in {{ city_label }} – aktuelle Auslastung und Tagesprognose auf badifrei.ch.",
+  "name": {{ pool.name | tojson }},
+  "description": {{ schema_description | tojson }},
   "url": "https://badifrei.ch/bad/{{ pool.uid }}",
   "image": "https://badifrei.ch/static/og-preview.jpg",
   {% if pool.max_capacity > 0 %}"maximumAttendeeCapacity": {{ pool.max_capacity }},{% endif %}
   "address": {
     "@type": "PostalAddress",
-    "addressLocality": "{{ city_label }}",
+    "addressLocality": {{ city_label | tojson }},
     "addressCountry": "CH"
-  }{% if pool.opening_hours and pool.opening_hours.schedule %},
-  "openingHoursSpecification": [
-    {% set oh = pool.opening_hours.schedule %}
-    {% set days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] %}
-    {% set ns = namespace(first=true) %}
-    {% for day in days %}{% if day in oh %}{% if not ns.first %},{% endif %}{% set ns.first = false %}
-    {
-      "@type": "OpeningHoursSpecification",
-      "dayOfWeek": "https://schema.org/{{ day_schema[day] }}",
-      "opens": "{{ oh[day].open }}",
-      "closes": "{{ oh[day].close }}"
-    }{% endif %}{% endfor %}
-
-  ]{% endif %}
+  }{% if hours_jsonld %},
+  "openingHoursSpecification": {{ hours_jsonld | tojson }}
+  {% endif %}
 }
 </script>
 <script type="application/ld+json">
@@ -56,26 +46,26 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
   "mainEntity": [
     {
       "@type": "Question",
-      "name": "Wann ist {{ pool.name | replace('"', '') }} am wenigsten voll?",
+      "name": {{ ("Wann ist " ~ pool.name ~ " am wenigsten voll?") | tojson }},
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "{% if quietest_hour is not none %}Laut aktueller Prognose ist {{ pool.name | replace('"', '') }} heute um {{ '%02d' | format(quietest_hour) }}:00 Uhr am wenigsten besucht. Die Auslastungsprognose auf badifrei.ch wird täglich aktualisiert.{% else %}Aktuelle Prognosedaten sind momentan nicht verfügbar. Prüfe die Auslastungskurve auf dieser Seite für aktuelle Informationen.{% endif %}"
+        "text": {% if quietest_hour is not none %}{{ ("Laut aktueller Prognose ist " ~ pool.name ~ " heute um " ~ ("%02d" | format(quietest_hour)) ~ ":00 Uhr am wenigsten besucht. Die Auslastungsprognose auf badifrei.ch wird täglich aktualisiert.") | tojson }}{% else %}{{ "Aktuelle Prognosedaten sind momentan nicht verfügbar. Prüfen Sie die Auslastungskurve auf dieser Seite für aktuelle Informationen." | tojson }}{% endif %}
       }
     },
     {
       "@type": "Question",
-      "name": "Wie viele Personen passen in {{ pool.name | replace('"', '') }}?",
+      "name": {{ ("Wie viele Personen passen in " ~ pool.name ~ "?") | tojson }},
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "{% if pool.max_capacity > 0 %}{{ pool.name | replace('"', '') }} hat eine maximale Kapazität von {{ pool.max_capacity }} Personen.{% else %}Die genaue Kapazität von {{ pool.name | replace('"', '') }} ist nicht öffentlich bekannt.{% endif %}"
+        "text": {% if pool.max_capacity > 0 %}{{ (pool.name ~ " hat eine maximale Kapazität von " ~ (pool.max_capacity | string) ~ " Personen.") | tojson }}{% else %}{{ ("Die genaue Kapazität von " ~ pool.name ~ " ist nicht öffentlich bekannt.") | tojson }}{% endif %}
       }
     },
     {
       "@type": "Question",
-      "name": "Wann hat {{ pool.name | replace('"', '') }} geöffnet?",
+      "name": {{ ("Wann hat " ~ pool.name ~ " geöffnet?") | tojson }},
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "{% if opening_hours_summary %}{{ pool.name | replace('"', '') }}: {{ opening_hours_summary }}{% if pool.opening_hours and pool.opening_hours.seasonal_open and pool.opening_hours.seasonal_close %} Saison: {{ pool.opening_hours.seasonal_open | date_de }} bis {{ pool.opening_hours.seasonal_close | date_de }}.{% endif %}{% else %}Die aktuellen Öffnungszeiten finden Sie auf dieser Seite.{% endif %}"
+        "text": {{ (hours_faq or "Die aktuellen Öffnungszeiten finden Sie auf dieser Seite.") | tojson }}
       }
     }
   ]
@@ -131,14 +121,108 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
     <h1>{{ pool.name }}</h1>
     <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>
     <span class="detail-live-count" id="detail-live-count" data-uid="{{ pool.uid }}"
-      data-capacity="{{ pool.max_capacity }}" style="margin-left:auto"></span>
+      data-capacity="{{ pool.max_capacity }}" style="margin-left:auto" hidden></span>
   </div>
+
+  {% if active_closure %}
+  <div class="notice-closed" role="status">
+    {% if active_closure.end_label %}
+    Geschlossen bis {{ active_closure.end_label }}
+    ({{ active_closure.reason }})
+    {% else %}
+    {{ active_closure.reason }}
+    {% endif %}
+  </div>
+  {% endif %}
 
   <div class="pool-info-grid">
     <div class="pool-info-block">
       <h2 class="section-h2">Öffnungszeiten</h2>
+      {% if hours_view and hours_view.kind == 'seasonal_periods' and hours_view.current %}
+      <div class="hours-period-current">
+        <div class="hours-period-label">{% if hours_view.current_covers_today %}Aktueller Zeitraum{% else %}Nächster
+          Zeitraum{% endif %} · {{ hours_view.current.label }}</div>
+        {% if hours_view.current.is_uniform_daily %}
+        <div class="hours-period-times">
+          Bei jedem Wetter: {{ hours_view.current.day_groups[0].always }}
+          {% if hours_view.current.day_groups[0].fair %}
+          <div class="fair-weather">Nur bei schönem Wetter: {{ hours_view.current.day_groups[0].fair }}</div>
+          {% endif %}
+        </div>
+        {% else %}
+        <table class="hours-table hours-table-day-groups">
+          <tbody>
+            {% for g in hours_view.current.day_groups %}
+            <tr>
+              <td class="day-label">{{ g.days_label }}</td>
+              <td class="day-hours">
+                {{ g.always }}
+                {% if g.fair %}
+                <div class="fair-weather">Nur bei schönem Wetter: {{ g.fair }}</div>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+      </div>
+      {% if hours_view.all_periods | length > 1 %}
+      <details class="hours-all-periods">
+        <summary>Alle Zeiträume</summary>
+        {% for period in hours_view.all_periods %}
+        <div class="hours-period-block">
+          <div class="hours-period-label">{{ period.label }}</div>
+          {% if period.is_uniform_daily %}
+          <div class="hours-period-times">
+            Bei jedem Wetter: {{ period.day_groups[0].always }}
+            {% if period.day_groups[0].fair %}
+            <div class="fair-weather">Nur bei schönem Wetter: {{ period.day_groups[0].fair }}</div>
+            {% endif %}
+          </div>
+          {% else %}
+          <table class="hours-table hours-table-day-groups">
+            <tbody>
+              {% for g in period.day_groups %}
+              <tr>
+                <td class="day-label">{{ g.days_label }}</td>
+                <td class="day-hours">
+                  {{ g.always }}
+                  {% if g.fair %}
+                  <div class="fair-weather">Nur bei schönem Wetter: {{ g.fair }}</div>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </details>
+      {% endif %}
+      {% elif hours_view and hours_view.kind == 'weekday_table' %}
+      <table class="hours-table">
+        <tbody>
+          {% for d in hours_view.days %}
+          <tr>
+            <td class="day-label">{{ d.day_label_de }}</td>
+            {% if d.closed %}
+            <td class="day-hours closed-day">Geschlossen</td>
+            {% else %}
+            <td class="day-hours">
+              {{ d.always | join(' · ') }}
+              {% if d.fair %}
+              <div class="fair-weather">Nur bei schönem Wetter: {{ d.fair | join(' · ') }}</div>
+              {% endif %}
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% elif pool.opening_hours %}
       {% set oh = pool.opening_hours %}
-      {% if oh %}
       {% set days = [("Mon","Mo"),("Tue","Di"),("Wed","Mi"),("Thu","Do"),("Fri","Fr"),("Sat","Sa"),("Sun","So")] %}
       <table class="hours-table">
         <tbody>
@@ -156,10 +240,13 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
         </tbody>
       </table>
       {% if oh.seasonal_open and oh.seasonal_close %}
-      <p class="seasonal-note">🏊 Saison: {{ oh.seasonal_open | date_de }} – {{ oh.seasonal_close | date_de }}</p>
+      <p class="seasonal-note">Saison: {{ oh.seasonal_open | date_de }} – {{ oh.seasonal_close | date_de }}</p>
       {% endif %}
       {% else %}
       <p class="pool-info-muted">Öffnungszeiten nicht verfügbar.</p>
+      {% endif %}
+      {% if hours_confidence == 'unverified' and hours_scraped_at %}
+      <p class="seasonal-note">Angaben ohne Gewähr · Stand {{ hours_scraped_at }}</p>
       {% endif %}
     </div>
 
@@ -376,7 +463,8 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
 
 {# Server-side data for pool.js — passed via data-* attributes to avoid unsafe-inline scripts #}
 <div id="ssr-data" data-pool-uid="{{ pool.uid }}" data-city="{{ pool.city }}" data-today-date="{{ today_date }}"
-  data-prediction-status="{{ today_prediction_status }}" data-ssr-predictions="{{ today_predictions_json }}" hidden></div>
+  data-prediction-status="{{ today_prediction_status }}" data-ssr-predictions="{{ today_predictions_json }}" hidden>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"
   integrity="sha384-b0GXujLkk9eYYSmcSfoyZbfyElGAQnDyY0skCHSG6w3JgTMFnz11ggrTAr7seu9f" crossorigin="anonymous"></script>
 <script src="/static/pool.js?v={{ static_ver('pool.js') }}"></script>

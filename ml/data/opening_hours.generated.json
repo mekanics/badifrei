@@ -1,0 +1,2423 @@
+{
+  "scraped_at": "2026-08-04",
+  "source": {
+    "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder.html",
+    "layout": "revisionsarbeiten",
+    "confidence": "official_structured"
+  },
+  "pools": [
+    {
+      "uid": "SSD-1",
+      "confidence": "official_structured",
+      "scraped_at": "2026-08-04",
+      "periods": null,
+      "closures": [
+        {
+          "from": "2026-07-30T00:00:00+02:00",
+          "to": "2026-08-17T00:00:00+02:00",
+          "reason": "Revision",
+          "scope": "full",
+          "extracted_by": "deterministic",
+          "cited_sentence": "Altstetten: Donnerstag, 30. Juli, bis und mit Sonntag, 16. August"
+        }
+      ]
+    },
+    {
+      "uid": "SSD-2",
+      "confidence": "official_structured",
+      "scraped_at": "2026-08-04",
+      "periods": [
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Mon"
+          ],
+          "intervals": [
+            {
+              "open": "12:00",
+              "close": "19:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Tue"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "20:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Wed"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "19:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "16:30",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Thu"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "22:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Fri"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "19:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Sat"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "16:00",
+              "condition": "always"
+            },
+            {
+              "open": "09:00",
+              "close": "18:00",
+              "condition": "always"
+            }
+          ]
+        }
+      ],
+      "closures": [
+        {
+          "from": "2026-07-27T00:00:00+02:00",
+          "to": "2026-08-17T00:00:00+02:00",
+          "reason": "Revision",
+          "scope": "full",
+          "extracted_by": "deterministic",
+          "cited_sentence": "Bläsi: Montag, 27. Juli, bis und mit Sonntag, 16. August"
+        }
+      ],
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/blaesi.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "SSD-3",
+      "confidence": "official_structured",
+      "scraped_at": "2026-08-04",
+      "periods": [
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Mon"
+          ],
+          "intervals": [
+            {
+              "open": "12:00",
+              "close": "13:30",
+              "condition": "always"
+            },
+            {
+              "open": "16:00",
+              "close": "19:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Tue"
+          ],
+          "intervals": [
+            {
+              "open": "12:00",
+              "close": "13:30",
+              "condition": "always"
+            },
+            {
+              "open": "16:00",
+              "close": "19:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Wed"
+          ],
+          "intervals": [
+            {
+              "open": "12:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "16:00",
+              "condition": "always"
+            },
+            {
+              "open": "16:00",
+              "close": "19:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Thu"
+          ],
+          "intervals": [
+            {
+              "open": "12:30",
+              "close": "19:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "16:00",
+              "condition": "always"
+            }
+          ]
+        }
+      ],
+      "closures": [
+        {
+          "from": "2026-07-11T00:00:00+02:00",
+          "to": "2026-08-01T00:00:00+02:00",
+          "reason": "Revision",
+          "scope": "full",
+          "extracted_by": "deterministic",
+          "cited_sentence": "Bungertwies: Samstag, 11., bis und mit Freitag, 31. Juli"
+        }
+      ],
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/bungertwies.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "SSD-4",
+      "confidence": "official_structured",
+      "scraped_at": "2026-08-04",
+      "periods": [
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "06:00",
+              "close": "22:00",
+              "condition": "always"
+            }
+          ]
+        }
+      ],
+      "closures": [
+        {
+          "from": "2026-07-04T00:00:00+02:00",
+          "to": "2026-08-08T00:00:00+02:00",
+          "reason": "Revision",
+          "scope": "full",
+          "extracted_by": "deterministic",
+          "cited_sentence": "City: Samstag, 4. Juli, bis und mit Freitag, 7. August"
+        }
+      ],
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/city.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "SSD-5",
+      "confidence": "official_structured",
+      "scraped_at": "2026-08-04",
+      "periods": [
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Mon"
+          ],
+          "intervals": [
+            {
+              "open": "11:00",
+              "close": "15:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Tue"
+          ],
+          "intervals": [
+            {
+              "open": "06:30",
+              "close": "15:00",
+              "condition": "always"
+            },
+            {
+              "open": "15:00",
+              "close": "16:30",
+              "condition": "always"
+            },
+            {
+              "open": "18:00",
+              "close": "22:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Wed"
+          ],
+          "intervals": [
+            {
+              "open": "06:30",
+              "close": "15:00",
+              "condition": "always"
+            },
+            {
+              "open": "18:00",
+              "close": "19:30",
+              "condition": "always"
+            },
+            {
+              "open": "19:30",
+              "close": "22:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Thu"
+          ],
+          "intervals": [
+            {
+              "open": "06:30",
+              "close": "08:00",
+              "condition": "always"
+            },
+            {
+              "open": "11:00",
+              "close": "15:00",
+              "condition": "always"
+            },
+            {
+              "open": "15:00",
+              "close": "17:00",
+              "condition": "always"
+            },
+            {
+              "open": "17:00",
+              "close": "18:00",
+              "condition": "always"
+            },
+            {
+              "open": "18:00",
+              "close": "22:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Fri"
+          ],
+          "intervals": [
+            {
+              "open": "06:30",
+              "close": "08:00",
+              "condition": "always"
+            },
+            {
+              "open": "08:00",
+              "close": "11:00",
+              "condition": "always"
+            },
+            {
+              "open": "11:00",
+              "close": "22:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Sat"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "16:00",
+              "condition": "always"
+            },
+            {
+              "open": "09:00",
+              "close": "18:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "16:00",
+              "condition": "always"
+            },
+            {
+              "open": "09:00",
+              "close": "18:00",
+              "condition": "always"
+            }
+          ]
+        }
+      ],
+      "closures": [
+        {
+          "from": "2026-07-11T00:00:00+02:00",
+          "to": "2026-08-03T00:00:00+02:00",
+          "reason": "Revision",
+          "scope": "full",
+          "extracted_by": "deterministic",
+          "cited_sentence": "Käferberg: Samstag, 11. Juli, bis und mit Sonntag, 2. August"
+        }
+      ],
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/kaeferberg.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "SSD-6",
+      "confidence": "official_structured",
+      "scraped_at": "2026-08-04",
+      "periods": [
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Mon"
+          ],
+          "intervals": [
+            {
+              "open": "06:00",
+              "close": "08:00",
+              "condition": "always"
+            },
+            {
+              "open": "12:00",
+              "close": "21:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Tue"
+          ],
+          "intervals": [
+            {
+              "open": "06:00",
+              "close": "08:00",
+              "condition": "always"
+            },
+            {
+              "open": "12:00",
+              "close": "21:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Wed"
+          ],
+          "intervals": [
+            {
+              "open": "06:00",
+              "close": "21:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Thu"
+          ],
+          "intervals": [
+            {
+              "open": "06:00",
+              "close": "08:00",
+              "condition": "always"
+            },
+            {
+              "open": "12:00",
+              "close": "21:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Fri"
+          ],
+          "intervals": [
+            {
+              "open": "06:00",
+              "close": "08:00",
+              "condition": "always"
+            },
+            {
+              "open": "12:00",
+              "close": "21:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Sat"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "18:00",
+              "condition": "always"
+            },
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:30",
+              "close": "18:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "18:00",
+              "condition": "always"
+            }
+          ]
+        }
+      ],
+      "closures": [
+        {
+          "from": "2026-07-27T00:00:00+02:00",
+          "to": "2026-08-17T00:00:00+02:00",
+          "reason": "Revision",
+          "scope": "full",
+          "extracted_by": "deterministic",
+          "cited_sentence": "Leimbach: Montag, 27. Juli, bis und mit Sonntag, 16. August"
+        }
+      ],
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/leimbach.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "SSD-7",
+      "confidence": "official_structured",
+      "scraped_at": "2026-08-04",
+      "periods": [
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Mon"
+          ],
+          "intervals": [
+            {
+              "open": "06:00",
+              "close": "20:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Tue"
+          ],
+          "intervals": [
+            {
+              "open": "06:00",
+              "close": "20:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Wed"
+          ],
+          "intervals": [
+            {
+              "open": "06:00",
+              "close": "22:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "16:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Thu"
+          ],
+          "intervals": [
+            {
+              "open": "06:00",
+              "close": "20:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Fri"
+          ],
+          "intervals": [
+            {
+              "open": "06:00",
+              "close": "22:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Sat"
+          ],
+          "intervals": [
+            {
+              "open": "06:00",
+              "close": "22:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": null,
+          "to": null,
+          "days": [
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "06:00",
+              "close": "22:00",
+              "condition": "always"
+            }
+          ]
+        }
+      ],
+      "closures": [
+        {
+          "from": "2026-08-02T00:00:00+02:00",
+          "to": "2026-08-24T00:00:00+02:00",
+          "reason": "Revision",
+          "scope": "full",
+          "extracted_by": "deterministic",
+          "cited_sentence": "Oerlikon: Sonntag, 2., bis und mit Sonntag, 23. August"
+        }
+      ],
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/oerlikon.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "fb006",
+      "closures": [],
+      "periods": [
+        {
+          "from": "2026-05-09",
+          "to": "2026-05-29",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-30",
+          "to": "2026-08-16",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "21:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-08-17",
+          "to": "2026-09-06",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-09-07",
+          "to": "2026-09-20",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "19:00",
+              "condition": "fair_weather"
+            }
+          ]
+        }
+      ],
+      "scraped_at": "2026-08-04",
+      "confidence": "official_structured",
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/allenmoos.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "fb008",
+      "closures": [],
+      "periods": [
+        {
+          "from": "2026-05-09",
+          "to": "2026-05-29",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-30",
+          "to": "2026-08-16",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "21:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-08-17",
+          "to": "2026-09-06",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-09-07",
+          "to": "2026-09-27",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "19:00",
+              "condition": "fair_weather"
+            }
+          ]
+        }
+      ],
+      "scraped_at": "2026-08-04",
+      "confidence": "official_structured",
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/auhof.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "fb012",
+      "closures": [],
+      "periods": [
+        {
+          "from": "2026-05-09",
+          "to": "2026-05-29",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-30",
+          "to": "2026-08-16",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "21:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-08-17",
+          "to": "2026-09-06",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-09-07",
+          "to": "2026-09-20",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "19:00",
+              "condition": "fair_weather"
+            }
+          ]
+        }
+      ],
+      "scraped_at": "2026-08-04",
+      "confidence": "official_structured",
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/heuried.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "LETZI-1",
+      "closures": [],
+      "periods": [
+        {
+          "from": "2026-05-01",
+          "to": "2026-05-08",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "19:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-09",
+          "to": "2026-05-29",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "20:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-30",
+          "to": "2026-08-16",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "21:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-08-17",
+          "to": "2026-09-06",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "20:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-09-07",
+          "to": "2026-09-27",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "19:00",
+              "condition": "always"
+            }
+          ]
+        }
+      ],
+      "scraped_at": "2026-08-04",
+      "confidence": "official_structured",
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/letzigraben.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "SSD-11",
+      "closures": [],
+      "periods": [
+        {
+          "from": "2026-04-11",
+          "to": "2026-04-30",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "19:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-01",
+          "to": "2026-05-08",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "19:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-09",
+          "to": "2026-05-29",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "20:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-30",
+          "to": "2026-08-16",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "21:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-08-17",
+          "to": "2026-09-06",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "20:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-09-07",
+          "to": "2026-09-27",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "19:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-09-28",
+          "to": "2026-10-25",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "18:00",
+              "condition": "always"
+            }
+          ]
+        }
+      ],
+      "scraped_at": "2026-08-04",
+      "confidence": "official_structured",
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/seebach.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "fb018",
+      "closures": [],
+      "periods": [
+        {
+          "from": "2026-05-09",
+          "to": "2026-05-29",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-30",
+          "to": "2026-08-16",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "21:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-08-17",
+          "to": "2026-09-06",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-09-07",
+          "to": "2026-09-20",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "19:00",
+              "condition": "fair_weather"
+            }
+          ]
+        }
+      ],
+      "scraped_at": "2026-08-04",
+      "confidence": "official_structured",
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/zwischen-den-hoelzern.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "SSD-10",
+      "closures": [],
+      "periods": [
+        {
+          "from": "2026-04-11",
+          "to": "2026-04-30",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "19:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-01",
+          "to": "2026-05-08",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "19:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-09",
+          "to": "2026-05-29",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "20:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-30",
+          "to": "2026-08-16",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "21:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-08-17",
+          "to": "2026-09-06",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "20:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-09-07",
+          "to": "2026-09-27",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "19:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-09-28",
+          "to": "2026-10-25",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "18:00",
+              "condition": "always"
+            }
+          ]
+        }
+      ],
+      "scraped_at": "2026-08-04",
+      "confidence": "official_structured",
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/utoquai.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "seb6946",
+      "closures": [],
+      "periods": [
+        {
+          "from": "2026-05-09",
+          "to": "2026-05-29",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-30",
+          "to": "2026-08-16",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "21:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-08-17",
+          "to": "2026-09-06",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-09-07",
+          "to": "2026-09-27",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "19:00",
+              "condition": "fair_weather"
+            }
+          ]
+        }
+      ],
+      "scraped_at": "2026-08-04",
+      "confidence": "official_structured",
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/mythenquai.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "seb6947",
+      "closures": [],
+      "periods": [
+        {
+          "from": "2026-05-09",
+          "to": "2026-05-29",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-30",
+          "to": "2026-08-16",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "21:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-08-17",
+          "to": "2026-09-06",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-09-07",
+          "to": "2026-09-27",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "19:00",
+              "condition": "fair_weather"
+            }
+          ]
+        }
+      ],
+      "scraped_at": "2026-08-04",
+      "confidence": "official_structured",
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/tiefenbrunnen.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "seb6948",
+      "closures": [],
+      "periods": [
+        {
+          "from": "2026-05-09",
+          "to": "2026-05-29",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-30",
+          "to": "2026-08-16",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "21:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-08-17",
+          "to": "2026-09-06",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-09-07",
+          "to": "2026-09-20",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "19:00",
+              "condition": "fair_weather"
+            }
+          ]
+        }
+      ],
+      "scraped_at": "2026-08-04",
+      "confidence": "official_structured",
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/wollishofen.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "flb6939",
+      "closures": [],
+      "periods": [
+        {
+          "from": "2026-05-09",
+          "to": "2026-05-29",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-30",
+          "to": "2026-08-16",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "21:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-08-17",
+          "to": "2026-09-06",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-09-07",
+          "to": "2026-09-20",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "19:00",
+              "condition": "fair_weather"
+            }
+          ]
+        }
+      ],
+      "scraped_at": "2026-08-04",
+      "confidence": "official_structured",
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/oberer-letten.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "flb6940",
+      "closures": [],
+      "periods": [
+        {
+          "from": "2026-05-09",
+          "to": "2026-05-29",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-30",
+          "to": "2026-08-16",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "21:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-08-17",
+          "to": "2026-09-06",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-09-07",
+          "to": "2026-09-20",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "19:00",
+              "condition": "fair_weather"
+            }
+          ]
+        }
+      ],
+      "scraped_at": "2026-08-04",
+      "confidence": "official_structured",
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/unterer-letten.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "flb6941",
+      "closures": [],
+      "periods": [
+        {
+          "from": "2026-05-09",
+          "to": "2026-09-06",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "19:30",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-09-07",
+          "to": "2026-09-20",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "07:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "19:00",
+              "condition": "fair_weather"
+            }
+          ]
+        }
+      ],
+      "scraped_at": "2026-08-04",
+      "confidence": "official_structured",
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/stadthausquai.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    },
+    {
+      "uid": "flb8803",
+      "closures": [],
+      "periods": [
+        {
+          "from": "2026-05-09",
+          "to": "2026-05-29",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-30",
+          "to": "2026-08-16",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "21:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-08-17",
+          "to": "2026-09-06",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "20:00",
+              "condition": "fair_weather"
+            }
+          ]
+        },
+        {
+          "from": "2026-09-07",
+          "to": "2026-09-20",
+          "days": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "14:00",
+              "condition": "always"
+            },
+            {
+              "open": "14:00",
+              "close": "19:00",
+              "condition": "fair_weather"
+            }
+          ]
+        }
+      ],
+      "scraped_at": "2026-08-04",
+      "confidence": "official_structured",
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/unterer-letten.html",
+        "layout": "stzh_datatable",
+        "scraped_at": "2026-08-04",
+        "confidence": "official_structured"
+      }
+    }
+  ]
+}

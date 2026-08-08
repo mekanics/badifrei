@@ -1,0 +1,120 @@
+{
+  "uid": "SSD-4",
+  "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/city.html",
+  "scraped_at": "2026-08-04",
+  "tables": [
+    {
+      "columns": [
+        "Wochentag",
+        "Zeit"
+      ],
+      "rows": [
+        [
+          "Montag–Sonntag",
+          "6–22 Uhr"
+        ]
+      ],
+      "raw_rows": [
+        [
+          {
+            "value": "Montag–Sonntag"
+          },
+          {
+            "value": "6–22 Uhr"
+          }
+        ]
+      ]
+    },
+    {
+      "columns": [
+        "Wochentag",
+        "Zeit",
+        "Anspruchsgruppe"
+      ],
+      "rows": [
+        [
+          "Montag",
+          "8–22 Uhr",
+          "gemischt"
+        ],
+        [
+          "Dienstag",
+          "8–14 Uhr | 14–22 Uhr",
+          "Frauen | gemischt"
+        ],
+        [
+          "Mittwoch",
+          "8–22 Uhr",
+          "gemischt"
+        ],
+        [
+          "Donnerstag",
+          "8–18 Uhr | 18–22 Uhr",
+          "gemischt | Frauen"
+        ],
+        [
+          "Freitag–Sonntag",
+          "8–22 Uhr",
+          "gemischt"
+        ]
+      ],
+      "raw_rows": [
+        [
+          {
+            "value": "Montag"
+          },
+          {
+            "value": "8–22 Uhr"
+          },
+          {
+            "value": "gemischt"
+          }
+        ],
+        [
+          {
+            "value": "Dienstag"
+          },
+          {
+            "value": "8–14 Uhr<br>14–22 Uhr"
+          },
+          {
+            "value": "Frauen<br>gemischt"
+          }
+        ],
+        [
+          {
+            "value": "Mittwoch"
+          },
+          {
+            "value": "8–22 Uhr"
+          },
+          {
+            "value": "gemischt"
+          }
+        ],
+        [
+          {
+            "value": "Donnerstag"
+          },
+          {
+            "value": "8–18 Uhr<br>18–22 Uhr"
+          },
+          {
+            "value": "gemischt<br>Frauen"
+          }
+        ],
+        [
+          {
+            "value": "Freitag–Sonntag"
+          },
+          {
+            "value": "8–22 Uhr"
+          },
+          {
+            "value": "gemischt"
+          }
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "uid": "SSD-5",
+  "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/kaeferberg.html",
+  "scraped_at": "2026-08-04",
+  "tables": [
+    {
+      "columns": [
+        "Wochentag",
+        "Zeit"
+      ],
+      "rows": [
+        [
+          "Montag",
+          "11–15 Uhr"
+        ],
+        [
+          "Dienstag",
+          "6.30–15 Uhr | 15–16.30 Uhr: Nur für Personen, die schwimmen können1 | 18–22 Uhr: Nur für Erwachsene"
+        ],
+        [
+          "Mittwoch",
+          "6.30–15 Uhr | 18–19.30 Uhr: Nur für Erwachsene | 19.30–22 Uhr: Nur für Erwachsene, die schwimmen können2"
+        ],
+        [
+          "Donnerstag",
+          "6.30–8 Uhr | 11–15 Uhr | 15–17 Uhr: Nur für Personen, die schwimmen können1 | 17–18 Uhr: Nur für Personen, die schwimmen können2 | 18–22 Uhr: Nur für Erwachsene, die schwimmen können3"
+        ],
+        [
+          "Freitag",
+          "6.30–8 Uhr | 8–11 Uhr: Nur für Personen, die schwimmen können1 | 11–22 Uhr"
+        ],
+        [
+          "Samstag",
+          "9–16 Uhr (Mai–September) | 9–18 Uhr (Oktober–April)"
+        ],
+        [
+          "Sonntag | (und Feiertage)",
+          "9–16 Uhr (Mai–September) | 9–18 Uhr (Oktober–April)"
+        ]
+      ],
+      "raw_rows": [
+        [
+          {
+            "value": "Montag"
+          },
+          {
+            "value": "<p>11–15 Uhr</p>",
+            "style": {
+              "width": "200"
+            },
+            "valign": "auto"
+          }
+        ],
+        [
+          {
+            "value": "Dienstag"
+          },
+          {
+            "value": "6.30–15 Uhr<br>15–16.30 Uhr: Nur für Personen, die schwimmen können<sup>1</sup><br>18–22 Uhr: Nur für Erwachsene"
+          }
+        ],
+        [
+          {
+            "value": "Mittwoch"
+          },
+          {
+            "value": "6.30–15 Uhr<br>18–19.30 Uhr: Nur für Erwachsene<br>19.30–22 Uhr: Nur für Erwachsene, die schwimmen können<sup>2</sup>"
+          }
+        ],
+        [
+          {
+            "value": "Donnerstag"
+          },
+          {
+            "value": "6.30–8 Uhr<br>11–15 Uhr<br>15–17 Uhr: Nur für Personen, die schwimmen können<sup>1</sup><br>17–18 Uhr: Nur für Personen, die schwimmen können<sup>2<br></sup>18–22 Uhr: Nur für Erwachsene, die schwimmen können<sup>3</sup>"
+          }
+        ],
+        [
+          {
+            "value": "Freitag"
+          },
+          {
+            "value": "6.30–8 Uhr<br>8–11 Uhr: Nur für Personen, die schwimmen können<sup>1</sup><br>11–22 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Samstag"
+          },
+          {
+            "value": "9–16 Uhr (Mai–September)<br>9–18 Uhr (Oktober–April)"
+          }
+        ],
+        [
+          {
+            "value": "Sonntag<br>(und Feiertage)"
+          },
+          {
+            "value": "9–16 Uhr (Mai–September)<br>9–18 Uhr (Oktober–April)"
+          }
+        ]
+      ]
+    }
+  ]
+}

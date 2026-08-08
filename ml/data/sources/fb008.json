@@ -1,0 +1,82 @@
+{
+  "uid": "fb008",
+  "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/auhof.html",
+  "scraped_at": "2026-08-04",
+  "tables": [
+    {
+      "columns": [
+        "Zeitraum",
+        "Öffnungszeiten bei jedem Wetter",
+        "Öffnungszeiten nur bei schönem Wetter"
+      ],
+      "rows": [
+        [
+          "9.–29. Mai",
+          "9–14 Uhr",
+          "14–20 Uhr"
+        ],
+        [
+          "30. Mai–16. August",
+          "9–14 Uhr",
+          "14–21 Uhr1"
+        ],
+        [
+          "17. August–6. September",
+          "9–14 Uhr",
+          "14–20 Uhr1"
+        ],
+        [
+          "7.–27. September",
+          "9–14 Uhr",
+          "14–19 Uhr1"
+        ]
+      ],
+      "raw_rows": [
+        [
+          {
+            "value": "9.–29. Mai"
+          },
+          {
+            "value": "9–14 Uhr"
+          },
+          {
+            "value": "14–20 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "30. Mai–16. August"
+          },
+          {
+            "value": "9–14 Uhr"
+          },
+          {
+            "value": "14–21 Uhr<sup>1</sup>"
+          }
+        ],
+        [
+          {
+            "value": "17. August–6. September"
+          },
+          {
+            "value": "9–14 Uhr"
+          },
+          {
+            "value": "14–20 Uhr<sup>1</sup>"
+          }
+        ],
+        [
+          {
+            "value": "7.–27. September"
+          },
+          {
+            "value": "9–14 Uhr"
+          },
+          {
+            "value": "14–19 Uhr<sup>1</sup>"
+          }
+        ]
+      ]
+    }
+  ]
+}

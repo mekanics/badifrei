@@ -1,0 +1,89 @@
+{
+  "uid": "SSD-2",
+  "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/blaesi.html",
+  "scraped_at": "2026-08-04",
+  "tables": [
+    {
+      "columns": [
+        "Wochentag",
+        "Zeit"
+      ],
+      "rows": [
+        [
+          "Montag",
+          "12–19 Uhr"
+        ],
+        [
+          "Dienstag",
+          "9–20 Uhr"
+        ],
+        [
+          "Mittwoch",
+          "9–19 Uhr | 14–16.30 Uhr Kinderspielnachmittag"
+        ],
+        [
+          "Donnerstag",
+          "9–22 Uhr"
+        ],
+        [
+          "Freitag",
+          "9–19 Uhr"
+        ],
+        [
+          "Samstag, Sonntag | (und Feiertage)",
+          "9–16 Uhr Mai–September | 9–18 Uhr Oktober–April"
+        ]
+      ],
+      "raw_rows": [
+        [
+          {
+            "value": "Montag"
+          },
+          {
+            "value": "12–19 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Dienstag"
+          },
+          {
+            "value": "9–20 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Mittwoch"
+          },
+          {
+            "value": "9–19 Uhr<br>14–16.30 Uhr Kinderspielnachmittag"
+          }
+        ],
+        [
+          {
+            "value": "Donnerstag"
+          },
+          {
+            "value": "9–22 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Freitag"
+          },
+          {
+            "value": "9–19 Uhr"
+          }
+        ],
+        [
+          {
+            "value": "Samstag, Sonntag<br>(und Feiertage)"
+          },
+          {
+            "value": "9–16 Uhr Mai–September<br>9–18 Uhr Oktober–April"
+          }
+        ]
+      ]
+    }
+  ]
+}

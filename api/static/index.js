@@ -293,6 +293,12 @@ async function fetchOccupancy() {
 				}
 				bar.style.width = Math.min(pct, 100) + '%'
 				bar.className = 'occupancy-bar ' + (pct <= 50 ? 'green' : pct <= 80 ? 'yellow' : 'red')
+			} else if (item && item.is_open === false) {
+				// Closed with no fill (e.g. Revision) — status badge carries the message
+				label.textContent = '—'
+				if (guestCount) guestCount.textContent = ''
+				bar.style.width = '0%'
+				bar.className = 'occupancy-bar grey'
 			} else {
 				label.textContent = 'Keine Daten'
 				if (guestCount) guestCount.textContent = ''
@@ -301,17 +307,15 @@ async function fetchOccupancy() {
 			}
 
 			if (badge && item) {
-				if (item.is_open) {
-					badge.innerHTML = '<span class="status-dot open"></span>'
-				} else {
-					let hint = ''
-					if (item.opens_seasonal) {
-						hint = ` · ${item.opens_seasonal}`
-					} else if (item.next_open) {
-						hint = ` · Öffnet ${item.next_open}`
-					}
-					badge.innerHTML = `<span class="status-dot closed"></span><span class="status-text">Geschlossen${hint}</span>`
-				}
+				badge.innerHTML = renderStatusBadge(item)
+			}
+
+			// Mute occupancy when closed — status matters more than a stale %
+			if (item && !item.is_open) {
+				label.classList.add('occupancy-muted')
+				bar.classList.add('grey')
+			} else {
+				label.classList.remove('occupancy-muted')
 			}
 
 			// Set data-open for filter logic
@@ -322,7 +326,50 @@ async function fetchOccupancy() {
 		applyFilters()
 	} catch (e) {
 		console.warn('Auslastung konnte nicht geladen werden', e)
+		document.querySelectorAll('.pool-card .status-badge').forEach(badge => {
+			badge.innerHTML =
+				'<span class="status-dot closed"></span>' +
+				'<span class="status-text">Live-Daten nicht verfügbar</span>'
+		})
 	}
+}
+
+function escapeHtml(value) {
+	return String(value)
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;')
+}
+
+function renderStatusBadge(item) {
+	const dotClass = item.is_open ? 'status-dot open' : 'status-dot closed'
+
+	if (item.is_open) {
+		return `<span class="${dotClass}" aria-hidden="true"></span>` +
+			`<span class="status-text">Offen</span>`
+	}
+
+	let text = 'Geschlossen'
+	if (item.state === 'observed_closed') {
+		text = 'Aktuell geschlossen'
+	} else if (item.state === 'closed_exception' && item.reason) {
+		text = `Geschlossen · ${escapeHtml(item.reason)}`
+	} else if (item.opens_seasonal) {
+		text = `Geschlossen · ${escapeHtml(item.opens_seasonal)}`
+	} else if (item.next_open) {
+		// "09:00" or "So. 09:00" → always include "um"
+		const t = escapeHtml(item.next_open)
+		text = t.includes(' ')
+			? `Geschlossen · Öffnet ${t.replace(' ', ' um ')}`
+			: `Geschlossen · Öffnet um ${t}`
+	} else if (item.reason) {
+		text = `Geschlossen · ${escapeHtml(item.reason)}`
+	}
+
+	return `<span class="${dotClass}" aria-hidden="true"></span>` +
+		`<span class="status-text">${text}</span>`
 }
 
 fetchOccupancy()
