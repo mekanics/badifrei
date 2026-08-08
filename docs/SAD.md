@@ -117,15 +117,18 @@ lifecycle isolation, not independent deployable products.
    rows (plus periodic force-write). Baditicker XML is polled into
    `pool_status`.
 2. **Weather** — Open-Meteo forecasts are cached in `hourly_weather` for
-   training and inference features.
+   training/inference features and city air temp / condition on pool detail
+   pages and `/api/current`.
 3. **Train** — Retrain job loads lookback window, builds features, trains
    XGBoost on clipped `occupancy_pct`, writes artifact + report.
 4. **Serve** — API merges latest occupancy, Schedule Resolution (observation /
-   closure / schedule), and predictions for HTML and JSON. Markdown and
-   `llms.txt` surfaces summarize the same catalog for agents.
+   closure / schedule), gated Baditicker water temp, city weather temps, and
+   predictions for HTML and JSON. Markdown and `llms.txt` surfaces summarize
+   the same catalog for agents.
 
-Domain terms (Schedule, Guaranteed hours, Resolution, Observation) are defined
-in [glossary.md](./glossary.md).
+Domain terms (Schedule, Guaranteed hours, Resolution, Observation,
+Wassertemperatur, water-temp freshness gates) are defined in
+[glossary.md](./glossary.md).
 
 ## External Integrations
 
@@ -133,7 +136,7 @@ in [glossary.md](./glossary.md).
 | ------------ | ----------------------------------- | -------------------- |
 | CrowdMonitor | Live occupancy WebSocket            | Public WS            |
 | Baditicker   | Stadt Zürich open/closed XML        | Public HTTP          |
-| Open-Meteo   | Hourly weather features             | None (no API key)    |
+| Open-Meteo   | Hourly weather features + UI air temp | None (no API key)  |
 | Umami        | Optional privacy-friendly analytics | Script URL + site ID |
 
 ## Security Model

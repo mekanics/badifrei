@@ -61,7 +61,8 @@ Default to surfacing uncertainty, not hiding it.
 
 ## Repository Map
 
-- `api/`: FastAPI app, Jinja2 templates, static CSS/JS, prediction endpoints.
+- `api/`: FastAPI app, Jinja2 templates, static CSS/JS, prediction endpoints,
+  detail-page weather temps (`water_temperature.py`, `weather_display.py`).
 - `collector/`: WebSocket ingestion service and database writer.
 - `ml/`: feature engineering, training, inference, weather integration, pool metadata.
 - `scripts/`: migrations, training, SEO/analytics verification, walk-forward tooling.
@@ -70,7 +71,7 @@ Default to surfacing uncertainty, not hiding it.
 - `tests/integration/`: integration tests that may require TimescaleDB or Compose.
 - `docs/PRD.md`: product scope (authoritative).
 - `docs/SAD.md`: system architecture (authoritative).
-- `docs/glossary.md`: ubiquitous language for Schedule / hours domain.
+- `docs/glossary.md`: ubiquitous language (Schedule / hours, water-temp freshness).
 - `docs/adr/`: architectural decision records.
 - `docs/COOLIFY.md`: deployment and migration behavior.
 - `docs/SECURITY_REVIEW.md`: known security findings and remediation context.

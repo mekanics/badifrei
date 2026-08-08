@@ -155,8 +155,10 @@ Siehe `.env.example` für alle verfügbaren Variablen.
 badifrei/
 ├── api/                  # FastAPI-App + Templates
 │   ├── main.py
+│   ├── water_temperature.py  # Baditicker water-temp freshness gates
+│   ├── weather_display.py    # Detail-page water/air temps + WMO labels
 │   ├── templates/        # Jinja2 HTML
-│   └── static/           # CSS
+│   └── static/           # CSS / JS
 ├── collector/            # WebSocket-Collector
 │   ├── collector.py
 │   └── config.py
