@@ -72,7 +72,7 @@ class TestDiscoverability:
         assert "/llms.txt" in response.text
 
     async def test_llms_txt_points_at_md(self, client):
-        from api.main import get_pools
+        from api.catalog import get_pools
 
         response = await client.get("/llms.txt")
         assert response.status_code == 200

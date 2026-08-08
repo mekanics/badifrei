@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
-from api.main import _detail_closed_notice
+from api.pool_page import _detail_closed_notice
 from ml.opening_hours import (
     Closure,
     Interval,

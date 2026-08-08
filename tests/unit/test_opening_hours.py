@@ -154,10 +154,10 @@ def _zurich(year: int, month: int, day: int, hour: int, minute: int) -> datetime
 
 
 class TestComputePoolIsOpen:
-    """Unit tests for api.main._compute_pool_is_open()."""
+    """Unit tests for api.snapshots._compute_pool_is_open()."""
 
     def _call(self, pool: dict, now: datetime) -> dict:
-        from api.main import _compute_pool_is_open
+        from api.snapshots import _compute_pool_is_open
 
         return _compute_pool_is_open(pool, now)
 
@@ -247,7 +247,7 @@ class TestComputePoolIsOpen:
 
     def test_fb006_afternoon_opens_with_fair_weather_hint(self):
         """P1: hourly_weather must reach resolve() for Sommerbad afternoons."""
-        from api.main import _compute_pool_is_open
+        from api.snapshots import _compute_pool_is_open
         from ml.opening_hours import WeatherHint
 
         pool = {"uid": "fb006", "city": "zurich"}
@@ -258,7 +258,7 @@ class TestComputePoolIsOpen:
         assert result["is_open"] is True
 
     def test_fb006_afternoon_closed_without_weather(self):
-        from api.main import _compute_pool_is_open
+        from api.snapshots import _compute_pool_is_open
 
         pool = {"uid": "fb006", "city": "zurich"}
         result = _compute_pool_is_open(pool, _zurich(2026, 8, 4, 15, 0))
@@ -286,7 +286,7 @@ class TestFetchCityWeatherHints:
     async def test_empty_cache_fetches_and_opens_fb006_afternoon(self):
         from unittest.mock import AsyncMock, patch
 
-        from api.main import _compute_pool_is_open, _fetch_city_weather_hints
+        from api.snapshots import _compute_pool_is_open, _fetch_city_weather_hints
 
         db_pool = AsyncMock()
         db_pool.fetch = AsyncMock(return_value=[])
@@ -311,7 +311,7 @@ class TestFetchCityWeatherHints:
     async def test_empty_cache_storm_keeps_fb006_closed(self):
         from unittest.mock import AsyncMock, patch
 
-        from api.main import _compute_pool_is_open, _fetch_city_weather_hints
+        from api.snapshots import _compute_pool_is_open, _fetch_city_weather_hints
 
         db_pool = AsyncMock()
         db_pool.fetch = AsyncMock(return_value=[])
@@ -334,7 +334,7 @@ class TestFetchCityWeatherHints:
     async def test_db_hit_skips_fetch(self):
         from unittest.mock import AsyncMock, patch
 
-        from api.main import _fetch_city_weather_hints
+        from api.snapshots import _fetch_city_weather_hints
 
         db_pool = AsyncMock()
         db_pool.fetch = AsyncMock(
@@ -364,7 +364,7 @@ class TestClassifyPredictionDay:
     """Unit tests for prediction status metadata."""
 
     def _call(self, pool: dict, day, model_available: bool) -> dict:
-        from api.main import _classify_prediction_day
+        from api.prediction_days import _classify_prediction_day
 
         return _classify_prediction_day(pool, day, model_available)
 
