@@ -16,7 +16,6 @@ class PoolInfo(BaseModel):
     type: str
     seasonal: bool
     city: str
-    max_capacity: int
 
 
 class PredictionResponse(BaseModel):

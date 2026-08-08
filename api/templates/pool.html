@@ -29,7 +29,7 @@ endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sehen Sie vor dem Besuch, w
   "description": {{ schema_description | tojson }},
   "url": "https://badifrei.ch/bad/{{ pool.uid }}",
   "image": "https://badifrei.ch/static/og-preview.jpg",
-  {% if pool.max_capacity > 0 %}"maximumAttendeeCapacity": {{ pool.max_capacity }},{% endif %}
+  {% if live_max_space %}"maximumAttendeeCapacity": {{ live_max_space }},{% endif %}
   "address": {
     "@type": "PostalAddress",
     "addressLocality": {{ city_label | tojson }},
@@ -51,15 +51,15 @@ endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sehen Sie vor dem Besuch, w
         "@type": "Answer",
         "text": {% if quietest_hour is not none %}{{ ("Laut aktueller Prognose ist " ~ pool.name ~ " heute um " ~ ("%02d" | format(quietest_hour)) ~ ":00 Uhr am wenigsten besucht. Die Auslastungsprognose auf badifrei.ch wird täglich aktualisiert.") | tojson }}{% else %}{{ "Aktuelle Prognosedaten sind momentan nicht verfügbar. Prüfen Sie die Auslastungskurve auf dieser Seite für aktuelle Informationen." | tojson }}{% endif %}
       }
-    },
+    }{% if live_max_space %},
     {
       "@type": "Question",
       "name": {{ ("Wie viele Personen passen in " ~ pool.name ~ "?") | tojson }},
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": {% if pool.max_capacity > 0 %}{{ (pool.name ~ " hat eine maximale Kapazität von " ~ (pool.max_capacity | string) ~ " Personen.") | tojson }}{% else %}{{ ("Die genaue Kapazität von " ~ pool.name ~ " ist nicht öffentlich bekannt.") | tojson }}{% endif %}
+        "text": {{ (pool.name ~ " hat eine maximale Kapazität von " ~ (live_max_space | string) ~ " Personen.") | tojson }}
       }
-    },
+    }{% endif %},
     {
       "@type": "Question",
       "name": {{ ("Wann hat " ~ pool.name ~ " geöffnet?") | tojson }},
@@ -120,8 +120,8 @@ endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sehen Sie vor dem Besuch, w
   <div class="pool-detail-header">
     <h1>{{ pool.name }}</h1>
     <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>
-    <span class="detail-live-count" id="detail-live-count" data-uid="{{ pool.uid }}"
-      data-capacity="{{ pool.max_capacity }}" style="margin-left:auto" hidden></span>
+    <span class="detail-live-count" id="detail-live-count" data-uid="{{ pool.uid }}" style="margin-left:auto"
+      hidden></span>
   </div>
 
   {% if active_closure %}
