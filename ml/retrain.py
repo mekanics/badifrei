@@ -49,7 +49,13 @@ async def _fetch_weather_for_df(df: pd.DataFrame) -> "pd.DataFrame | None":
             uid: meta.get("city", "zurich") for uid, meta in metadata.items()
         }
 
-        dates_series = pd.to_datetime(df["time"]).dt.date
+        # hourly_weather is UTC-keyed — derive fetch dates in UTC so the join
+        # in add_weather_features (Zurich → UTC) can find the matching rows.
+        times = pd.to_datetime(df["time"])
+        if getattr(times.dt, "tz", None) is not None:
+            dates_series = times.dt.tz_convert("UTC").dt.date
+        else:
+            dates_series = times.dt.date
         temp = pd.DataFrame(
             {"pool_uid": df["pool_uid"].values, "date": dates_series.values}
         )

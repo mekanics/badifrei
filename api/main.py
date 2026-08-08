@@ -517,6 +517,7 @@ async def pool_detail(request: Request, pool_uid: str):
             opening_hours_jsonld,
             opening_hours_summary_from_schedule,
             resolve,
+            use_observed_override,
         )
 
         schedule = _schedule_for_pool(pool)
@@ -538,26 +539,20 @@ async def pool_detail(request: Request, pool_uid: str):
                     f"{schedule.scraped_at.year}"
                 )
             weather_hint = None
+            observation = None
             if db_pool is not None:
                 city = pool.get("city", "zurich")
                 weather_by_city = await _fetch_city_weather_hints(
                     db_pool, now_zurich, cities={city}
                 )
                 weather_hint = weather_by_city.get(city)
-            resolution = resolve(schedule, now_zurich, weather=weather_hint)
-            if resolution.state.value == "closed_exception":
-                # Find the active closure for the end label
-                for closure in schedule.closures:
-                    if closure.scope == "full" and closure.active_at(now_zurich):
-                        # end is exclusive — show the inclusive last closed day
-                        inclusive = (closure.end - timedelta(minutes=1)).date()
-                        active_closure = {
-                            "reason": closure.reason,
-                            "end_label": (
-                                f"{inclusive.day}. " f"{DE_MONTHS[inclusive.month - 1]}"
-                            ),
-                        }
-                        break
+                observation = await _fetch_latest_observation(db_pool, pool_uid)
+
+            obs = observation if use_observed_override() else None
+            resolution = resolve(
+                schedule, now_zurich, observation=obs, weather=weather_hint
+            )
+            active_closure = _detail_closed_notice(schedule, resolution, now_zurich)
     except Exception as exc:  # noqa: BLE001
         logger.warning("hours/closure block failed for %s: %s", pool_uid, exc)
 
@@ -957,6 +952,58 @@ def _weather_hint_from_values(temp, precip, code):
         precipitation_mm=float(precip) if precip is not None else None,
         weathercode=int(code) if code is not None else None,
     )
+
+
+def _detail_closed_notice(schedule, resolution, now_zurich: datetime) -> dict | None:
+    """Banner payload for Revision / live Baditicker closes on the detail page."""
+    from ml.opening_hours import DE_MONTHS, OpenState
+
+    if resolution.is_open:
+        return None
+    if resolution.state == OpenState.CLOSED_EXCEPTION:
+        for closure in schedule.closures:
+            if closure.scope == "full" and closure.active_at(now_zurich):
+                inclusive = (closure.end - timedelta(minutes=1)).date()
+                return {
+                    "reason": closure.reason,
+                    "end_label": (f"{inclusive.day}. {DE_MONTHS[inclusive.month - 1]}"),
+                }
+        if resolution.reason:
+            return {"reason": resolution.reason, "end_label": None}
+        return None
+    if resolution.state == OpenState.OBSERVED_CLOSED:
+        return {
+            "reason": resolution.reason or "Aktuell geschlossen",
+            "end_label": None,
+        }
+    return None
+
+
+async def _fetch_latest_observation(db_pool, pool_uid: str):
+    """Latest Baditicker Observation for one pool, or None if unavailable."""
+    try:
+        from ml.opening_hours import observation_from_status_text
+
+        srow = await db_pool.fetchrow(
+            """
+            SELECT status_text, source_modified_at, observed_at
+            FROM pool_status
+            WHERE pool_uid = $1
+            ORDER BY observed_at DESC
+            LIMIT 1
+            """,
+            pool_uid,
+        )
+        if srow is None:
+            return None
+        return observation_from_status_text(
+            srow["status_text"],
+            observed_at=srow["observed_at"],
+            source_modified_at=srow["source_modified_at"],
+        )
+    except Exception:  # noqa: BLE001
+        # pool_status may not exist yet (pre-migration)
+        return None
 
 
 async def _fetch_city_weather_hints(

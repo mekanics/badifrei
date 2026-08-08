@@ -12,10 +12,13 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
 {% set _name = pool.name %}
 {% set _needs_type = _type and not _name.lower().startswith(_type.lower()) %}
 {% set _prefix = _type + ' ' if _needs_type else '' %}
-{% block description %}{{ _prefix }}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{% endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sehen Sie vor dem Besuch, wie voll es ist →{% endblock %}
+{% block description %}{{ _prefix }}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{%
+endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sehen Sie vor dem Besuch, wie voll es ist →{% endblock %}
 {% block og_url_path %}/bad/{{ pool.uid }}{% endblock %}
-{% block og_description %}{{ _prefix }}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{% endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sehen Sie vor dem Besuch, wie voll es ist →{% endblock %}
-{% block twitter_description %}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{% endif %}: Live-Auslastung & aktuelle Besucherzahlen | badifrei.ch{% endblock %}
+{% block og_description %}{{ _prefix }}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{%
+endif %}: Live-Auslastung & aktuelle Besucherzahlen. Sehen Sie vor dem Besuch, wie voll es ist →{% endblock %}
+{% block twitter_description %}{{ _name }}{% if city_label and city_label not in _name %} in {{ city_label }}{% endif
+%}: Live-Auslastung & aktuelle Besucherzahlen | badifrei.ch{% endblock %}
 {% block canonical_path %}/bad/{{ pool.uid }}{% endblock %}
 {% block structured_data %}
 <script type="application/ld+json">
@@ -123,8 +126,12 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
 
   {% if active_closure %}
   <div class="notice-closed" role="status">
-    Geschlossen{% if active_closure.end_label %} bis {{ active_closure.end_label }}{% endif %}
+    {% if active_closure.end_label %}
+    Geschlossen bis {{ active_closure.end_label }}
     ({{ active_closure.reason }})
+    {% else %}
+    {{ active_closure.reason }}
+    {% endif %}
   </div>
   {% endif %}
 
@@ -133,7 +140,8 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
       <h2 class="section-h2">Öffnungszeiten</h2>
       {% if hours_view and hours_view.kind == 'seasonal_periods' and hours_view.current %}
       <div class="hours-period-current">
-        <div class="hours-period-label">{% if hours_view.current_covers_today %}Aktueller Zeitraum{% else %}Nächster Zeitraum{% endif %} · {{ hours_view.current.label }}</div>
+        <div class="hours-period-label">{% if hours_view.current_covers_today %}Aktueller Zeitraum{% else %}Nächster
+          Zeitraum{% endif %} · {{ hours_view.current.label }}</div>
         {% if hours_view.current.is_uniform_daily %}
         <div class="hours-period-times">
           Bei jedem Wetter: {{ hours_view.current.day_groups[0].always }}
@@ -455,7 +463,8 @@ Auslastung & Beste Besuchszeit | badifrei.ch{% endblock %}
 
 {# Server-side data for pool.js — passed via data-* attributes to avoid unsafe-inline scripts #}
 <div id="ssr-data" data-pool-uid="{{ pool.uid }}" data-city="{{ pool.city }}" data-today-date="{{ today_date }}"
-  data-prediction-status="{{ today_prediction_status }}" data-ssr-predictions="{{ today_predictions_json }}" hidden></div>
+  data-prediction-status="{{ today_prediction_status }}" data-ssr-predictions="{{ today_predictions_json }}" hidden>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"
   integrity="sha384-b0GXujLkk9eYYSmcSfoyZbfyElGAQnDyY0skCHSG6w3JgTMFnz11ggrTAr7seu9f" crossorigin="anonymous"></script>
 <script src="/static/pool.js?v={{ static_ver('pool.js') }}"></script>

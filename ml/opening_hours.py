@@ -3,7 +3,10 @@
 Supports both the legacy flat ``schedule`` shape in pool_metadata.json and the
 generated periods/intervals/closures shape. Precedence inside ``resolve``:
 
-    fresh observation → full closure → schedule interval → season window
+    full closure → fresh observation → schedule interval → season window
+
+Full Closure outranks Observation so a lagging Baditicker ``offen`` cannot
+reopen a pool during Revision.
 """
 
 from __future__ import annotations
@@ -524,7 +527,23 @@ def resolve(
     current_min = when.hour * 60 + when.minute
     confidence = _effective_confidence(schedule, day)
 
-    # 1. Fresh observation wins for is_open only
+    # 1. Full closure — published exceptions beat a lagging Baditicker "offen"
+    closure = _active_full_closure(schedule, when)
+    if closure is not None:
+        # Closure.end is exclusive; display the inclusive last closed day.
+        inclusive_end = (closure.end - dt.timedelta(minutes=1)).date()
+        end_label = f"{inclusive_end.day}. {DE_MONTHS[inclusive_end.month - 1]}"
+        # next_open always comes from the schedule, starting at closure end.
+        return Resolution(
+            state=OpenState.CLOSED_EXCEPTION,
+            is_open=False,
+            reason=f"{closure.reason} bis {end_label}",
+            next_open=_format_next_open(schedule, closure.end),
+            source="closure",
+            confidence=confidence,
+        )
+
+    # 2. Fresh observation wins for is_open only (weather closes, etc.)
     if _observation_is_fresh(observation, when, observation_max_age):
         assert observation is not None and observation.is_open is not None
         if observation.is_open:
@@ -543,22 +562,6 @@ def resolve(
             reason="Aktuell geschlossen",
             next_open=_format_next_open(schedule, when),
             source="observed",
-            confidence=confidence,
-        )
-
-    # 2. Full closure
-    closure = _active_full_closure(schedule, when)
-    if closure is not None:
-        # Closure.end is exclusive; display the inclusive last closed day.
-        inclusive_end = (closure.end - dt.timedelta(minutes=1)).date()
-        end_label = f"{inclusive_end.day}. {DE_MONTHS[inclusive_end.month - 1]}"
-        # next_open always comes from the schedule, starting at closure end.
-        return Resolution(
-            state=OpenState.CLOSED_EXCEPTION,
-            is_open=False,
-            reason=f"{closure.reason} bis {end_label}",
-            next_open=_format_next_open(schedule, closure.end),
-            source="closure",
             confidence=confidence,
         )
 
@@ -1229,6 +1232,38 @@ def opening_hours_faq_text(
     page instead of inventing a false “täglich” soup. An active full Closure
     or off-season window leads the answer so we never claim open then.
     """
+    now = when if when is not None else dt.datetime.now(ZURICH_TZ)
+    today = _to_zurich(now).date()
+
+    active = _active_full_closures(schedule, now)
+    if active:
+        closure = min(active, key=lambda c: c.end)
+        return (
+            f"{pool_name} ist derzeit geschlossen ({closure.reason} bis "
+            f"{_fmt_closure_end_label(closure)}). "
+            f"Übliche Öffnungszeiten finden Sie auf dieser Seite."
+        )
+
+    if is_off_season(schedule, today):
+        season_open = _next_season_open(schedule, today)
+        if season_open is not None:
+            reopen = f"{season_open.day}. {DE_MONTHS[season_open.month - 1]}"
+            return (
+                f"{pool_name} ist derzeit geschlossen (ausserhalb der Saison, "
+                f"wieder ab {reopen}). "
+                f"Übliche Öffnungszeiten finden Sie auf dieser Seite."
+            )
+        return (
+            f"{pool_name} ist derzeit geschlossen (ausserhalb der Saison). "
+            f"Übliche Öffnungszeiten finden Sie auf dieser Seite."
+        )
+
+    # Day-set / "täglich" follows Periods covering *today* (same as
+    # hours_display_view). Fair-weather close times still come from the full
+    # Schedule so "je nach Saisonabschnitt bis 20:00 oder 21:00" stays honest.
+    covering = [p for p in schedule.periods if p.covers(today)]
+    periods_for_days = covering if covering else list(schedule.periods)
+
     fair_closes: set[str] = set()
     season_start: dt.date | None = None
     season_end: dt.date | None = None
@@ -1242,14 +1277,16 @@ def opening_hours_faq_text(
             season_start = period.start
         if period.end is not None and (season_end is None or period.end > season_end):
             season_end = period.end
+        for interval in period.intervals:
+            if interval.condition == "fair_weather":
+                fair_closes.add(_fmt_clock(interval.close_min))
+
+    for period in periods_for_days:
         always_here = [
             (i.open_min, i.close_min)
             for i in period.intervals
             if i.condition == "always"
         ]
-        for interval in period.intervals:
-            if interval.condition == "fair_weather":
-                fair_closes.add(_fmt_clock(interval.close_min))
         if not always_here:
             continue
         for day_idx in period.days:
@@ -1257,30 +1294,6 @@ def opening_hours_faq_text(
 
     active_days = {d: frozenset(wins) for d, wins in day_always.items() if wins}
     has_fair = bool(fair_closes)
-    now = when if when is not None else dt.datetime.now(ZURICH_TZ)
-
-    active = _active_full_closures(schedule, now)
-    if active:
-        closure = min(active, key=lambda c: c.end)
-        return (
-            f"{pool_name} ist derzeit geschlossen ({closure.reason} bis "
-            f"{_fmt_closure_end_label(closure)}). "
-            f"Übliche Öffnungszeiten finden Sie auf dieser Seite."
-        )
-
-    if is_off_season(schedule, now.date()):
-        season_open = _next_season_open(schedule, now.date())
-        if season_open is not None:
-            reopen = f"{season_open.day}. {DE_MONTHS[season_open.month - 1]}"
-            return (
-                f"{pool_name} ist derzeit geschlossen (ausserhalb der Saison, "
-                f"wieder ab {reopen}). "
-                f"Übliche Öffnungszeiten finden Sie auf dieser Seite."
-            )
-        return (
-            f"{pool_name} ist derzeit geschlossen (ausserhalb der Saison). "
-            f"Übliche Öffnungszeiten finden Sie auf dieser Seite."
-        )
 
     upcoming_note = _faq_upcoming_closure_suffix(schedule, now)
 

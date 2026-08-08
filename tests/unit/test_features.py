@@ -433,6 +433,84 @@ class TestWeatherFeatures:
         afternoon = result[result["hour_of_day"] == 15]
         assert afternoon.iloc[0]["is_open"] == 0
 
+    def test_build_features_with_metadata_still_uses_generated_schedule(self):
+        """Predictor passes pool_metadata; is_open must still honour Schedule.
+
+        Legacy flat open/close in pool_metadata omits Revision closures and
+        Hallenbad mid-day gaps — training (no metadata) already used the
+        generated file, so metadata must not reopen those hours at inference.
+        """
+        from ml.features import build_features, load_pool_metadata
+
+        meta = load_pool_metadata()
+        # SSD-4: Revision closure on 2026-08-04
+        df_rev = make_df(n=1, pool_uid="SSD-4", start="2026-08-04")
+        rev = build_features(df_rev, metadata=meta)
+        assert int(rev.iloc[0]["is_open"]) == 0
+
+        # SSD-3 Mon: 12:00–13:30 + 16:00–19:00 — 15:00 is the gap
+        df_gap = make_df(n=24, pool_uid="SSD-3", start="2026-08-03")
+        gap = build_features(df_gap, metadata=meta)
+        at_15 = gap[gap["hour_of_day"] == 15]
+        assert len(at_15) == 1
+        assert int(at_15.iloc[0]["is_open"]) == 0
+
+    def test_utc_weather_join_closes_zurich_afternoon_on_correct_hour(self):
+        """Rain at UTC hour 13 must close Zurich 15:00 (CEST), not label-15."""
+        from datetime import date
+
+        from ml.features import (
+            add_opening_hours_features,
+            add_pool_features,
+            add_time_features,
+            add_weather_features,
+            load_pool_metadata,
+        )
+
+        # 15:00 Zurich = 13:00 UTC in summer
+        ts = datetime(2026, 7, 15, 13, 0, tzinfo=timezone.utc)
+        df = add_time_features(
+            pd.DataFrame(
+                {
+                    "time": [ts],
+                    "pool_uid": ["fb006"],
+                    "occupancy_pct": [20.0],
+                }
+            )
+        )
+        meta = load_pool_metadata()
+        df = add_pool_features(df, meta)
+        assert int(df["hour_of_day"].iloc[0]) == 15
+
+        base = {
+            "city": ["zurich"] * 24,
+            "date": [date(2026, 7, 15)] * 24,
+            "hour": list(range(24)),
+            "temperature_c": [20.0] * 24,
+            "precipitation_mm": [0.0] * 24,
+            "weathercode": [0] * 24,
+        }
+        rain_utc13 = pd.DataFrame(base)
+        rain_utc13.loc[
+            rain_utc13["hour"] == 13, ["precipitation_mm", "weathercode"]
+        ] = [5.0, 61]
+        m13 = add_opening_hours_features(
+            add_weather_features(df.copy(), rain_utc13, metadata=meta), None
+        )
+        assert float(m13["precipitation_mm"].iloc[0]) == 5.0
+        assert int(m13["is_open"].iloc[0]) == 0
+
+        rain_label15 = pd.DataFrame(base)
+        rain_label15.loc[
+            rain_label15["hour"] == 15, ["precipitation_mm", "weathercode"]
+        ] = [5.0, 61]
+        m15 = add_opening_hours_features(
+            add_weather_features(df.copy(), rain_label15, metadata=meta), None
+        )
+        # Wrong-hour rain must not be joined onto Zurich 15:00
+        assert float(m15["precipitation_mm"].iloc[0]) == 0.0
+        assert int(m15["is_open"].iloc[0]) == 1
+
 
 # Mock opening hours metadata for tests
 _MOCK_OPENING_HOURS = {

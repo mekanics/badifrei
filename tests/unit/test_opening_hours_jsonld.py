@@ -262,3 +262,32 @@ class TestOpeningHoursFaqText:
         assert "sicher geöffnet" not in text
         assert "Mai" in text
         assert "finden Sie" in text
+
+    def test_faq_scopes_day_set_to_current_period(self):
+        """May Mo–Fr + June daily must not invent 'täglich' while still in May."""
+        schedule = PoolSchedule(
+            uid="split",
+            periods=(
+                Period(
+                    start=date(2026, 5, 1),
+                    end=date(2026, 5, 31),
+                    days=frozenset(range(5)),  # Mo–Fr
+                    intervals=(Interval(9 * 60, 14 * 60, "always"),),
+                ),
+                Period(
+                    start=date(2026, 6, 1),
+                    end=date(2026, 6, 30),
+                    days=frozenset(range(7)),  # daily
+                    intervals=(Interval(9 * 60, 14 * 60, "always"),),
+                ),
+            ),
+            confidence="official_structured",
+            scraped_at=date(2026, 5, 1),
+        )
+        may = opening_hours_faq_text(schedule, "Testbad", when=_when(2026, 5, 15, 12))
+        assert "täglich" not in may
+        assert "an Öffnungstagen" in may or "variieren" in may
+
+        june = opening_hours_faq_text(schedule, "Testbad", when=_when(2026, 6, 15, 12))
+        assert "täglich" in june
+        assert "sicher" in june

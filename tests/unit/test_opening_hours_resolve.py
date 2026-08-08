@@ -126,6 +126,25 @@ class TestObservations:
         assert result.is_open is False
         assert result.state == OpenState.OBSERVED_CLOSED
 
+    def test_full_closure_outranks_observed_open(self):
+        """Lagging Baditicker 'offen' must not reopen a Revision day."""
+        closure = Closure(
+            start=_when(2026, 7, 4, 0),
+            end=_when(2026, 8, 8, 0),
+            reason="Revision",
+            scope="full",
+        )
+        schedule = _simple_schedule(closures=(closure,))
+        obs = Observation(
+            observed_at=_when(2026, 8, 4, 12),
+            source_modified_at=_when(2026, 8, 4, 11, 55),
+            is_open=True,
+        )
+        result = resolve(schedule, _when(2026, 8, 4, 12), observation=obs)
+        assert result.is_open is False
+        assert result.state == OpenState.CLOSED_EXCEPTION
+        assert result.source == "closure"
+
     def test_fresh_poll_keeps_closed_when_date_modified_aged(self):
         """Baditicker dateModified often sticks at last status change.
 

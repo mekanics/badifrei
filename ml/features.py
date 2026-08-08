@@ -198,6 +198,25 @@ def add_rolling_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _zurich_date_hour_to_utc_keys(
+    dates: "pd.Series", hours: "pd.Series"
+) -> tuple["pd.Series", "pd.Series"]:
+    """Map Zurich-local (date, hour_of_day) to UTC (date, hour) join keys.
+
+    ``hourly_weather`` / Open-Meteo rows are stored with ``timezone=UTC``.
+    Feature ``date`` / ``hour_of_day`` are Europe/Zurich — joining them
+    directly skews fair-weather ``is_open`` by the UTC offset.
+    """
+    local = pd.to_datetime(pd.Series(dates).astype(str)) + pd.to_timedelta(
+        pd.Series(hours).astype(int), unit="h"
+    )
+    local = local.dt.tz_localize(
+        "Europe/Zurich", ambiguous="infer", nonexistent="shift_forward"
+    )
+    utc = local.dt.tz_convert("UTC")
+    return utc.dt.date, utc.dt.hour
+
+
 def add_weather_features(
     df: pd.DataFrame,
     weather_df: pd.DataFrame,
@@ -209,17 +228,24 @@ def add_weather_features(
     Expects df to have 'hour_of_day' and 'date' columns (from add_time_features).
     Adds: temperature_c, precipitation_mm, is_rainy, temp_x_outdoor.
 
-    When *weather_df* contains a ``city`` column, the join uses
-    ``(city, date, hour_of_day)`` so each pool receives weather for its own
-    city.  The ``city`` column is derived from pool_uid via *metadata*
-    (pool_metadata.json).  Pools with an unrecognised uid emit a warning and
-    receive NaN weather values (filled with sensible defaults below).
+    When *weather_df* has a ``date`` column, those dates/hours are treated as
+    **UTC** (Open-Meteo / ``hourly_weather``). Feature rows are converted from
+    Zurich-local to UTC before the merge.
 
-    Falls back to the legacy ``(date, hour_of_day)`` join when ``city`` is
-    absent from *weather_df* — preserving backward compatibility with callers
-    that pass non-city-aware weather DataFrames.
+    When *weather_df* contains a ``city`` column, the join also includes city
+    (from pool_metadata). Pools with an unrecognised uid emit a warning and
+    receive NaN weather values.
+
+    Hour-only weather (no ``date``) keeps a legacy hour join for tests that
+    paint every hour identically.
     """
     df = df.copy()
+
+    weather_has_date = "date" in weather_df.columns
+    if weather_has_date:
+        wx_date, wx_hour = _zurich_date_hour_to_utc_keys(df["date"], df["hour_of_day"])
+        df["_wx_date"] = wx_date.to_numpy()
+        df["_wx_hour"] = wx_hour.to_numpy()
 
     if "city" in weather_df.columns:
         # --- City-aware path ---
@@ -246,26 +272,34 @@ def add_weather_features(
             "weathercode",
         ]
         weather_cols = weather_df[[c for c in w_cols if c in weather_df.columns]].copy()
-        weather_cols = weather_cols.rename(
-            columns={"hour": "hour_of_day", "city": "_city"}
-        )
-
-        df = df.merge(weather_cols, on=["_city", "date", "hour_of_day"], how="left")
-        df = df.drop(columns=["_city"], errors="ignore")
+        if weather_has_date:
+            weather_cols = weather_cols.rename(
+                columns={"hour": "_wx_hour", "date": "_wx_date", "city": "_city"}
+            )
+            df = df.merge(
+                weather_cols, on=["_city", "_wx_date", "_wx_hour"], how="left"
+            )
+        else:
+            weather_cols = weather_cols.rename(
+                columns={"hour": "hour_of_day", "city": "_city"}
+            )
+            df = df.merge(weather_cols, on=["_city", "hour_of_day"], how="left")
+        df = df.drop(columns=["_city", "_wx_date", "_wx_hour"], errors="ignore")
     else:
         # --- Legacy path: no city column in weather_df ---
         w_cols = ["hour", "temperature_c", "precipitation_mm", "weathercode"]
-        if "date" in weather_df.columns:
+        if weather_has_date:
             w_cols = ["date"] + w_cols
         weather_cols = weather_df[w_cols].copy()
-        weather_cols = weather_cols.rename(columns={"hour": "hour_of_day"})
-
-        merge_on = (
-            ["date", "hour_of_day"]
-            if "date" in weather_cols.columns
-            else ["hour_of_day"]
-        )
-        df = df.merge(weather_cols, on=merge_on, how="left")
+        if weather_has_date:
+            weather_cols = weather_cols.rename(
+                columns={"hour": "_wx_hour", "date": "_wx_date"}
+            )
+            df = df.merge(weather_cols, on=["_wx_date", "_wx_hour"], how="left")
+            df = df.drop(columns=["_wx_date", "_wx_hour"], errors="ignore")
+        else:
+            weather_cols = weather_cols.rename(columns={"hour": "hour_of_day"})
+            df = df.merge(weather_cols, on=["hour_of_day"], how="left")
 
     # Keep weathercode through opening-hours features so fair_weather can use
     # the same predicate as is_fair_weather(). Defaults are applied later in
@@ -342,7 +376,11 @@ def build_features(
         df["weathercode"] = np.nan
         df["is_rainy"] = np.nan
         df["temp_x_outdoor"] = 0.0
-    df = add_opening_hours_features(df, metadata)
+    # Always load generated Schedules — never the caller's pool_metadata.
+    # Passing metadata here forced _legacy_to_schedule (flat open/close) and
+    # dropped closures, split intervals, and fair_weather windows. Training
+    # already omits metadata; the predictor must not diverge.
+    df = add_opening_hours_features(df)
     # Model-facing defaults — applied AFTER opening-hours so fair_weather does
     # not see synthetic 15°C / 0mm as real observations.
     df["temperature_c"] = df["temperature_c"].fillna(15.0)

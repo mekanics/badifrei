@@ -15,7 +15,7 @@ state.
 **Conditional hours** _(CH)_ _(seo)_ — Published Interval(s) that apply only
 under fair weather (`condition: fair_weather`). Shown in UI and FAQ prose; never
 asserted as unconditional open/close in structured data. Distinct from a
-Resolution whose state is *open conditional* (live, weather-resolved). See
+Resolution whose state is _open conditional_ (live, weather-resolved). See
 [ADR-001](./adr/ADR-001-guaranteed-hours-in-structured-data.md).
 
 **Confidence** — Provenance grade of a Schedule: `official_structured`,
@@ -48,7 +48,9 @@ Guaranteed hours or Conditional hours.
 ## O
 
 **Observation** — What the Baditicker feed reported at a timestamp. Asserts
-nothing about the future; used only when fresh to override a Resolution.
+nothing about the future; used only when fresh to override schedule-based
+Resolution. A full Closure still outranks Observation (Revision cannot be
+reopened by a lagging Baditicker `offen`).
 
 ## P
 

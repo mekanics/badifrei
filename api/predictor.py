@@ -424,8 +424,11 @@ class Predictor:
         # Check for model staleness once (not once per hour)
         await self._reload_if_stale()
 
-        # Collect all unique dates across the requested hours and the pool's city
-        unique_dates = sorted({h.date() for h in hours}) if hours else []
+        # hourly_weather is UTC-keyed; fetch the UTC calendar dates that cover
+        # each requested local hour (Zurich hours near midnight span two days).
+        unique_dates = (
+            sorted({h.astimezone(timezone.utc).date() for h in hours}) if hours else []
+        )
         pool_meta = self._get_metadata().get(pool_uid, {})
         city_slug = pool_meta.get("city", "zurich")
 

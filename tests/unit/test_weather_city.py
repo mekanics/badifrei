@@ -2,6 +2,7 @@
 
 All HTTP and DB calls are mocked — no live database required.
 """
+
 import datetime
 import json
 from pathlib import Path
@@ -56,6 +57,7 @@ def make_mock_http_session(lat: float, lon: float, date: datetime.date):
 @pytest.fixture(autouse=True)
 def clear_weather_cache():
     from ml.weather import clear_cache
+
     clear_cache()
     yield
     clear_cache()
@@ -65,12 +67,22 @@ def clear_weather_cache():
 # 1. CITY_COORDS completeness
 # ---------------------------------------------------------------------------
 
+
 class TestCityCoords:
     def test_city_coords_all_cities_present(self):
         """CITY_COORDS must contain all 8 expected city slugs."""
         from ml.weather import CITY_COORDS
 
-        expected = {"zurich", "bern", "adliswil", "luzern", "entfelden", "hunenberg", "rotkreuz", "wengen"}
+        expected = {
+            "zurich",
+            "bern",
+            "adliswil",
+            "luzern",
+            "entfelden",
+            "hunenberg",
+            "rotkreuz",
+            "wengen",
+        }
         assert set(CITY_COORDS.keys()) == expected
 
     def test_city_coords_values_are_lat_lon_tuples(self):
@@ -78,7 +90,9 @@ class TestCityCoords:
         from ml.weather import CITY_COORDS
 
         for city, coords in CITY_COORDS.items():
-            assert isinstance(coords, tuple), f"{city}: expected tuple, got {type(coords)}"
+            assert isinstance(
+                coords, tuple
+            ), f"{city}: expected tuple, got {type(coords)}"
             assert len(coords) == 2, f"{city}: expected 2-tuple"
             lat, lon = coords
             assert isinstance(lat, float), f"{city}: lat must be float"
@@ -99,6 +113,7 @@ class TestCityCoords:
 # 2. fetch_weather_batch uses city-specific coordinates
 # ---------------------------------------------------------------------------
 
+
 class TestFetchWeatherBatchCityCoords:
     async def test_fetch_weather_batch_uses_city_coords(self):
         """fetch_weather_batch(city='bern') must request Bern's lat/lon, not Zürich's."""
@@ -112,13 +127,17 @@ class TestFetchWeatherBatchCityCoords:
         mock_conn = AsyncMock()
         mock_conn.fetch = AsyncMock(return_value=[])  # empty DB cache
 
-        with patch("ml.weather._get_db_conn", AsyncMock(return_value=mock_conn)), \
-             patch("aiohttp.ClientSession", return_value=mock_session):
+        with (
+            patch("ml.weather._get_db_conn", AsyncMock(return_value=mock_conn)),
+            patch("aiohttp.ClientSession", return_value=mock_session),
+        ):
             await fetch_weather_batch([SAMPLE_DATE], city="bern")
 
         # Inspect the call params
         # params may be in kwargs
-        params = mock_session.get.call_args.kwargs.get("params") or mock_session.get.call_args[1].get("params", {})
+        params = mock_session.get.call_args.kwargs.get(
+            "params"
+        ) or mock_session.get.call_args[1].get("params", {})
         assert params.get("latitude") == pytest.approx(bern_lat)
         assert params.get("longitude") == pytest.approx(bern_lon)
         assert params.get("latitude") != pytest.approx(zurich_lat)
@@ -133,11 +152,15 @@ class TestFetchWeatherBatchCityCoords:
         mock_conn = AsyncMock()
         mock_conn.fetch = AsyncMock(return_value=[])
 
-        with patch("ml.weather._get_db_conn", AsyncMock(return_value=mock_conn)), \
-             patch("aiohttp.ClientSession", return_value=mock_session):
+        with (
+            patch("ml.weather._get_db_conn", AsyncMock(return_value=mock_conn)),
+            patch("aiohttp.ClientSession", return_value=mock_session),
+        ):
             await fetch_weather_batch([SAMPLE_DATE])  # no city argument
 
-        params = mock_session.get.call_args.kwargs.get("params") or mock_session.get.call_args[1].get("params", {})
+        params = mock_session.get.call_args.kwargs.get(
+            "params"
+        ) or mock_session.get.call_args[1].get("params", {})
         assert params.get("latitude") == pytest.approx(zurich_lat)
         assert params.get("longitude") == pytest.approx(zurich_lon)
 
@@ -145,6 +168,7 @@ class TestFetchWeatherBatchCityCoords:
 # ---------------------------------------------------------------------------
 # 3. persist_weather includes city
 # ---------------------------------------------------------------------------
+
 
 class TestPersistWeatherIncludesCity:
     async def test_persist_weather_includes_city_in_insert(self):
@@ -161,7 +185,9 @@ class TestPersistWeatherIncludesCity:
         assert "city" in sql.lower(), "SQL must mention 'city'"
         assert "ON CONFLICT" in sql.upper()
         # Each row tuple should contain "luzern"
-        assert all("luzern" in row for row in rows), "Every row must include city='luzern'"
+        assert all(
+            "luzern" in row for row in rows
+        ), "Every row must include city='luzern'"
 
     async def test_persist_weather_city_in_conflict_clause(self):
         """ON CONFLICT clause must target (city, date, hour)."""
@@ -179,6 +205,7 @@ class TestPersistWeatherIncludesCity:
 # ---------------------------------------------------------------------------
 # 4. load_cached_dates filters by city
 # ---------------------------------------------------------------------------
+
 
 class TestLoadCachedDatesFiltersByCity:
     async def test_load_cached_dates_filters_by_city_miss(self):
@@ -202,11 +229,18 @@ class TestLoadCachedDatesFiltersByCity:
         from ml.weather import _load_dates_from_db
 
         mock_conn = AsyncMock()
-        mock_conn.fetch = AsyncMock(return_value=[
-            {"date": SAMPLE_DATE, "hour": h,
-             "temperature_c": 18.0, "precipitation_mm": 0.0, "weathercode": 0}
-            for h in range(24)
-        ])
+        mock_conn.fetch = AsyncMock(
+            return_value=[
+                {
+                    "date": SAMPLE_DATE,
+                    "hour": h,
+                    "temperature_c": 18.0,
+                    "precipitation_mm": 0.0,
+                    "weathercode": 0,
+                }
+                for h in range(24)
+            ]
+        )
 
         result = await _load_dates_from_db(mock_conn, [SAMPLE_DATE], city="bern")
 
@@ -219,6 +253,7 @@ class TestLoadCachedDatesFiltersByCity:
 # ---------------------------------------------------------------------------
 # 5. Cross-city cache isolation (in-memory)
 # ---------------------------------------------------------------------------
+
 
 class TestCrossCityCacheIsolation:
     async def test_in_memory_cache_isolated_by_city(self):
@@ -251,8 +286,10 @@ class TestCrossCityCacheIsolation:
         mock_session.__aenter__ = AsyncMock(return_value=mock_session)
         mock_session.__aexit__ = AsyncMock(return_value=False)
 
-        with patch("ml.weather._get_db_conn", AsyncMock(return_value=mock_conn)), \
-             patch("aiohttp.ClientSession", return_value=mock_session):
+        with (
+            patch("ml.weather._get_db_conn", AsyncMock(return_value=mock_conn)),
+            patch("aiohttp.ClientSession", return_value=mock_session),
+        ):
             bern_result = await fetch_weather_batch([SAMPLE_DATE], city="bern")
 
         # Bern should have temp=10, not zurich's 25
@@ -266,12 +303,15 @@ class TestCrossCityCacheIsolation:
         _cache[("zurich", SAMPLE_DATE)] = zurich_df
 
         # Confirm zurich cache still has temp=25.0 (h=0 → 25.0 + 0*0.1 = 25.0)
-        assert _cache[("zurich", SAMPLE_DATE)]["temperature_c"].iloc[0] == pytest.approx(25.0)
+        assert _cache[("zurich", SAMPLE_DATE)]["temperature_c"].iloc[
+            0
+        ] == pytest.approx(25.0)
 
 
 # ---------------------------------------------------------------------------
 # 6. Multi-city training helper
 # ---------------------------------------------------------------------------
+
 
 class TestMultiCityTrainingHelper:
     async def test_fetch_weather_for_df_multi_city(self):
@@ -289,20 +329,40 @@ class TestMultiCityTrainingHelper:
         rows = []
         for h in range(24):
             dt = base + datetime.timedelta(hours=h)
-            rows.append({"time": dt, "pool_uid": zurich_uid, "occupancy_pct": 50.0,
-                          "pool_name": "Z", "current_fill": 50, "max_space": 100, "free_space": 50})
-            rows.append({"time": dt, "pool_uid": bern_uid, "occupancy_pct": 40.0,
-                          "pool_name": "B", "current_fill": 40, "max_space": 100, "free_space": 60})
+            rows.append(
+                {
+                    "time": dt,
+                    "pool_uid": zurich_uid,
+                    "occupancy_pct": 50.0,
+                    "pool_name": "Z",
+                    "current_fill": 50,
+                    "max_space": 100,
+                    "free_space": 50,
+                }
+            )
+            rows.append(
+                {
+                    "time": dt,
+                    "pool_uid": bern_uid,
+                    "occupancy_pct": 40.0,
+                    "pool_name": "B",
+                    "current_fill": 40,
+                    "max_space": 100,
+                    "free_space": 60,
+                }
+            )
         df = pd.DataFrame(rows)
 
-        weather_response = pd.DataFrame({
-            "date": [SAMPLE_DATE] * 24,
-            "hour": list(range(24)),
-            "temperature_c": [20.0] * 24,
-            "precipitation_mm": [0.0] * 24,
-            "weathercode": [0] * 24,
-            "city": ["zurich"] * 24,
-        })
+        weather_response = pd.DataFrame(
+            {
+                "date": [SAMPLE_DATE] * 24,
+                "hour": list(range(24)),
+                "temperature_c": [20.0] * 24,
+                "precipitation_mm": [0.0] * 24,
+                "weathercode": [0] * 24,
+                "city": ["zurich"] * 24,
+            }
+        )
 
         call_cities = []
 
@@ -315,7 +375,9 @@ class TestMultiCityTrainingHelper:
         with patch("ml.retrain.fetch_weather_batch", side_effect=fake_fetch_batch):
             await _fetch_weather_for_df(df)
 
-        assert len(call_cities) == 2, f"Expected 2 calls (one per city), got {len(call_cities)}: {call_cities}"
+        assert (
+            len(call_cities) == 2
+        ), f"Expected 2 calls (one per city), got {len(call_cities)}: {call_cities}"
         assert set(call_cities) == {"zurich", "bern"}
 
     async def test_fetch_weather_for_df_returns_city_column(self):
@@ -327,20 +389,31 @@ class TestMultiCityTrainingHelper:
         zurich_uid = next(p["uid"] for p in metadata if p.get("city") == "zurich")
 
         base = datetime.datetime(2025, 6, 1)
-        rows = [{"time": base + datetime.timedelta(hours=h), "pool_uid": zurich_uid,
-                 "occupancy_pct": 50.0, "pool_name": "Z", "current_fill": 50,
-                 "max_space": 100, "free_space": 50} for h in range(24)]
+        rows = [
+            {
+                "time": base + datetime.timedelta(hours=h),
+                "pool_uid": zurich_uid,
+                "occupancy_pct": 50.0,
+                "pool_name": "Z",
+                "current_fill": 50,
+                "max_space": 100,
+                "free_space": 50,
+            }
+            for h in range(24)
+        ]
         df = pd.DataFrame(rows)
 
         async def fake_fetch_batch(dates, city="zurich", **kwargs):
-            return pd.DataFrame({
-                "date": [SAMPLE_DATE] * 24,
-                "hour": list(range(24)),
-                "temperature_c": [20.0] * 24,
-                "precipitation_mm": [0.0] * 24,
-                "weathercode": [0] * 24,
-                "city": [city] * 24,
-            })
+            return pd.DataFrame(
+                {
+                    "date": [SAMPLE_DATE] * 24,
+                    "hour": list(range(24)),
+                    "temperature_c": [20.0] * 24,
+                    "precipitation_mm": [0.0] * 24,
+                    "weathercode": [0] * 24,
+                    "city": [city] * 24,
+                }
+            )
 
         with patch("ml.retrain.fetch_weather_batch", side_effect=fake_fetch_batch):
             result = await _fetch_weather_for_df(df)
@@ -353,10 +426,11 @@ class TestMultiCityTrainingHelper:
 # 7. Updated join key in features.py
 # ---------------------------------------------------------------------------
 
+
 class TestTrainingJoinUsesCityDateHour:
     def test_training_join_uses_city_and_date_hour(self):
-        """add_weather_features joins on (city, date, hour_of_day); bern gets bern weather."""
-        from ml.features import add_weather_features, load_pool_metadata
+        """add_weather_features joins on (city, UTC date, UTC hour); bern ≠ zurich."""
+        from ml.features import add_weather_features
 
         metadata_path = Path("ml/pool_metadata.json")
         metadata = json.loads(metadata_path.read_text())
@@ -365,38 +439,89 @@ class TestTrainingJoinUsesCityDateHour:
         zurich_uid = next(p["uid"] for p in metadata if p.get("city") == "zurich")
         bern_uid = next(p["uid"] for p in metadata if p.get("city") == "bern")
 
+        # Feature side is Zurich-local 10:00 CEST → UTC 08:00 same calendar day.
         date = datetime.date(2025, 6, 1)
         dt = datetime.datetime(2025, 6, 1, 10)
 
-        df = pd.DataFrame([
-            {"time": dt, "pool_uid": zurich_uid, "occupancy_pct": 50.0,
-             "pool_name": "Z", "current_fill": 50, "max_space": 100, "free_space": 50,
-             "hour_of_day": 10, "day_of_week": 6, "is_weekend": 1, "month": 6,
-             "day_of_year": 152, "is_holiday": 0, "pool_uid_encoded": 0, "pool_type": 1,
-             "is_seasonal": 1, "lag_1h": 50.0, "lag_1w": 50.0, "rolling_mean_7d": 50.0,
-             "date": date},
-            {"time": dt, "pool_uid": bern_uid, "occupancy_pct": 40.0,
-             "pool_name": "B", "current_fill": 40, "max_space": 100, "free_space": 60,
-             "hour_of_day": 10, "day_of_week": 6, "is_weekend": 1, "month": 6,
-             "day_of_year": 152, "is_holiday": 0, "pool_uid_encoded": 1, "pool_type": 1,
-             "is_seasonal": 0, "lag_1h": 40.0, "lag_1w": 40.0, "rolling_mean_7d": 40.0,
-             "date": date},
-        ])
+        df = pd.DataFrame(
+            [
+                {
+                    "time": dt,
+                    "pool_uid": zurich_uid,
+                    "occupancy_pct": 50.0,
+                    "pool_name": "Z",
+                    "current_fill": 50,
+                    "max_space": 100,
+                    "free_space": 50,
+                    "hour_of_day": 10,
+                    "day_of_week": 6,
+                    "is_weekend": 1,
+                    "month": 6,
+                    "day_of_year": 152,
+                    "is_holiday": 0,
+                    "pool_uid_encoded": 0,
+                    "pool_type": 1,
+                    "is_seasonal": 1,
+                    "lag_1h": 50.0,
+                    "lag_1w": 50.0,
+                    "rolling_mean_7d": 50.0,
+                    "date": date,
+                },
+                {
+                    "time": dt,
+                    "pool_uid": bern_uid,
+                    "occupancy_pct": 40.0,
+                    "pool_name": "B",
+                    "current_fill": 40,
+                    "max_space": 100,
+                    "free_space": 60,
+                    "hour_of_day": 10,
+                    "day_of_week": 6,
+                    "is_weekend": 1,
+                    "month": 6,
+                    "day_of_year": 152,
+                    "is_holiday": 0,
+                    "pool_uid_encoded": 1,
+                    "pool_type": 1,
+                    "is_seasonal": 0,
+                    "lag_1h": 40.0,
+                    "lag_1w": 40.0,
+                    "rolling_mean_7d": 40.0,
+                    "date": date,
+                },
+            ]
+        )
 
-        # City-aware weather_df: zurich=30°, bern=10°
-        weather_df = pd.DataFrame([
-            {"city": "zurich", "date": date, "hour": 10,
-             "temperature_c": 30.0, "precipitation_mm": 0.0, "weathercode": 0},
-            {"city": "bern", "date": date, "hour": 10,
-             "temperature_c": 10.0, "precipitation_mm": 0.0, "weathercode": 0},
-        ])
+        # City-aware weather_df keyed in UTC (hour 8 = Zurich 10:00 CEST)
+        weather_df = pd.DataFrame(
+            [
+                {
+                    "city": "zurich",
+                    "date": date,
+                    "hour": 8,
+                    "temperature_c": 30.0,
+                    "precipitation_mm": 0.0,
+                    "weathercode": 0,
+                },
+                {
+                    "city": "bern",
+                    "date": date,
+                    "hour": 8,
+                    "temperature_c": 10.0,
+                    "precipitation_mm": 0.0,
+                    "weathercode": 0,
+                },
+            ]
+        )
 
         result = add_weather_features(df, weather_df, metadata=metadata_dict)
 
         zurich_row = result[result["pool_uid"] == zurich_uid]
         bern_row = result[result["pool_uid"] == bern_uid]
 
-        assert zurich_row["temperature_c"].values[0] == pytest.approx(30.0), \
-            "Zürich pool should get Zürich temperature"
-        assert bern_row["temperature_c"].values[0] == pytest.approx(10.0), \
-            "Bern pool should get Bern temperature, not Zürich"
+        assert zurich_row["temperature_c"].values[0] == pytest.approx(
+            30.0
+        ), "Zürich pool should get Zürich temperature"
+        assert bern_row["temperature_c"].values[0] == pytest.approx(
+            10.0
+        ), "Bern pool should get Bern temperature, not Zürich"
