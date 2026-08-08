@@ -569,6 +569,8 @@ async def pool_detail(request: Request, pool_uid: str):
             "(siehe Öffnungszeiten auf dieser Seite)."
         )
 
+    live_max_space = await _latest_max_space(db_pool, pool_uid)
+
     return templates.TemplateResponse(
         request,
         "pool.html",
@@ -589,6 +591,7 @@ async def pool_detail(request: Request, pool_uid: str):
             "hours_confidence": hours_confidence,
             "hours_scraped_at": hours_scraped_at,
             "hours_view": hours_view,
+            "live_max_space": live_max_space,
         },
     )
 
@@ -1003,6 +1006,39 @@ async def _fetch_latest_observation(db_pool, pool_uid: str):
         )
     except Exception:  # noqa: BLE001
         # pool_status may not exist yet (pre-migration)
+        return None
+
+
+def _coerce_live_max_space(value) -> int | None:
+    """Positive CrowdMonitor max_space for SEO/UI, else None."""
+    if value is None:
+        return None
+    try:
+        n = int(value)
+    except (TypeError, ValueError):
+        return None
+    return n if n > 0 else None
+
+
+async def _latest_max_space(db_pool, pool_uid: str) -> int | None:
+    """Latest CrowdMonitor max_space for a pool (source of truth for capacity)."""
+    if db_pool is None:
+        return None
+    try:
+        row = await db_pool.fetchrow(
+            """
+            SELECT max_space
+            FROM pool_occupancy
+            WHERE pool_uid = $1 AND max_space > 0
+            ORDER BY time DESC
+            LIMIT 1
+            """,
+            pool_uid,
+        )
+        if row is None:
+            return None
+        return _coerce_live_max_space(row["max_space"])
+    except Exception:  # noqa: BLE001
         return None
 
 

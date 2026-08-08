@@ -36,7 +36,6 @@ async function refreshLiveCount() {
 	const el = document.getElementById('detail-live-count')
 	if (!el) return
 	const uid = el.dataset.uid
-	const cap = parseInt(el.dataset.capacity) || 0
 	try {
 		const res = await fetch('/api/current')
 		if (!res.ok) return
@@ -47,7 +46,9 @@ async function refreshLiveCount() {
 			el.textContent = ''
 			return
 		}
-		const capStr = cap > 0 ? ` / ${cap}` : ''
+		// Slash denom must match occupancy_pct basis (CrowdMonitor max_space).
+		const maxSpace = item.max_space > 0 ? item.max_space : null
+		const capStr = maxSpace != null ? ` / ${maxSpace}` : ''
 		const pct = item.occupancy_pct != null ? ` (${Math.round(item.occupancy_pct)}%)` : ''
 		el.textContent = `${item.current_fill}${capStr} Gäste${pct}`
 		el.className = 'detail-live-count'

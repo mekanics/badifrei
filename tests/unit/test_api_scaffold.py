@@ -67,8 +67,9 @@ class TestPools:
     async def test_pools_schema(self, client):
         response = await client.get("/pools")
         pool = response.json()[0]
-        for field in ["uid", "name", "type", "seasonal", "city", "max_capacity"]:
+        for field in ["uid", "name", "type", "seasonal", "city"]:
             assert field in pool, f"Missing field: {field}"
+        assert "max_capacity" not in pool
 
     async def test_kaeferberg_present(self, client):
         response = await client.get("/pools")

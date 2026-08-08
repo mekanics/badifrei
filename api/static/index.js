@@ -287,8 +287,9 @@ async function fetchOccupancy() {
 				const pct = Math.round(item.occupancy_pct)
 				label.textContent = pct + '%'
 				if (guestCount) {
-					const capacity = card.dataset.capacity
-					const cap = capacity && capacity !== '0' ? ` / ${capacity}` : ''
+					// Slash denom must match occupancy_pct basis (CrowdMonitor max_space).
+					const maxSpace = item.max_space > 0 ? item.max_space : null
+					const cap = maxSpace != null ? ` / ${maxSpace}` : ''
 					guestCount.textContent = item.current_fill != null ? `${item.current_fill}${cap} Gäste` : ''
 				}
 				bar.style.width = Math.min(pct, 100) + '%'

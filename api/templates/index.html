@@ -73,8 +73,8 @@ each detail page. #}
   <h2 class="section-title">Schwimmbäder {{ city.label }}</h2>
   <div class="pool-grid" id="pool-grid-{{ city.key }}">
     {% for pool in city.pools %}
-    <a href="/bad/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}" data-capacity="{{ pool.max_capacity }}"
-      data-type="{{ pool.type }}" data-city="{{ pool.city | default('zurich') }}">
+    <a href="/bad/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}" data-type="{{ pool.type }}"
+      data-city="{{ pool.city | default('zurich') }}">
       <button class="star-btn" data-uid="{{ pool.uid }}" aria-label="Zu Favoriten hinzufügen">⭐</button>
       <div class="pool-header">
         <span class="pool-name">{{ pool.name }}</span>

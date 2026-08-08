@@ -6,7 +6,6 @@
 		"type": "freibad",
 		"seasonal": true,
 		"city": "zurich",
-		"max_capacity": 2500,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -52,7 +51,6 @@
 		"type": "freibad",
 		"seasonal": true,
 		"city": "zurich",
-		"max_capacity": 2001,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -98,7 +96,6 @@
 		"type": "freibad",
 		"seasonal": true,
 		"city": "zurich",
-		"max_capacity": 2600,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -144,7 +141,6 @@
 		"type": "freibad",
 		"seasonal": true,
 		"city": "zurich",
-		"max_capacity": 3800,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -190,7 +186,6 @@
 		"type": "freibad",
 		"seasonal": true,
 		"city": "zurich",
-		"max_capacity": 2000,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -236,7 +231,6 @@
 		"type": "freibad",
 		"seasonal": true,
 		"city": "zurich",
-		"max_capacity": 2000,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -282,7 +276,6 @@
 		"type": "hallenbad",
 		"seasonal": false,
 		"city": "zurich",
-		"max_capacity": 0,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -328,7 +321,6 @@
 		"type": "hallenbad",
 		"seasonal": false,
 		"city": "zurich",
-		"max_capacity": 70,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -374,7 +366,6 @@
 		"type": "hallenbad",
 		"seasonal": false,
 		"city": "zurich",
-		"max_capacity": 70,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -414,7 +405,6 @@
 		"type": "hallenbad",
 		"seasonal": false,
 		"city": "zurich",
-		"max_capacity": 220,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -460,7 +450,6 @@
 		"type": "hallenbad",
 		"seasonal": false,
 		"city": "zurich",
-		"max_capacity": 80,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -506,7 +495,6 @@
 		"type": "hallenbad",
 		"seasonal": false,
 		"city": "zurich",
-		"max_capacity": 200,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -552,7 +540,6 @@
 		"type": "strandbad",
 		"seasonal": true,
 		"city": "luzern",
-		"max_capacity": 3500,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -598,7 +585,6 @@
 		"type": "freibad",
 		"seasonal": true,
 		"city": "rotkreuz",
-		"max_capacity": 600,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -644,7 +630,6 @@
 		"type": "seebad",
 		"seasonal": true,
 		"city": "zurich",
-		"max_capacity": 800,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -690,7 +675,6 @@
 		"type": "strandbad",
 		"seasonal": true,
 		"city": "zurich",
-		"max_capacity": 4500,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -736,7 +720,6 @@
 		"type": "strandbad",
 		"seasonal": true,
 		"city": "zurich",
-		"max_capacity": 3500,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -782,7 +765,6 @@
 		"type": "strandbad",
 		"seasonal": true,
 		"city": "zurich",
-		"max_capacity": 700,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -828,7 +810,6 @@
 		"type": "hallenbad",
 		"seasonal": false,
 		"city": "zurich",
-		"max_capacity": 70,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -874,7 +855,6 @@
 		"type": "freibad",
 		"seasonal": true,
 		"city": "wengen",
-		"max_capacity": 70,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -920,7 +900,6 @@
 		"type": "strandbad",
 		"seasonal": true,
 		"city": "hunenberg",
-		"max_capacity": 1000,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -966,7 +945,6 @@
 		"type": "seebad",
 		"seasonal": false,
 		"city": "zurich",
-		"max_capacity": 54,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -1012,7 +990,6 @@
 		"type": "freibad",
 		"seasonal": true,
 		"city": "entfelden",
-		"max_capacity": 1300,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -1058,7 +1035,6 @@
 		"type": "freibad",
 		"seasonal": true,
 		"city": "adliswil",
-		"max_capacity": 2000,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -1104,7 +1080,6 @@
 		"type": "freibad",
 		"seasonal": true,
 		"city": "bern",
-		"max_capacity": 14999,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -1150,7 +1125,6 @@
 		"type": "hallenbad",
 		"seasonal": false,
 		"city": "bern",
-		"max_capacity": 3500,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -1196,7 +1170,6 @@
 		"type": "hallenbad",
 		"seasonal": false,
 		"city": "bern",
-		"max_capacity": 2500,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -1242,7 +1215,6 @@
 		"type": "freibad",
 		"seasonal": true,
 		"city": "zurich",
-		"max_capacity": 1000,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -1288,7 +1260,6 @@
 		"type": "freibad",
 		"seasonal": true,
 		"city": "zurich",
-		"max_capacity": 800,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -1334,7 +1305,6 @@
 		"type": "freibad",
 		"seasonal": true,
 		"city": "zurich",
-		"max_capacity": 350,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {
@@ -1380,7 +1350,6 @@
 		"type": "freibad",
 		"seasonal": true,
 		"city": "zurich",
-		"max_capacity": 800,
 		"opening_hours": {
 			"schedule": {
 				"Mon": {

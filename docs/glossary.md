@@ -12,6 +12,12 @@
 event). Scope `full` closes the pool; `partial` does not change whole-pool open
 state.
 
+**CrowdMonitor max space** _(seo)_ — Live sensor capacity from the CrowdMonitor
+feed (`pool_occupancy.max_space`). Source of truth for live fill percentage
+(`occupancy_pct = current_fill / max_space`), the guest-count badge denominator,
+and SEO/FAQ capacity (`maximumAttendeeCapacity`) via the latest occupancy row.
+Not stored in `pool_metadata.json`.
+
 **Conditional hours** _(CH)_ _(seo)_ — Published Interval(s) that apply only
 under fair weather (`condition: fair_weather`). Shown in UI and FAQ prose; never
 asserted as unconditional open/close in structured data. Distinct from a
