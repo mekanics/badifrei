@@ -46,7 +46,9 @@ a better time.
 ### Live occupancy
 
 - Dashboard grouped by city with current fill / capacity and freshness
-- Pool detail page with live status and capacity from CrowdMonitor max space
+- Pool detail page with live status and capacity from CrowdMonitor max space,
+  plus water temperature (Baditicker, outdoor pools when fresh) and city air
+  temperature / condition beside the live count
 
 ### Forecasts
 
@@ -72,7 +74,8 @@ a better time.
 
 ## Success Metrics
 
-- User can open a pool page and see live occupancy plus a useful day forecast
+- User can open a pool page and see live occupancy, available water/air temps,
+  plus a useful day forecast
 - Forecast quality tracked via training reports (MAE vs naive baseline;
   stratified holdout metrics)
 - Collector and API stay healthy under normal dashboard refresh traffic
