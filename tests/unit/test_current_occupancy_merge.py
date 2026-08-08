@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from ml.opening_hours import WeatherHint
+
 from api.snapshots import _merge_current_pool_items
 
 Z = ZoneInfo("Europe/Zurich")
@@ -94,3 +96,53 @@ class TestMergeCurrentPoolItems:
         )
         assert [i["pool_uid"] for i in items] == ["SSD-1"]
         assert items[0]["occupancy_pct"] is None
+
+    def test_emits_water_temp_air_temp_and_weathercode(self):
+        pools = [
+            {"uid": "fb006", "name": "Freibad Allenmoos", "city": "zurich"},
+            {"uid": "SSD-2", "name": "Hallenbad Blaesi", "city": "zurich"},
+        ]
+        weather = {
+            "zurich": WeatherHint(
+                temperature_c=21.5, precipitation_mm=0.0, weathercode=1
+            )
+        }
+        items = _merge_current_pool_items(
+            pools,
+            occupancy_by_uid={},
+            observations={},
+            weather_by_city=weather,
+            now_zurich=NOW,
+            water_temps={"fb006": 26.0},
+            compute_status=_status_open,
+        )
+        by_uid = {i["pool_uid"]: i for i in items}
+
+        fb = by_uid["fb006"]
+        assert fb["water_temp_c"] == 26.0
+        assert fb["air_temp_c"] == 21.5
+        assert fb["weathercode"] == 1
+        assert fb["condition_label"] == "Meist klar"
+        assert fb["condition_emoji"] == "🌤️"
+
+        indoor = by_uid["SSD-2"]
+        assert indoor["water_temp_c"] is None
+        assert indoor["air_temp_c"] == 21.5
+        assert indoor["weathercode"] == 1
+        assert indoor["condition_label"] == "Meist klar"
+
+    def test_missing_weather_and_water_temps_emit_nulls(self):
+        pools = [{"uid": "fb006", "city": "zurich"}]
+        items = _merge_current_pool_items(
+            pools,
+            occupancy_by_uid={},
+            observations={},
+            weather_by_city={},
+            now_zurich=NOW,
+            compute_status=_status_open,
+        )
+        assert items[0]["water_temp_c"] is None
+        assert items[0]["air_temp_c"] is None
+        assert items[0]["weathercode"] is None
+        assert items[0]["condition_label"] is None
+        assert items[0]["condition_emoji"] is None

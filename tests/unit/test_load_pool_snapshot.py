@@ -30,7 +30,7 @@ async def test_load_pool_snapshot_uses_single_uid_query(monkeypatch):
     db.fetchrow = AsyncMock(return_value=row)
 
     monkeypatch.setattr(
-        "api.snapshots._fetch_latest_observation",
+        "api.snapshots._fetch_latest_status",
         AsyncMock(return_value=None),
     )
     monkeypatch.setattr(

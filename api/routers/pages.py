@@ -22,10 +22,11 @@ from api.prediction_days import _classify_prediction_day, _schedule_for_pool
 from api.predictor import predictor
 from api.snapshots import (
     _fetch_city_weather_hints,
-    _fetch_latest_observation,
+    _fetch_latest_status,
     _latest_max_space,
 )
 from api.templating import templates
+from api.weather_display import build_weather_temps
 from api.weekly_insights import is_stale, refresh_weekly_insights
 
 logger = logging.getLogger(__name__)
@@ -109,6 +110,7 @@ async def pool_detail(request: Request, db_pool: DbPool, pool_uid: str):
     hours_view = None
     hours_jsonld: list = []
     hours_faq = opening_hours_summary
+    weather_temps = None
     try:
         from ml.opening_hours import (
             DE_MONTHS,
@@ -121,6 +123,37 @@ async def pool_detail(request: Request, db_pool: DbPool, pool_uid: str):
         )
 
         schedule = _schedule_for_pool(pool)
+        weather_hint = None
+        latest_status = None
+        if db_pool is not None:
+            city = pool.get("city", "zurich")
+            try:
+                weather_by_city = await _fetch_city_weather_hints(
+                    db_pool, now_zurich, cities={city}
+                )
+                weather_hint = weather_by_city.get(city)
+            except Exception as weather_exc:  # noqa: BLE001
+                logger.warning("weather hint failed for %s: %s", pool_uid, weather_exc)
+            try:
+                latest_status = await _fetch_latest_status(db_pool, pool_uid)
+            except Exception as status_exc:  # noqa: BLE001
+                logger.warning("latest status failed for %s: %s", pool_uid, status_exc)
+            weather_temps = build_weather_temps(
+                water_temp_c=(
+                    latest_status.water_temp_c if latest_status is not None else None
+                ),
+                observed_at=(
+                    latest_status.observed_at if latest_status is not None else None
+                ),
+                source_modified_at=(
+                    latest_status.source_modified_at
+                    if latest_status is not None
+                    else None
+                ),
+                weather_hint=weather_hint,
+                now=now_zurich,
+            )
+
         if schedule is not None:
             hours_confidence = schedule.confidence
             now_zurich = datetime.now(ZURICH_TZ)
@@ -138,16 +171,9 @@ async def pool_detail(request: Request, db_pool: DbPool, pool_uid: str):
                     f"{DE_MONTHS[schedule.scraped_at.month - 1]} "
                     f"{schedule.scraped_at.year}"
                 )
-            weather_hint = None
-            observation = None
-            if db_pool is not None:
-                city = pool.get("city", "zurich")
-                weather_by_city = await _fetch_city_weather_hints(
-                    db_pool, now_zurich, cities={city}
-                )
-                weather_hint = weather_by_city.get(city)
-                observation = await _fetch_latest_observation(db_pool, pool_uid)
-
+            observation = (
+                latest_status.observation if latest_status is not None else None
+            )
             obs = observation if use_observed_override() else None
             resolution = resolve(
                 schedule, now_zurich, observation=obs, weather=weather_hint
@@ -191,5 +217,6 @@ async def pool_detail(request: Request, db_pool: DbPool, pool_uid: str):
             "hours_scraped_at": hours_scraped_at,
             "hours_view": hours_view,
             "live_max_space": live_max_space,
+            "weather_temps": weather_temps,
         },
     )

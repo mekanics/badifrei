@@ -72,6 +72,9 @@ lifecycle isolation, not independent deployable products.
   (`/api/current`, `/pools`, `/predict`, `/predict/range`, `/api/history`),
   SEO/LLM surfaces (`/llms.txt`, `/index.md`, `/bad/{uid}.md`, sitemap,
   robots), structured data and hours Resolution via `ml/opening_hours.py`.
+  Detail-page weather temps combine gated `pool_status.water_temp_c` with
+  city air temp / WMO condition from `hourly_weather` (`api/weather_display.py`,
+  `api/water_temperature.py`); `/api/current` refreshes the same fields.
 - **Interfaces**: Reads TimescaleDB pool; loads XGBoost artifact from
   `ml/models` (shared volume); optional Umami snippet via env.
 - **Data ownership**: Request/response shaping and presentation; pool catalog
