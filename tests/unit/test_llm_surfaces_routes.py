@@ -71,6 +71,17 @@ class TestDiscoverability:
         )
         assert "/llms.txt" in response.text
 
+    async def test_homepage_footer_credits_data_origins(self, client):
+        response = await client.get("/")
+        assert response.status_code == 200
+        body = response.text
+        assert "CrowdMonitor" in body
+        assert "Baditicker" in body
+        assert "Wassertemperatur" in body
+        assert "Open-Meteo" in body
+        assert 'href="https://open-meteo.com/"' in body
+        assert 'data-umami-event-link-target="open-meteo"' in body
+
     async def test_llms_txt_points_at_md(self, client):
         from api.catalog import get_pools
 
