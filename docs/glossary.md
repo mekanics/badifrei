@@ -59,6 +59,10 @@ Not stored in `pool_metadata.json`.
 of weather (`condition: always`). The only open windows asserted in Hours
 JSON-LD. See [ADR-001](./adr/ADR-001-guaranteed-hours-in-structured-data.md).
 
+**History day** — The Europe/Zurich calendar date used by `/api/history` and the
+pool chart date picker when bucketing hourly occupancy actuals. Day bounds are
+Zurich midnights (`[D 00:00, D+1 00:00)`), not UTC midnights.
+
 **Hours display view** — Derived UI projection of a Schedule for the pool detail
 page. Not stored. Two shapes: seasonal periods (date ranges with nested weekday
 time groups) and weekday table (Mo–So cells that may hold multiple Intervals).
