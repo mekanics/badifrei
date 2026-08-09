@@ -81,12 +81,12 @@ body {
 	width: 100%;
 	max-width: 1200px;
 	margin: 0 auto;
-	padding: 3rem 1.5rem;
+	padding: 1.25rem 1.5rem 3rem;
 }
 
 /* Page header */
 .page-title {
-	font-size: 2.25rem;
+	font-size: 1.65rem;
 	font-weight: 700;
 	letter-spacing: -0.04em;
 	margin-bottom: 0.5rem;
@@ -97,6 +97,17 @@ body {
 	background-clip: text;
 }
 
+/* Breakpoints match Tailwind v4 defaults (sm 40rem / md 48rem). */
+@media (min-width: 48rem) {
+	.container {
+		padding-top: 3rem;
+	}
+
+	.page-title {
+		font-size: 2.25rem;
+	}
+}
+
 .subtitle {
 	color: var(--muted);
 	margin-bottom: 3rem;
@@ -105,11 +116,19 @@ body {
 	padding-left: 0.75rem;
 }
 
-/* Pool grid */
+/* Pool grid — each card spans 2 parent rows (header | body) via subgrid so
+   occupancy bars align across a row when titles wrap to different heights.
+   Column count is mobile-first (min-width) so later queries only widen. */
 .pool-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	grid-template-columns: 1fr;
 	gap: 1rem;
+}
+
+@media (min-width: 40rem) {
+	.pool-grid {
+		grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	}
 }
 
 .pool-card {
@@ -122,7 +141,9 @@ body {
 	transition:
 		box-shadow 0.15s ease,
 		transform 0.15s ease;
-	display: block;
+	display: grid;
+	grid-template-rows: subgrid;
+	grid-row: span 2;
 	box-shadow: var(--shadow);
 	position: relative;
 }
@@ -135,9 +156,16 @@ body {
 .pool-header {
 	display: grid;
 	grid-template-columns: 1fr auto;
-	align-items: flex-start;
+	align-items: start;
 	gap: 0.5rem;
-	margin-bottom: 1rem;
+	grid-row: 1;
+	min-width: 0;
+}
+
+.pool-body {
+	grid-row: 2;
+	min-width: 0;
+	align-self: start;
 }
 
 .pool-name {
@@ -145,6 +173,25 @@ body {
 	font-size: 0.95rem;
 	line-height: 1.3;
 	color: var(--text);
+}
+
+/* star-btn is a grid item (position:absolute); keep it on the header track
+   so it does not steal the body row from auto-placement. */
+.pool-card > .star-btn {
+	grid-row: 1;
+}
+
+/* No-subgrid fallback: reserve two title lines so bars still roughly align. */
+@supports not (grid-template-rows: subgrid) {
+	.pool-card {
+		display: grid;
+		grid-template-rows: auto auto;
+		grid-row: auto;
+	}
+
+	.pool-name {
+		min-height: calc(1.3em * 2);
+	}
 }
 
 /* Badges */
@@ -252,10 +299,10 @@ body {
 	margin-top: 0.2rem;
 }
 
-/* Filter bar */
+/* Filter bar — compact on small screens, roomier from sm (40rem) up */
 .filter-bar {
 	margin-bottom: 2rem;
-	padding: 0.75rem 1rem;
+	padding: 0.6rem 0.75rem;
 	border: 2px solid var(--border);
 	background: var(--surface);
 	box-shadow: var(--shadow);
@@ -286,6 +333,7 @@ body {
 }
 
 .filter-sep {
+	display: none;
 	width: 1.5px;
 	height: 1.25rem;
 	background: var(--border-light);
@@ -417,7 +465,9 @@ body {
 }
 
 .filter-meta {
-	margin-left: auto;
+	width: 100%;
+	margin-left: 0;
+	margin-top: 0.25rem;
 	display: flex;
 	align-items: center;
 	gap: 0.6rem;
@@ -447,17 +497,19 @@ body {
 	color: var(--red);
 }
 
-@media (max-width: 600px) {
+@media (min-width: 40rem) {
 	.filter-bar {
-		padding: 0.6rem 0.75rem;
+		padding: 0.75rem 1rem;
 	}
+
 	.filter-sep {
-		display: none;
+		display: block;
 	}
+
 	.filter-meta {
-		width: 100%;
-		margin-left: 0;
-		margin-top: 0.25rem;
+		width: auto;
+		margin-left: auto;
+		margin-top: 0;
 	}
 }
 
@@ -579,12 +631,13 @@ body {
 	text-decoration: underline;
 }
 
+/* Detail header — mobile-first: stack → 2×2 → single row */
 .pool-detail-header {
 	display: grid;
-	grid-template-columns: auto auto 1fr auto;
-	grid-template-areas: 'title badge temps counter';
+	grid-template-columns: 1fr auto;
+	grid-template-areas: 'title badge';
 	align-items: center;
-	gap: 1rem;
+	gap: 0.6rem;
 	padding-bottom: 1.25rem;
 	border-bottom: 2px solid var(--border);
 }
@@ -600,11 +653,17 @@ body {
 
 .pool-detail-header .badge {
 	grid-area: badge;
+	justify-self: end;
+	align-self: start;
 }
 
 .detail-weather-temps {
-	grid-area: temps;
-	justify-self: end;
+	/* Narrow default: full-width under title|badge so the guest count never clips.
+	   Only title|badge stays named — temps/counter auto-place so a missing weather
+	   block does not leave a phantom gap row. */
+	grid-area: auto;
+	grid-column: 1 / -1;
+	justify-self: start;
 	font-size: 0.875rem;
 	font-weight: 700;
 	color: var(--text);
@@ -625,7 +684,53 @@ body {
 }
 
 .pool-detail-header .detail-live-count {
-	grid-area: counter;
+	grid-area: auto;
+	grid-column: 1 / -1;
+	justify-self: end;
+	font-size: 0.85rem;
+	padding: 0.25rem 0.6rem;
+}
+
+@media (min-width: 22.5rem) {
+	.pool-detail-header {
+		grid-template-areas:
+			'title badge'
+			'temps counter';
+	}
+
+	.detail-weather-temps {
+		grid-area: temps;
+		grid-column: auto;
+		justify-self: start;
+		align-self: center;
+	}
+
+	.pool-detail-header .detail-live-count {
+		grid-area: counter;
+		grid-column: auto;
+	}
+}
+
+@media (min-width: 48rem) {
+	.pool-detail-header {
+		grid-template-columns: auto auto 1fr auto;
+		grid-template-areas: 'title badge temps counter';
+		gap: 1rem;
+	}
+
+	.pool-detail-header .badge {
+		justify-self: auto;
+		align-self: auto;
+	}
+
+	.detail-weather-temps {
+		justify-self: end;
+	}
+
+	.pool-detail-header .detail-live-count {
+		font-size: 1rem;
+		padding: 0.3rem 0.8rem;
+	}
 }
 
 .visually-hidden {
@@ -781,7 +886,7 @@ input[type='date'] {
 	padding: 1.5rem;
 	max-width: 100%;
 	box-shadow: var(--shadow);
-	height: 380px;
+	height: 300px;
 }
 
 .chart-wrap canvas {
@@ -789,9 +894,9 @@ input[type='date'] {
 	height: 100% !important;
 }
 
-@media (max-width: 600px) {
+@media (min-width: 40rem) {
 	.chart-wrap {
-		height: 300px;
+		height: 380px;
 	}
 }
 
@@ -805,60 +910,6 @@ input[type='date'] {
 	font-size: 0.9rem;
 	font-weight: 600;
 	box-shadow: 3px 3px 0 var(--border);
-}
-
-/* Narrow / tablet: 2×2 detail header (title|badge / temps|counter).
-   Breakpoint sits above ~605px viewports where the desktop single row crowds. */
-@media (max-width: 768px) {
-	.container {
-		padding-top: 1.25rem;
-	}
-	.pool-grid {
-		grid-template-columns: 1fr;
-	}
-	.page-title {
-		font-size: 1.65rem;
-	}
-	.pool-detail-header {
-		grid-template-columns: 1fr auto;
-		grid-template-areas:
-			'title badge'
-			'temps counter';
-		gap: 0.6rem;
-	}
-	.pool-detail-header .badge {
-		justify-self: end;
-		align-self: start;
-	}
-	.detail-weather-temps {
-		grid-area: temps;
-		justify-self: start;
-		align-self: center;
-	}
-	.pool-detail-header .detail-live-count {
-		font-size: 0.85rem;
-		padding: 0.25rem 0.6rem;
-	}
-}
-
-/* Very narrow: stack weather above occupancy so the guest count never clips.
-   Only title|badge stays named — temps/counter auto-place so a missing weather
-   block does not leave a phantom gap row. */
-@media (max-width: 360px) {
-	.pool-detail-header {
-		grid-template-columns: 1fr auto;
-		grid-template-areas: 'title badge';
-	}
-	.detail-weather-temps {
-		grid-area: auto;
-		grid-column: 1 / -1;
-		justify-self: start;
-	}
-	.pool-detail-header .detail-live-count {
-		grid-area: auto;
-		grid-column: 1 / -1;
-		justify-self: end;
-	}
 }
 
 /* Footer */
