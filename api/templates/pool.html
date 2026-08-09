@@ -333,13 +333,13 @@ endif %}: Live-Auslastung & aktuelle Besucherzahlen. Schau vor dem Besuch, wie v
 
   .pool-info-grid {
     display: grid;
-    grid-template-columns: minmax(max-content, 1fr) 2fr;
+    grid-template-columns: 1fr;
     gap: 1.25rem;
   }
 
-  @media (max-width: 600px) {
+  @media (min-width: 40rem) {
     .pool-info-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(max-content, 1fr) 2fr;
     }
   }
 

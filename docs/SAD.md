@@ -1,7 +1,7 @@
 # Software Architecture Document
 
 **Project**: badifrei.ch (`badi-predictor`)
-**Last Updated**: 2026-08-08
+**Last Updated**: 2026-08-09
 **Version**: 1.0
 
 ## Overview
@@ -46,7 +46,7 @@ lifecycle isolation, not independent deployable products.
 
 | Layer        | Technology                     | Rationale                                                                                                       |
 | ------------ | ------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| Frontend     | Jinja2 + vanilla JS + Chart.js | SSR dashboard; no SPA framework                                                                                 |
+| Frontend     | Jinja2 + vanilla JS + Chart.js | SSR dashboard; no SPA framework; mobile-first CSS per [ADR-004](./adr/ADR-004-mobile-first-css-breakpoints.md)  |
 | Backend      | FastAPI + asyncpg              | Async I/O; simple JSON + HTML routes; layout and DB access per [ADR-002](./adr/ADR-002-fastapi-flat-asyncpg.md) |
 | Collector    | Python asyncio + websockets    | Push-based CrowdMonitor feed                                                                                    |
 | Database     | TimescaleDB (PostgreSQL 16)    | Time-series hypertables; SQL familiarity                                                                        |
@@ -132,12 +132,12 @@ Wassertemperatur, water-temp freshness gates) are defined in
 
 ## External Integrations
 
-| Service      | Purpose                             | Authentication       |
-| ------------ | ----------------------------------- | -------------------- |
-| CrowdMonitor | Live occupancy WebSocket            | Public WS            |
-| Baditicker   | Stadt Zürich open/closed XML        | Public HTTP          |
-| Open-Meteo   | Hourly weather features + UI air temp | None (no API key)  |
-| Umami        | Optional privacy-friendly analytics | Script URL + site ID |
+| Service      | Purpose                               | Authentication       |
+| ------------ | ------------------------------------- | -------------------- |
+| CrowdMonitor | Live occupancy WebSocket              | Public WS            |
+| Baditicker   | Stadt Zürich open/closed XML          | Public HTTP          |
+| Open-Meteo   | Hourly weather features + UI air temp | None (no API key)    |
+| Umami        | Optional privacy-friendly analytics   | Script URL + site ID |
 
 ## Security Model
 
