@@ -47,6 +47,11 @@ class TestRetrainJob:
 
         with (
             patch("ml.retrain.load_data", AsyncMock(return_value=df)),
+            # Avoid real Open-Meteo — unmocked weather made CI unit-tests ~19min.
+            patch(
+                "ml.retrain._fetch_weather_for_df",
+                AsyncMock(return_value=None),
+            ),
             patch("ml.retrain.train", return_value=(mock_model, mock_metrics)),
             patch("ml.retrain.save_model", return_value=Path("/tmp/model.ubj")),
             patch("ml.retrain.evaluate", return_value=mock_report),
@@ -86,6 +91,10 @@ class TestRetrainJob:
 
         with (
             patch("ml.retrain.load_data", AsyncMock(return_value=df)),
+            patch(
+                "ml.retrain._fetch_weather_for_df",
+                AsyncMock(return_value=None),
+            ),
             patch("ml.retrain.train", return_value=(mock_model, {"mae": 5.0})),
             patch(
                 "ml.retrain.save_model", return_value=Path("/tmp/model.ubj")
@@ -114,6 +123,10 @@ class TestRetrainJob:
 
         with (
             patch("ml.retrain.load_data", AsyncMock(return_value=df)),
+            patch(
+                "ml.retrain._fetch_weather_for_df",
+                AsyncMock(return_value=None),
+            ),
             patch("ml.retrain.train", return_value=(mock_model, {"mae": 5.0})),
             patch("ml.retrain.save_model", return_value=Path("/tmp/model.ubj")),
             patch("ml.retrain.evaluate", return_value=mock_report) as mock_eval,
