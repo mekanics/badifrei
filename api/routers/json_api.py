@@ -1,7 +1,7 @@
 """JSON read APIs: occupancy, pools, predictions, history."""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException
 
@@ -19,6 +19,12 @@ from api.snapshots import load_current_snapshot
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+def _zurich_day_bounds(d: date) -> tuple[datetime, datetime]:
+    """Inclusive-start / exclusive-end Zurich midnights for calendar day ``d``."""
+    start = datetime(d.year, d.month, d.day, 0, 0, 0, tzinfo=ZURICH_TZ)
+    return start, start + timedelta(days=1)
 
 
 @router.get("/api/current", tags=["dashboard"])
@@ -123,16 +129,14 @@ async def predict_range(db_pool: DbPool, pool_uid: str, date: str):
 @router.get("/api/history", tags=["history"])
 async def history(db_pool: DbPool, pool_uid: str, date: str):
     """Return hourly average occupancy from DB for a given pool and date."""
-    from datetime import date as date_type
-
     null_actuals = [{"hour": i, "occupancy_pct": None} for i in range(24)]
 
     if not any(p["uid"] == pool_uid for p in get_pools()):
         raise HTTPException(status_code=404, detail="Pool not found")
 
     try:
-        d = date_type.fromisoformat(date)
-    except ValueError:
+        d = date_parser(date)
+    except Exception:
         raise HTTPException(
             status_code=422, detail="Invalid date. Use YYYY-MM-DD format."
         )
@@ -140,6 +144,7 @@ async def history(db_pool: DbPool, pool_uid: str, date: str):
     if db_pool is None:
         return {"pool_uid": pool_uid, "date": date, "actuals": null_actuals}
 
+    start, end = _zurich_day_bounds(d)
     try:
         rows = await db_pool.fetch(
             """
@@ -154,8 +159,8 @@ async def history(db_pool: DbPool, pool_uid: str, date: str):
             ORDER BY hour
             """,
             pool_uid,
-            d,
-            d + timedelta(days=1),
+            start,
+            end,
         )
         hour_map = {
             int(row["hour"]): (
