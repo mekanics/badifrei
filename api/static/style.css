@@ -175,12 +175,6 @@ body {
 	color: var(--text);
 }
 
-/* star-btn is a grid item (position:absolute); keep it on the header track
-   so it does not steal the body row from auto-placement. */
-.pool-card > .star-btn {
-	grid-row: 1;
-}
-
 /* No-subgrid fallback: reserve two title lines so bars still roughly align. */
 @supports not (grid-template-rows: subgrid) {
 	.pool-card {
