@@ -136,7 +136,7 @@ async def poll_once(
     for reading in readings:
         uid = poiid_to_uid.get(reading.poiid)
         if uid is None:
-            continue  # untracked pools (Dolder, Schanzengraben, …) — not an error
+            continue  # untracked pools (Schanzengraben, Au-Höngg, Katzensee, …) — not an error
         mapped.append(
             {
                 "pool_uid": uid,

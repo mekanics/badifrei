@@ -270,6 +270,51 @@
 		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/zwischen-den-hoelzern.html"
 	},
 	{
+		"uid": "SSD-13",
+		"baditicker_poiid": "fb016",
+		"name": "Freibad Dolder",
+		"type": "freibad",
+		"seasonal": true,
+		"city": "zurich",
+		"opening_hours": {
+			"schedule": {
+				"Mon": {
+					"open": "11:30",
+					"close": "20:00"
+				},
+				"Tue": {
+					"open": "10:00",
+					"close": "20:00"
+				},
+				"Wed": {
+					"open": "10:00",
+					"close": "20:00"
+				},
+				"Thu": {
+					"open": "10:00",
+					"close": "20:00"
+				},
+				"Fri": {
+					"open": "10:00",
+					"close": "20:00"
+				},
+				"Sat": {
+					"open": "10:00",
+					"close": "20:00"
+				},
+				"Sun": {
+					"open": "10:00",
+					"close": "20:00"
+				}
+			},
+			"seasonal_open": "2026-06-19",
+			"seasonal_close": "2026-09-13",
+			"notes": "Operated by Dolder Eis und Bad. Sportabo valid. Waves return 2027. May close early in bad weather. Wellenkino 31 Jul–16 Aug 2026 closes 19:30. Closed 5 Sep 2026 for an event."
+		},
+		"description": "Das Freibad Dolder liegt bei der Bergstation der Dolderbahn auf dem Zürichberg und wird von Dolder Eis und Bad betrieben. Die sanierte Anlage bietet ein 50-Meter-Becken, ein Planschbecken und eine Spielwiese. Das städtische Sportabo ist gültig. Die Wellenanlage geht erst 2027 wieder in Betrieb.",
+		"official_url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/dolder.html"
+	},
+	{
 		"uid": "SSD-1",
 		"baditicker_poiid": null,
 		"name": "Hallenbad Altstetten",

@@ -26,7 +26,7 @@ def test_all_uids_present():
     # Derive expected UIDs from the file itself — this test checks for duplicates
     assert len(uids) == len(data), "All UIDs must be unique (no duplicates)"
     # Spot-check a few known UIDs that should always be present
-    known_uids = {"SSD-5", "SSD-4", "LETZI-1"}
+    known_uids = {"SSD-5", "SSD-4", "LETZI-1", "SSD-13"}
     assert known_uids.issubset(uids), f"Known UIDs missing: {known_uids - uids}"
 
 
@@ -48,6 +48,7 @@ def test_seasonal_flags_correct():
     # Freibäder are seasonal
     assert by_uid["fb006"]["seasonal"]  # Freibad Allenmoos (was fb001)
     assert by_uid["LETZI-1"]["seasonal"]  # Freibad Letzigraben
+    assert by_uid["SSD-13"]["seasonal"]  # Freibad Dolder
 
 
 def test_max_capacity_removed():

@@ -2370,6 +2370,101 @@
         "scraped_at": "2026-08-17",
         "confidence": "official_structured"
       }
+    },
+    {
+      "uid": "SSD-13",
+      "closures": [
+        {
+          "from": "2026-09-05T00:00:00+02:00",
+          "to": "2026-09-06T00:00:00+02:00",
+          "reason": "Veranstaltung",
+          "scope": "full",
+          "extracted_by": "human",
+          "cited_sentence": "Am Samstag, 5. September 2026, bleibt das Dolder Wellenbad auf Grund einer Veranstaltung geschlossen."
+        }
+      ],
+      "periods": [
+        {
+          "from": "2026-06-19",
+          "to": "2026-07-30",
+          "days": ["Mon"],
+          "intervals": [
+            {
+              "open": "11:30",
+              "close": "20:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-06-19",
+          "to": "2026-07-30",
+          "days": ["Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+          "intervals": [
+            {
+              "open": "10:00",
+              "close": "20:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-07-31",
+          "to": "2026-08-16",
+          "days": ["Mon"],
+          "intervals": [
+            {
+              "open": "11:30",
+              "close": "19:30",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-07-31",
+          "to": "2026-08-16",
+          "days": ["Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+          "intervals": [
+            {
+              "open": "10:00",
+              "close": "19:30",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-08-17",
+          "to": "2026-09-13",
+          "days": ["Mon"],
+          "intervals": [
+            {
+              "open": "11:30",
+              "close": "20:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-08-17",
+          "to": "2026-09-13",
+          "days": ["Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+          "intervals": [
+            {
+              "open": "10:00",
+              "close": "20:00",
+              "condition": "always"
+            }
+          ]
+        }
+      ],
+      "confidence": "official_prose",
+      "holidays_follow": "Sun",
+      "last_entry_offset_min": 30,
+      "source": {
+        "url": "https://doldereisundbad.ch/wellenbad/",
+        "layout": "operator_prose",
+        "confidence": "official_prose"
+      }
     }
   ]
 }

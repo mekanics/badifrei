@@ -62,7 +62,12 @@ class TestPools:
 
     async def test_pools_count_32(self, client):
         response = await client.get("/pools")
-        assert len(response.json()) == 31
+        assert len(response.json()) == 32
+
+    async def test_dolder_present(self, client):
+        response = await client.get("/pools")
+        uids = [p["uid"] for p in response.json()]
+        assert "SSD-13" in uids
 
     async def test_pools_schema(self, client):
         response = await client.get("/pools")
