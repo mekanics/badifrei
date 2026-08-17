@@ -106,10 +106,10 @@ class TestClosures:
         result = resolve(schedule, _when(2026, 8, 4, 12))
         assert result.is_open is True
 
-    def test_generated_revision_closes_city(self):
+    def test_generated_revision_closes_oerlikon(self):
         schedules = load_schedules()
-        city = schedules["SSD-4"]
-        result = resolve(city, _when(2026, 8, 4, 12))
+        oerlikon = schedules["SSD-7"]
+        result = resolve(oerlikon, _when(2026, 8, 17, 12))
         assert result.is_open is False
         assert result.state == OpenState.CLOSED_EXCEPTION
 

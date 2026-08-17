@@ -1,32 +1,23 @@
 {
-  "scraped_at": "2026-08-10",
+  "scraped_at": "2026-08-17",
   "source": {
     "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder.html",
     "layout": "revisionsarbeiten",
     "confidence": "official_structured",
-    "scraped_at": "2026-08-10"
+    "scraped_at": "2026-08-17"
   },
   "pools": [
     {
       "uid": "SSD-1",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-10",
+      "scraped_at": "2026-08-17",
       "periods": null,
-      "closures": [
-        {
-          "from": "2026-07-30T00:00:00+02:00",
-          "to": "2026-08-17T00:00:00+02:00",
-          "reason": "Revision",
-          "scope": "full",
-          "extracted_by": "deterministic",
-          "cited_sentence": "Altstetten: Donnerstag, 30. Juli, bis und mit Sonntag, 16. August"
-        }
-      ]
+      "closures": []
     },
     {
       "uid": "SSD-2",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-10",
+      "scraped_at": "2026-08-17",
       "periods": [
         {
           "from": null,
@@ -123,16 +114,7 @@
           ]
         }
       ],
-      "closures": [
-        {
-          "from": "2026-07-27T00:00:00+02:00",
-          "to": "2026-08-17T00:00:00+02:00",
-          "reason": "Revision",
-          "scope": "full",
-          "extracted_by": "deterministic",
-          "cited_sentence": "Bläsi: Montag, 27. Juli, bis und mit Sonntag, 16. August"
-        }
-      ],
+      "closures": [],
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
@@ -145,7 +127,7 @@
     {
       "uid": "SSD-3",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-10",
+      "scraped_at": "2026-08-17",
       "periods": [
         {
           "from": null,
@@ -238,16 +220,7 @@
           ]
         }
       ],
-      "closures": [
-        {
-          "from": "2026-07-11T00:00:00+02:00",
-          "to": "2026-08-01T00:00:00+02:00",
-          "reason": "Revision",
-          "scope": "full",
-          "extracted_by": "deterministic",
-          "cited_sentence": "Bungertwies: Samstag, 11., bis und mit Freitag, 31. Juli"
-        }
-      ],
+      "closures": [],
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
@@ -260,7 +233,7 @@
     {
       "uid": "SSD-4",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-10",
+      "scraped_at": "2026-08-17",
       "periods": [
         {
           "from": null,
@@ -283,16 +256,7 @@
           ]
         }
       ],
-      "closures": [
-        {
-          "from": "2026-07-04T00:00:00+02:00",
-          "to": "2026-08-08T00:00:00+02:00",
-          "reason": "Revision",
-          "scope": "full",
-          "extracted_by": "deterministic",
-          "cited_sentence": "City: Samstag, 4. Juli, bis und mit Freitag, 7. August"
-        }
-      ],
+      "closures": [],
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
@@ -305,7 +269,7 @@
     {
       "uid": "SSD-5",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-10",
+      "scraped_at": "2026-08-17",
       "periods": [
         {
           "from": null,
@@ -466,16 +430,7 @@
           ]
         }
       ],
-      "closures": [
-        {
-          "from": "2026-07-11T00:00:00+02:00",
-          "to": "2026-08-03T00:00:00+02:00",
-          "reason": "Revision",
-          "scope": "full",
-          "extracted_by": "deterministic",
-          "cited_sentence": "Käferberg: Samstag, 11. Juli, bis und mit Sonntag, 2. August"
-        }
-      ],
+      "closures": [],
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
@@ -488,7 +443,7 @@
     {
       "uid": "SSD-6",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-10",
+      "scraped_at": "2026-08-17",
       "periods": [
         {
           "from": null,
@@ -619,16 +574,7 @@
           ]
         }
       ],
-      "closures": [
-        {
-          "from": "2026-07-18T00:00:00+02:00",
-          "to": "2026-08-17T00:00:00+02:00",
-          "reason": "Revision",
-          "scope": "full",
-          "extracted_by": "deterministic",
-          "cited_sentence": "Leimbach: Samstag, 18. Juli, bis und mit Sonntag, 16. August"
-        }
-      ],
+      "closures": [],
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
@@ -641,7 +587,7 @@
     {
       "uid": "SSD-7",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-10",
+      "scraped_at": "2026-08-17",
       "periods": [
         {
           "from": null,
@@ -754,7 +700,7 @@
           "reason": "Revision",
           "scope": "full",
           "extracted_by": "deterministic",
-          "cited_sentence": "Oerlikon: Sonntag, 2., bis und mit Sonntag, 23. August"
+          "cited_sentence": "Hallenbad Oerlikon bis 23.. August gechlossen"
         }
       ],
       "holidays_follow": "Sun",

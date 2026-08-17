@@ -91,8 +91,8 @@ class TestPoolStructuredDataJson:
         assert "sicher" in answer
         assert "findest du" in answer
 
-    def test_ssd4_scripts_parse_with_closure_spec(self):
-        html = _render_pool_html("SSD-4")
+    def test_ssd7_scripts_parse_with_closure_spec(self):
+        html = _render_pool_html("SSD-7")
         blocks = _ld_json_blocks(html)
         sports = next(b for b in blocks if b.get("@type") == "SportsActivityLocation")
         specs = sports["openingHoursSpecification"]

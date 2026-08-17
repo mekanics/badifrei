@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Scrape the Stadt Zürich Revisionsarbeiten list into the generated hours file.
 
-Deterministic parse of the central Hallenbäder overview page. Merges closures
-into ``ml/data/opening_hours.generated.json`` without overwriting periods.
+Deterministic parse of the central Hallenbäder overview page. The
+Revisionsarbeiten section is the full current Revision set: pools not named
+there lose their Revision closures. Periods and event closures are kept.
 """
 
 from __future__ import annotations
@@ -54,44 +55,83 @@ MONTHS = {
     "dezember": 12,
 }
 
-# "Altstetten: Donnerstag, 30. Juli, bis und mit Sonntag, 16. August"
-_LINE_RE = re.compile(
-    r"(?P<name>Altstetten|Bläsi|Blaesi|Bungertwies|City|Käferberg|Kaeferberg|"
-    r"Leimbach|Oerlikon)\s*:\s*"
-    r".*?(?P<d1>\d{1,2})\.?(?:,)?\s+(?P<m1>[A-Za-zäöüÄÖÜ]+)"
-    r".*?bis und mit\s+.*?(?P<d2>\d{1,2})\.?(?:,)?\s+(?P<m2>[A-Za-zäöüÄÖÜ]+)",
-    re.IGNORECASE | re.DOTALL,
+_NAME_ALT = (
+    r"Altstetten|Bläsi|Blaesi|Bungertwies|City|Käferberg|Kaeferberg|"
+    r"Leimbach|Oerlikon"
 )
+_MONTH_ALT = (
+    r"Januar|Februar|März|Maerz|April|Mai|Juni|Juli|August|"
+    r"September|Oktober|November|Dezember"
+)
+_WEEKDAY = r"[A-Za-zäöüÄÖÜ]+,\s+"
+
+# "Altstetten: Donnerstag, 30. Juli, bis und mit Sonntag, 16. August"
+# "Oerlikon: Sonntag, 2., bis und mit Sonntag, 23. August"
+_RANGE_RE = re.compile(
+    rf"(?P<name>{_NAME_ALT})\s*:\s*"
+    rf"(?:{_WEEKDAY})?"
+    rf"(?P<d1>\d{{1,2}})\.?(?:,)?"
+    rf"(?:\s+(?P<m1>{_MONTH_ALT}))?"
+    rf"\s*,?\s*"
+    rf"bis(?:\s+und\s+mit)?\s+"
+    rf"(?:{_WEEKDAY})?"
+    rf"(?P<d2>\d{{1,2}})\.+(?:,)?"
+    rf"\s+(?P<m2>{_MONTH_ALT})",
+    re.IGNORECASE,
+)
+
+# "Hallenbad Oerlikon bis 23.. August gechlossen"
+_END_ONLY_RE = re.compile(
+    rf"(?:Hallenbad\s+)?(?P<name>{_NAME_ALT})\s*:?\s+"
+    rf"bis(?:\s+und\s+mit)?\s+"
+    rf"(?P<d2>\d{{1,2}})\.+\s+(?P<m2>{_MONTH_ALT})"
+    rf"(?:\s+ge?chlossen)?",
+    re.IGNORECASE,
+)
+
+_SECTION_RE = re.compile(r"Revisionsarbeiten(.*?)Mehr zum Thema", re.S | re.I)
+_NAME_RE = re.compile(_NAME_ALT, re.IGNORECASE)
 
 
 def _month(name: str) -> int:
     key = name.lower().replace("ä", "ae").replace("ö", "oe").replace("ü", "ue")
-    # normalize back for lookup
     for m, num in MONTHS.items():
         if m.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue") == key:
             return num
         if m == name.lower():
             return num
-    # direct
     normalized = name.lower()
     if normalized in MONTHS:
         return MONTHS[normalized]
     raise ValueError(f"Unknown month: {name}")
 
 
-def parse_revision_lines(html: str, year: int | None = None) -> list[dict]:
-    """Extract revision closures from the Hallenbäder overview HTML."""
-    year = year or date.today().year
-    # Prefer the Revisionsarbeiten section if present
-    section = html
-    m = re.search(r"Revisionsarbeiten(.*?)Mehr zum Thema", html, re.S | re.I)
-    if m:
-        section = m.group(1)
+def _uid_for(name: str) -> str:
+    for key, uid in NAME_TO_UID.items():
+        if key.lower() == name.lower():
+            return uid
+    raise KeyError(name)
 
-    # Decode common entities and strip tags for matching
-    text = re.sub(r"<br\s*/?>", "\n", section)
+
+def _exclusive_end(year: int, month: int, day: int) -> datetime:
+    end_day = date(year, month, day) + timedelta(days=1)
+    return datetime(end_day.year, end_day.month, end_day.day, 0, 0, tzinfo=ZURICH)
+
+
+def _cited(match: re.Match[str]) -> str:
+    return re.sub(r"\s+", " ", match.group(0)).strip()
+
+
+def revision_section(html: str) -> str | None:
+    """Return the Revisionsarbeiten body, or None if the markers are missing."""
+    m = _SECTION_RE.search(html)
+    return m.group(1) if m else None
+
+
+def _plain_text(html: str) -> str:
+    text = re.sub(r"<br\s*/?>", "\n", html)
     text = re.sub(r"<[^>]+>", "\n", text)
-    text = (
+    return (
         text.replace("&auml;", "ä")
         .replace("&ouml;", "ö")
         .replace("&uuml;", "ü")
@@ -101,31 +141,83 @@ def parse_revision_lines(html: str, year: int | None = None) -> list[dict]:
         .replace("&nbsp;", " ")
     )
 
-    closures: list[dict] = []
-    for match in _LINE_RE.finditer(text):
-        name = match.group("name")
-        uid = NAME_TO_UID[name if name in NAME_TO_UID else name]
-        m1 = _month(match.group("m1"))
+
+def named_pools_in_text(text: str) -> set[str]:
+    return {m.group(0) for m in _NAME_RE.finditer(text)}
+
+
+def parse_revision_lines(html: str, year: int | None = None) -> list[dict]:
+    """Extract revision closures from the Hallenbäder overview HTML."""
+    year = year or date.today().year
+    section = revision_section(html)
+    text = _plain_text(section if section is not None else html)
+
+    by_uid: dict[str, dict] = {}
+    for match in _RANGE_RE.finditer(text):
         m2 = _month(match.group("m2"))
+        m1_raw = match.group("m1")
+        m1 = _month(m1_raw) if m1_raw else m2
         d1 = int(match.group("d1"))
         d2 = int(match.group("d2"))
         start = datetime(year, m1, d1, 0, 0, tzinfo=ZURICH)
-        # "bis und mit" → exclusive end is the next calendar day
-        end_day = date(year, m2, d2) + timedelta(days=1)
-        end = datetime(end_day.year, end_day.month, end_day.day, 0, 0, tzinfo=ZURICH)
-        cited = re.sub(r"\s+", " ", match.group(0)).strip()
-        closures.append(
-            {
-                "uid": uid,
-                "from": start.isoformat(),
-                "to": end.isoformat(),
-                "reason": "Revision",
-                "scope": "full",
-                "extracted_by": "deterministic",
-                "cited_sentence": cited,
-            }
+        uid = _uid_for(match.group("name"))
+        by_uid[uid] = {
+            "uid": uid,
+            "from": start.isoformat(),
+            "to": _exclusive_end(year, m2, d2).isoformat(),
+            "reason": "Revision",
+            "scope": "full",
+            "extracted_by": "deterministic",
+            "cited_sentence": _cited(match),
+        }
+
+    for match in _END_ONLY_RE.finditer(text):
+        uid = _uid_for(match.group("name"))
+        if uid in by_uid:
+            continue
+        m2 = _month(match.group("m2"))
+        d2 = int(match.group("d2"))
+        by_uid[uid] = {
+            "uid": uid,
+            "to": _exclusive_end(year, m2, d2).isoformat(),
+            "reason": "Revision",
+            "scope": "full",
+            "extracted_by": "deterministic",
+            "cited_sentence": _cited(match),
+        }
+
+    return list(by_uid.values())
+
+
+def _scraped_midnight(scraped_at: date) -> str:
+    return datetime(
+        scraped_at.year, scraped_at.month, scraped_at.day, 0, 0, tzinfo=ZURICH
+    ).isoformat()
+
+
+def _revision_record(
+    closure: dict, existing_closures: list[dict], scraped_at: date
+) -> dict:
+    start = closure.get("from")
+    end = closure["to"]
+    if not start:
+        prior = next(
+            (
+                existing["from"]
+                for existing in existing_closures
+                if existing.get("reason") == "Revision" and existing.get("from")
+            ),
+            None,
         )
-    return closures
+        start = prior if prior and prior < end else _scraped_midnight(scraped_at)
+    return {
+        "from": start,
+        "to": end,
+        "reason": closure.get("reason", "Revision"),
+        "scope": closure.get("scope", "full"),
+        "extracted_by": closure.get("extracted_by", "deterministic"),
+        "cited_sentence": closure.get("cited_sentence"),
+    }
 
 
 def merge_into_generated(closures: list[dict], scraped_at: date) -> dict:
@@ -135,28 +227,31 @@ def merge_into_generated(closures: list[dict], scraped_at: date) -> dict:
         data = {"pools": []}
 
     by_uid = {p["uid"]: p for p in data.get("pools", [])}
-    for c in closures:
-        uid = c["uid"]
-        entry = by_uid.setdefault(
-            uid,
-            {
-                "uid": uid,
-                "confidence": "official_structured",
-                "scraped_at": scraped_at.isoformat(),
-                "periods": None,
-                "closures": [],
-            },
-        )
-        # Replace Revision closures; keep event closures from other extractors
-        kept = [
-            existing
-            for existing in entry.get("closures") or []
-            if existing.get("reason") != "Revision"
-        ]
-        kept.append({k: v for k, v in c.items() if k != "uid"})
-        entry["closures"] = kept
-        entry["scraped_at"] = scraped_at.isoformat()
-        entry["confidence"] = "official_structured"
+    incoming = {c["uid"]: c for c in closures}
+
+    for uid, entry in by_uid.items():
+        previous = list(entry.get("closures") or [])
+        had_revision = any(item.get("reason") == "Revision" for item in previous)
+        kept = [item for item in previous if item.get("reason") != "Revision"]
+        if uid in incoming:
+            kept.append(_revision_record(incoming[uid], previous, scraped_at))
+            entry["closures"] = kept
+            entry["scraped_at"] = scraped_at.isoformat()
+            entry["confidence"] = "official_structured"
+        elif had_revision:
+            entry["closures"] = kept
+            entry["scraped_at"] = scraped_at.isoformat()
+
+    for uid, closure in incoming.items():
+        if uid in by_uid:
+            continue
+        by_uid[uid] = {
+            "uid": uid,
+            "confidence": "official_structured",
+            "scraped_at": scraped_at.isoformat(),
+            "periods": None,
+            "closures": [_revision_record(closure, [], scraped_at)],
+        }
 
     data["pools"] = list(by_uid.values())
     data["scraped_at"] = scraped_at.isoformat()
@@ -167,6 +262,18 @@ def merge_into_generated(closures: list[dict], scraped_at: date) -> dict:
         "scraped_at": scraped_at.isoformat(),
     }
     return data
+
+
+def classify_parse(html: str, closures: list[dict]) -> str | None:
+    """Return an error message when the page cannot be trusted, else None."""
+    section = revision_section(html)
+    if section is None:
+        return "ERROR: Revisionsarbeiten section missing"
+    if closures:
+        return None
+    if named_pools_in_text(_plain_text(section)):
+        return "ERROR: no revision closures parsed"
+    return None
 
 
 def main() -> int:
@@ -191,8 +298,9 @@ def main() -> int:
     (SOURCES / "revisionsarbeiten.html").write_text(html, encoding="utf-8")
 
     closures = parse_revision_lines(html, year=args.year)
-    if not closures:
-        print("ERROR: no revision closures parsed", flush=True)
+    error = classify_parse(html, closures)
+    if error:
+        print(error, flush=True)
         return 1
 
     scraped_at = date.today()
