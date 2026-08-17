@@ -242,6 +242,20 @@ def tables_to_periods(tables: list[dict], year: int) -> list[dict]:
     return periods
 
 
+def generated_source_layout(
+    uid: str, generated_path: Path | None = None
+) -> str | None:
+    """Return the committed Schedule source layout for *uid*, if any."""
+    path = generated_path or GENERATED
+    if not path.exists():
+        return None
+    data = json.loads(path.read_text(encoding="utf-8"))
+    for pool in data.get("pools", []):
+        if pool.get("uid") == uid:
+            return (pool.get("source") or {}).get("layout")
+    return None
+
+
 def slug_from_official_url(url: str) -> tuple[str, str] | None:
     """Return (section, slug) for a stadt-zuerich.ch pool page."""
     m = re.search(
@@ -304,6 +318,9 @@ def main() -> int:
             continue
         url = pool.get("official_url") or ""
         if "stadt-zuerich.ch" not in url:
+            continue
+        if generated_source_layout(pool["uid"]) == "operator_prose":
+            print(f"[skip] {pool['uid']}: operator_prose schedule")
             continue
         slug = slug_from_official_url(url)
         if not slug:

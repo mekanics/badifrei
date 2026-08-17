@@ -131,13 +131,14 @@ class TestPoiidCrosswalk:
         assert by_uid["SSD-10"] == "seb6945"
         assert by_uid["BADI-1"] == "seb6943"
         assert by_uid["SSD-4"] == "hb001"
+        assert by_uid["SSD-13"] == "fb016"
         assert by_uid["LIDO-1"] is None
 
     def test_build_poiid_to_uid(self, pools):
         mapping = build_poiid_to_uid(pools)
         assert mapping["fb002"] == "LETZI-1"
         assert mapping["seb6945"] == "SSD-10"
-        assert "fb016" not in mapping  # untracked Dolder
+        assert mapping["fb016"] == "SSD-13"
 
 
 class TestPollOnce:
@@ -156,8 +157,7 @@ class TestPollOnce:
         assert "fb006" in uids
         assert "LETZI-1" in uids  # via fb002
         assert "SSD-10" in uids  # via seb6945
-        # Untracked Dolder (fb016) must not appear
-        assert all(r["baditicker_poiid"] != "fb016" for r in records)
+        assert "SSD-13" in uids  # via fb016 Dolder
 
     async def test_empty_status_written_as_none(self, fixture_xml, pools):
         with patch(
