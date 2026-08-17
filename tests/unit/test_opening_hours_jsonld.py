@@ -244,7 +244,7 @@ class TestOpeningHoursFaqText:
     def test_active_closure_leads_faq(self):
         schedules = load_schedules()
         text = opening_hours_faq_text(
-            schedules["SSD-4"], "Hallenbad City", when=_when(2026, 8, 4, 12)
+            schedules["SSD-7"], "Hallenbad Oerlikon", when=_when(2026, 8, 17, 12)
         )
         assert "derzeit geschlossen" in text
         assert "Revision" in text

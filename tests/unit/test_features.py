@@ -443,8 +443,8 @@ class TestWeatherFeatures:
         from ml.features import build_features, load_pool_metadata
 
         meta = load_pool_metadata()
-        # SSD-4: Revision closure on 2026-08-04
-        df_rev = make_df(n=1, pool_uid="SSD-4", start="2026-08-04")
+        # SSD-7: Revision closure through 2026-08-23
+        df_rev = make_df(n=1, pool_uid="SSD-7", start="2026-08-17")
         rev = build_features(df_rev, metadata=meta)
         assert int(rev.iloc[0]["is_open"]) == 0
 
