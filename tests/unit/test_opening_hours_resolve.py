@@ -185,6 +185,120 @@ class TestObservations:
         assert result.is_open is True
         assert result.source == "schedule"
 
+    def test_overnight_stuck_closed_falls_back_to_schedule(self):
+        """Baditicker left geschlossen at Friday close; Sunday poll must not override."""
+        schedule = _simple_schedule("08:00", "20:00")
+        now = _when(2026, 8, 9, 10, 12)  # Sunday
+        obs = Observation(
+            observed_at=now,
+            source_modified_at=_when(2026, 8, 7, 20, 19),  # Friday
+            is_open=False,
+        )
+        result = resolve(schedule, now, observation=obs)
+        assert result.is_open is True
+        assert result.state == OpenState.OPEN_GUARANTEED
+        assert result.source == "schedule"
+
+    def test_null_source_modified_at_does_not_override(self):
+        schedule = _simple_schedule()
+        now = _when(2026, 8, 4, 12)
+        obs = Observation(
+            observed_at=now,
+            source_modified_at=None,
+            is_open=False,
+        )
+        result = resolve(schedule, now, observation=obs)
+        assert result.is_open is True
+        assert result.source == "schedule"
+
+    def test_fair_weather_only_day_does_not_override(self):
+        """No always interval today → Observation cannot override."""
+        schedule = PoolSchedule(
+            uid="fair-only",
+            periods=(
+                Period(
+                    start=None,
+                    end=None,
+                    days=frozenset(range(7)),
+                    intervals=(Interval(9 * 60, 20 * 60, "fair_weather"),),
+                ),
+            ),
+            confidence="official_structured",
+            scraped_at=date(2026, 8, 4),
+        )
+        now = _when(2026, 8, 4, 12)
+        obs = Observation(
+            observed_at=now,
+            source_modified_at=_when(2026, 8, 4, 11, 0),
+            is_open=False,
+        )
+        # Unfair weather → schedule closed; stale-cycle Observation must not win.
+        result = resolve(
+            schedule,
+            now,
+            observation=obs,
+            weather=WeatherHint(
+                temperature_c=10.0, precipitation_mm=5.0, weathercode=61
+            ),
+        )
+        assert result.is_open is False
+        assert result.source == "schedule"
+        assert result.state != OpenState.OBSERVED_CLOSED
+
+    def test_stuck_offen_off_season_does_not_reopen(self):
+        schedule = _simple_schedule(
+            seasonal_open="2026-05-01",
+            seasonal_close="2026-09-30",
+        )
+        now = _when(2026, 3, 20, 14)
+        obs = Observation(
+            observed_at=now,
+            source_modified_at=_when(2026, 2, 8, 10, 42),
+            is_open=True,
+        )
+        result = resolve(schedule, now, observation=obs)
+        assert result.is_open is False
+        assert result.state == OpenState.OFF_SEASON
+        assert result.source == "schedule"
+
+    def test_stuck_offen_closed_today_does_not_reopen(self):
+        """Weekday-only schedule on Saturday: no Guaranteed open → no override."""
+        schedule = _legacy_to_schedule(
+            "weekday-only",
+            {
+                "schedule": {
+                    day: {"open": "09:00", "close": "20:00"}
+                    for day in ["Mon", "Tue", "Wed", "Thu", "Fri"]
+                },
+                "seasonal_open": None,
+                "seasonal_close": None,
+            },
+        )
+        now = _when(2026, 8, 8, 12)  # Saturday
+        obs = Observation(
+            observed_at=now,
+            source_modified_at=_when(2026, 8, 7, 10, 0),
+            is_open=True,
+        )
+        result = resolve(schedule, now, observation=obs)
+        assert result.is_open is False
+        assert result.state == OpenState.CLOSED_TODAY
+        assert result.source == "schedule"
+
+    def test_resolve_normalizes_utc_when_for_cycle_day(self):
+        """UTC instant near Zurich midnight must use Zurich calendar day."""
+        schedule = _simple_schedule("08:00", "20:00")
+        # 2026-08-08 22:30 UTC == 2026-08-09 00:30 Europe/Zurich (Sunday).
+        now_utc = datetime(2026, 8, 8, 22, 30, tzinfo=ZoneInfo("UTC"))
+        obs = Observation(
+            observed_at=now_utc,
+            source_modified_at=_when(2026, 8, 8, 20, 0),
+            is_open=False,
+        )
+        result = resolve(schedule, now_utc, observation=obs)
+        assert result.source == "schedule"
+        assert result.state == OpenState.CLOSED_BETWEEN
+
 
 class TestSplitIntervals:
     def test_gap_is_closed(self):

@@ -80,9 +80,14 @@ Guaranteed hours or Conditional hours.
 ## M — R
 
 **Observation** — What the Baditicker feed reported at a timestamp. Asserts
-nothing about the future; used only when fresh to override schedule-based
-Resolution. A full Closure still outranks Observation (Revision cannot be
-reopened by a lagging Baditicker `offen`).
+nothing about the future; used only when eligible to override schedule-based
+Resolution. Eligibility requires collector liveness (`observed_at` within
+60 minutes) **and** a same-day status confirmation (`source_modified_at` at or
+after today's first Guaranteed / `always` open). Missing `source_modified_at`
+or no Guaranteed open that day means Observation does not override (overnight-
+stuck Baditicker values fall through to Schedule). A full Closure still
+outranks Observation (Revision cannot be reopened by a lagging Baditicker
+`offen`). See [ADR-004](./adr/ADR-004-observation-same-day-cycle.md).
 
 **Period** — A weekday set holding Intervals, optionally bounded by a date range.
 Dated Periods model Sommerbad season sections; an evergreen Period (`start` and

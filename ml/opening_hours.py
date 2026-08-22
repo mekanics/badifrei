@@ -3,10 +3,13 @@
 Supports both the legacy flat ``schedule`` shape in pool_metadata.json and the
 generated periods/intervals/closures shape. Precedence inside ``resolve``:
 
-    full closure → fresh observation → schedule interval → season window
+    full closure → eligible observation → schedule interval → season window
 
 Full Closure outranks Observation so a lagging Baditicker ``offen`` cannot
-reopen a pool during Revision.
+reopen a pool during Revision. Observation is eligible only when the collector
+is alive (``observed_at`` fresh) and ``source_modified_at`` is at or after
+today's first Guaranteed (``always``) open — overnight-stuck feed values fall
+through to Schedule.
 """
 
 from __future__ import annotations
@@ -433,6 +436,18 @@ def _active_full_closure(schedule: PoolSchedule, when: dt.datetime) -> Closure |
     return None
 
 
+def _first_always_open_min(schedule: PoolSchedule, day: dt.date) -> int | None:
+    """Earliest Guaranteed-hours open (minutes) for ``day``, or None if none."""
+    earliest: int | None = None
+    for period in _periods_for_day(schedule, day):
+        for interval in period.intervals:
+            if interval.condition != "always":
+                continue
+            if earliest is None or interval.open_min < earliest:
+                earliest = interval.open_min
+    return earliest
+
+
 def _observation_is_fresh(
     observation: Observation | None,
     when: dt.datetime,
@@ -440,15 +455,48 @@ def _observation_is_fresh(
 ) -> bool:
     """True when the collector still confirms this status recently.
 
-    Key off ``observed_at`` (written every poll), not Baditicker
-    ``dateModified`` / ``source_modified_at``. The feed often leaves
+    Key off ``observed_at`` (written every poll). The feed often leaves
     ``dateModified`` stuck at the last status change while the pool stays
-    geschlossen all afternoon — confirmations must keep that override live.
+    geschlossen all afternoon — poll confirmations must keep that override
+    live once the same-day cycle gate also passes.
     """
     if observation is None or observation.is_open is None:
         return False
     stamp = _to_zurich(observation.observed_at)
     return (when - stamp) <= max_age
+
+
+def _observation_may_override(
+    schedule: PoolSchedule,
+    observation: Observation | None,
+    when: dt.datetime,
+    max_age: dt.timedelta,
+) -> bool:
+    """True when Observation may override Schedule for ``is_open``.
+
+    Requires collector liveness (``observed_at`` within ``max_age``) and a
+    same-day status confirmation: ``source_modified_at`` at or after today's
+    first ``always`` open. Missing ``source_modified_at`` or no Guaranteed
+    open today means Observation cannot override (overnight-stuck Baditicker
+    falls through to Schedule).
+    """
+    when = _to_zurich(when)
+    if not _observation_is_fresh(observation, when, max_age):
+        return False
+    assert observation is not None
+    if observation.source_modified_at is None:
+        return False
+    day = when.date()
+    first_open = _first_always_open_min(schedule, day)
+    if first_open is None:
+        return False
+    modified = _to_zurich(observation.source_modified_at)
+    cycle_start = dt.datetime.combine(
+        day,
+        _minutes_to_time(first_open),
+        tzinfo=ZURICH_TZ,
+    )
+    return modified >= cycle_start
 
 
 def _format_next_open(schedule: PoolSchedule, when: dt.datetime) -> str | None:
@@ -543,8 +591,8 @@ def resolve(
             confidence=confidence,
         )
 
-    # 2. Fresh observation wins for is_open only (weather closes, etc.)
-    if _observation_is_fresh(observation, when, observation_max_age):
+    # 2. Eligible observation wins for is_open only (weather closes, etc.)
+    if _observation_may_override(schedule, observation, when, observation_max_age):
         assert observation is not None and observation.is_open is not None
         if observation.is_open:
             g_close, c_close = _close_times_for_day(_periods_for_day(schedule, day))
