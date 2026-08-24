@@ -40,10 +40,41 @@ NAMED_UNPARSED = """
 Mehr zum Thema
 """
 
-MISSING_SECTION = """
+UNRECOGNIZABLE_PAGE = """
 <h2>Öffnungszeiten</h2>
 <p>Keine Angaben auf dieser Seite.</p>
 """
+
+_POOL_LIST = """
+<h1>Hallenbäder</h1>
+<ul>
+  <li>Hallenbad Altstetten</li>
+  <li>Hallenbad Bläsi</li>
+  <li>Hallenbad Bungertwies</li>
+  <li>Hallenbad City</li>
+  <li>Hallenbad Käferberg</li>
+  <li>Hallenbad Leimbach</li>
+  <li>Hallenbad Oerlikon</li>
+</ul>
+"""
+
+# Stadt Zürich drops the whole heading once the last Revision ends
+SECTION_REMOVED = f"{_POOL_LIST}\nMehr zum Thema\n"
+
+# A closure is announced but the Revisionsarbeiten heading is gone
+CLOSURE_OUTSIDE_SECTION = (
+    f"{_POOL_LIST}\n"
+    "<p>Das Hallenbad Oerlikon ist bis 30. September geschlossen.</p>\n"
+    "Mehr zum Thema\n"
+)
+
+# Same, but in a shape the deterministic parser can read. Deliberately free of
+# closure keywords so only the parsed-closures branch can reject it.
+PARSED_OUTSIDE_SECTION = (
+    f"{_POOL_LIST}\n"
+    "<ul><li>Oerlikon: Sonntag, 2., bis und mit Sonntag, 23. August</li></ul>\n"
+    "Mehr zum Thema\n"
+)
 
 
 @pytest.fixture
@@ -52,13 +83,18 @@ def generated():
     return json.loads(GENERATED.read_text(encoding="utf-8"))
 
 
-def test_generated_has_revision_closures(generated):
-    by_uid = {p["uid"]: p for p in generated["pools"]}
-    oerlikon = by_uid["SSD-7"]
-    revision = next(c for c in oerlikon["closures"] if c.get("reason") == "Revision")
-    assert revision["from"].startswith("2026-08-02")
-    assert revision["to"].startswith("2026-08-24")
-    assert revision["extracted_by"] == "deterministic"
+def test_generated_revision_closures_are_wellformed(generated):
+    """Revisions come and go with the season; their shape must not."""
+    for pool in generated["pools"]:
+        for closure in pool.get("closures") or []:
+            if closure.get("reason") != "Revision":
+                continue
+            assert (
+                closure["from"] < closure["to"]
+            ), f"{pool['uid']}: Revision closure ends before it starts"
+            assert closure.get(
+                "cited_sentence"
+            ), f"{pool['uid']}: Revision closure missing cited_sentence"
 
 
 def test_model_closures_are_cited(generated):
@@ -66,16 +102,16 @@ def test_model_closures_are_cited(generated):
     for pool in generated["pools"]:
         for closure in pool.get("closures") or []:
             if closure.get("extracted_by") == "model":
-                assert closure.get("cited_sentence"), (
-                    f"{pool['uid']} model closure missing cited_sentence"
-                )
+                assert closure.get(
+                    "cited_sentence"
+                ), f"{pool['uid']} model closure missing cited_sentence"
                 # If a source fragment exists, the sentence must appear in it
                 fragment_path = SOURCES / f"{pool['uid']}.json"
                 if fragment_path.exists():
                     text = fragment_path.read_text(encoding="utf-8")
-                    assert closure["cited_sentence"] in text, (
-                        f"{pool['uid']}: cited_sentence not found in fragment"
-                    )
+                    assert (
+                        closure["cited_sentence"] in text
+                    ), f"{pool['uid']}: cited_sentence not found in fragment"
 
 
 def test_revision_closures_have_deterministic_extractor(generated):
@@ -263,7 +299,7 @@ def test_merge_empty_recognized_section_clears_all_revisions(tmp_path, monkeypat
         )
 
 
-def _run_main(monkeypatch, tmp_path: Path, html: str) -> int:
+def _run_main(monkeypatch, tmp_path: Path, html: str, today: str = "2026-08-24") -> int:
     generated = tmp_path / "opening_hours.generated.json"
     sources = tmp_path / "sources"
     if not generated.exists():
@@ -274,7 +310,15 @@ def _run_main(monkeypatch, tmp_path: Path, html: str) -> int:
     page.write_text(html, encoding="utf-8")
     monkeypatch.setattr(
         "sys.argv",
-        ["scrape_closures.py", "--from-file", str(page), "--year", "2026"],
+        [
+            "scrape_closures.py",
+            "--from-file",
+            str(page),
+            "--year",
+            "2026",
+            "--today",
+            today,
+        ],
     )
     return sc.main()
 
@@ -296,5 +340,77 @@ def test_main_named_but_unparsed_exits_1(tmp_path, monkeypatch):
     assert _run_main(monkeypatch, tmp_path, NAMED_UNPARSED) == 1
 
 
-def test_main_missing_section_exits_1(tmp_path, monkeypatch):
-    assert _run_main(monkeypatch, tmp_path, MISSING_SECTION) == 1
+def test_main_unrecognizable_page_exits_1(tmp_path, monkeypatch):
+    assert _run_main(monkeypatch, tmp_path, UNRECOGNIZABLE_PAGE) == 1
+
+
+def test_main_section_removed_exits_0_and_clears_revisions(tmp_path, monkeypatch):
+    """No heading on an otherwise intact page means no Revision is pending."""
+    generated = tmp_path / "opening_hours.generated.json"
+    _seed_generated(generated, [{"uid": "SSD-7", "closures": [_revision()]}])
+    assert _run_main(monkeypatch, tmp_path, SECTION_REMOVED) == 0
+    data = json.loads(generated.read_text(encoding="utf-8"))
+    assert not any(
+        c.get("reason") == "Revision"
+        for p in data["pools"]
+        for c in p.get("closures") or []
+    )
+
+
+def test_main_closure_keyword_without_section_exits_1(tmp_path, monkeypatch):
+    """A closure notice outside the section must not be silently dropped."""
+    assert _run_main(monkeypatch, tmp_path, CLOSURE_OUTSIDE_SECTION) == 1
+
+
+def test_main_parsable_closure_without_section_exits_1(tmp_path, monkeypatch):
+    assert not sc._CLOSURE_WORD_RE.search(
+        PARSED_OUTSIDE_SECTION
+    ), "fixture must not leak a closure keyword, or it stops testing this branch"
+    assert _run_main(monkeypatch, tmp_path, PARSED_OUTSIDE_SECTION) == 1
+
+
+def test_main_section_removed_keeps_still_active_revision(tmp_path, monkeypatch):
+    """Inferring "no Revisions" must never delete a closure still in force.
+
+    A renamed heading looks identical to an ended Revision, so the destructive
+    direction needs its own guard.
+    """
+    generated = tmp_path / "opening_hours.generated.json"
+    _seed_generated(
+        generated,
+        [{"uid": "SSD-7", "closures": [_revision(end="2026-09-30T00:00:00+02:00")]}],
+    )
+    assert _run_main(monkeypatch, tmp_path, SECTION_REMOVED) == 1
+    data = json.loads(generated.read_text(encoding="utf-8"))
+    by_uid = {p["uid"]: p for p in data["pools"]}
+    assert [c["reason"] for c in by_uid["SSD-7"]["closures"]] == ["Revision"]
+
+
+def test_main_recognized_empty_section_may_clear_active_revision(tmp_path, monkeypatch):
+    """ "Derzeit keine Revisionsarbeiten" is the page stating it, not us guessing."""
+    generated = tmp_path / "opening_hours.generated.json"
+    _seed_generated(
+        generated,
+        [{"uid": "SSD-7", "closures": [_revision(end="2026-09-30T00:00:00+02:00")]}],
+    )
+    assert _run_main(monkeypatch, tmp_path, EMPTY_SECTION) == 0
+    data = json.loads(generated.read_text(encoding="utf-8"))
+    by_uid = {p["uid"]: p for p in data["pools"]}
+    assert by_uid["SSD-7"]["closures"] == []
+
+
+def test_section_removed_keeps_non_revision_closures(tmp_path, monkeypatch):
+    generated = tmp_path / "opening_hours.generated.json"
+    event = {
+        "from": "2026-09-01T00:00:00+02:00",
+        "to": "2026-09-02T00:00:00+02:00",
+        "reason": "Betriebsanlass",
+        "scope": "full",
+        "extracted_by": "deterministic",
+        "cited_sentence": "Betriebsanlass",
+    }
+    _seed_generated(generated, [{"uid": "SSD-7", "closures": [_revision(), event]}])
+    assert _run_main(monkeypatch, tmp_path, SECTION_REMOVED) == 0
+    data = json.loads(generated.read_text(encoding="utf-8"))
+    by_uid = {p["uid"]: p for p in data["pools"]}
+    assert [c["reason"] for c in by_uid["SSD-7"]["closures"]] == ["Betriebsanlass"]

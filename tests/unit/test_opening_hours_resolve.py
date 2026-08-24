@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import json
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pandas as pd
 
 from ml.opening_hours import (
+    DAY_NAMES,
     Closure,
     Interval,
     Observation,
@@ -106,12 +108,47 @@ class TestClosures:
         result = resolve(schedule, _when(2026, 8, 4, 12))
         assert result.is_open is True
 
-    def test_generated_revision_closes_oerlikon(self):
-        schedules = load_schedules()
-        oerlikon = schedules["SSD-7"]
+    def test_revision_closure_in_generated_file_closes_pool(self, tmp_path):
+        """A Revision written to the generated file must reach the resolver.
+
+        Built from a fixture rather than the committed file, whose Revisions come
+        and go as the city finishes each pool.
+        """
+        generated = tmp_path / "opening_hours.generated.json"
+        generated.write_text(
+            json.dumps(
+                {
+                    "pools": [
+                        {
+                            "uid": "SSD-7",
+                            "periods": [
+                                {
+                                    "from": None,
+                                    "to": None,
+                                    "days": list(DAY_NAMES),
+                                    "intervals": [{"open": "09:00", "close": "20:00"}],
+                                }
+                            ],
+                            "closures": [
+                                {
+                                    "from": "2026-08-02T00:00:00+02:00",
+                                    "to": "2026-08-24T00:00:00+02:00",
+                                    "reason": "Revision",
+                                    "scope": "full",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            ),
+            encoding="utf-8",
+        )
+        oerlikon = load_schedules(generated_path=generated)["SSD-7"]
         result = resolve(oerlikon, _when(2026, 8, 17, 12))
         assert result.is_open is False
         assert result.state == OpenState.CLOSED_EXCEPTION
+
+        assert resolve(oerlikon, _when(2026, 8, 24, 12)).is_open is True
 
 
 class TestObservations:

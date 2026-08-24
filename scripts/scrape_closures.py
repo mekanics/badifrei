@@ -4,6 +4,11 @@
 Deterministic parse of the central Hallenbäder overview page. The
 Revisionsarbeiten section is the full current Revision set: pools not named
 there lose their Revision closures. Periods and event closures are kept.
+
+The city deletes the whole section once the last Revision ends, so a missing
+heading on an otherwise intact page means "no Revisions pending". That reading is
+an error when the page is unrecognizable, announces a closure elsewhere, or would
+drop a stored Revision that is still running.
 """
 
 from __future__ import annotations
@@ -91,6 +96,13 @@ _END_ONLY_RE = re.compile(
 
 _SECTION_RE = re.compile(r"Revisionsarbeiten(.*?)Mehr zum Thema", re.S | re.I)
 _NAME_RE = re.compile(_NAME_ALT, re.IGNORECASE)
+
+# "gechlossen" is a typo the city has published before
+_CLOSURE_WORD_RE = re.compile(r"Revision|geschlossen|gechlossen", re.IGNORECASE)
+
+# The page keeps listing every Hallenbad even when no Revision is pending, so a
+# healthy fetch still names most pools and ends with the "Mehr zum Thema" block.
+_MIN_KNOWN_POOLS = 5
 
 
 def _month(name: str) -> int:
@@ -264,16 +276,80 @@ def merge_into_generated(closures: list[dict], scraped_at: date) -> dict:
     return data
 
 
+def page_is_recognizable(html: str) -> bool:
+    """True when the fetch still looks like the Hallenbäder overview page."""
+    if not re.search(r"Mehr zum Thema", html, re.I):
+        return False
+    uids = {_uid_for(name) for name in named_pools_in_text(_plain_text(html))}
+    return len(uids) >= _MIN_KNOWN_POOLS
+
+
+def _classify_missing_section(html: str, closures: list[dict]) -> str | None:
+    """Decide whether a missing heading means "no Revisions" or a broken page.
+
+    The city deletes the whole Revisionsarbeiten block once the last Revision
+    ends, so its absence is the normal off-season state. Only trust that reading
+    when the rest of the page survived and announces no closure anywhere.
+    """
+    if not page_is_recognizable(html):
+        return "ERROR: Revisionsarbeiten section missing"
+    if closures or _CLOSURE_WORD_RE.search(_plain_text(html)):
+        return "ERROR: closure announced outside Revisionsarbeiten section"
+    return None
+
+
 def classify_parse(html: str, closures: list[dict]) -> str | None:
     """Return an error message when the page cannot be trusted, else None."""
     section = revision_section(html)
     if section is None:
-        return "ERROR: Revisionsarbeiten section missing"
+        return _classify_missing_section(html, closures)
     if closures:
         return None
     if named_pools_in_text(_plain_text(section)):
         return "ERROR: no revision closures parsed"
     return None
+
+
+def _active_revisions(scraped_at: date) -> dict[str, str]:
+    """Stored Revisions that still run at scrape time, as uid -> end timestamp."""
+    if not GENERATED.exists():
+        return {}
+    data = json.loads(GENERATED.read_text(encoding="utf-8"))
+    cutoff = datetime(
+        scraped_at.year, scraped_at.month, scraped_at.day, 0, 0, tzinfo=ZURICH
+    )
+    active: dict[str, str] = {}
+    for pool in data.get("pools", []):
+        for closure in pool.get("closures") or []:
+            if closure.get("reason") != "Revision" or not closure.get("to"):
+                continue
+            if datetime.fromisoformat(closure["to"]) > cutoff:
+                active[pool["uid"]] = closure["to"]
+    return active
+
+
+def classify_clear(html: str, closures: list[dict], scraped_at: date) -> str | None:
+    """Guard the destructive direction: never drop a Revision still in force.
+
+    A renamed heading is indistinguishable from a finished Revision, so absence
+    is only trusted for closures that have already ended. An empty section is
+    the page saying so itself and stays authoritative.
+    """
+    if revision_section(html) is not None:
+        return None
+    incoming = {c["uid"] for c in closures}
+    stale = {
+        uid: end
+        for uid, end in _active_revisions(scraped_at).items()
+        if uid not in incoming
+    }
+    if not stale:
+        return None
+    detail = ", ".join(f"{uid} until {end}" for uid, end in sorted(stale.items()))
+    return (
+        "ERROR: Revisionsarbeiten section missing while a Revision is still "
+        f"active ({detail})"
+    )
 
 
 def main() -> int:
@@ -284,6 +360,12 @@ def main() -> int:
         "--from-file",
         type=Path,
         help="Parse a saved HTML file instead of fetching",
+    )
+    parser.add_argument(
+        "--today",
+        type=date.fromisoformat,
+        default=None,
+        help="Treat this ISO date as the scrape date instead of today",
     )
     args = parser.parse_args()
 
@@ -298,12 +380,12 @@ def main() -> int:
     (SOURCES / "revisionsarbeiten.html").write_text(html, encoding="utf-8")
 
     closures = parse_revision_lines(html, year=args.year)
-    error = classify_parse(html, closures)
+    scraped_at = args.today or date.today()
+    error = classify_parse(html, closures) or classify_clear(html, closures, scraped_at)
     if error:
         print(error, flush=True)
         return 1
 
-    scraped_at = date.today()
     data = merge_into_generated(closures, scraped_at)
     GENERATED.parent.mkdir(parents=True, exist_ok=True)
     GENERATED.write_text(
