@@ -1,10 +1,10 @@
 {
-  "scraped_at": "2026-08-20",
+  "scraped_at": "2026-08-24",
   "source": {
     "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder.html",
     "layout": "revisionsarbeiten",
     "confidence": "official_structured",
-    "scraped_at": "2026-08-20"
+    "scraped_at": "2026-08-24"
   },
   "pools": [
     {
@@ -17,7 +17,7 @@
     {
       "uid": "SSD-2",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "periods": [
         {
           "from": null,
@@ -120,14 +120,14 @@
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/blaesi.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
     {
       "uid": "SSD-3",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "periods": [
         {
           "from": null,
@@ -226,14 +226,14 @@
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/bungertwies.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
     {
       "uid": "SSD-4",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "periods": [
         {
           "from": null,
@@ -262,14 +262,14 @@
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/city.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
     {
       "uid": "SSD-5",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "periods": [
         {
           "from": null,
@@ -441,14 +441,14 @@
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/kaeferberg.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
     {
       "uid": "SSD-6",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "periods": [
         {
           "from": null,
@@ -585,14 +585,14 @@
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/leimbach.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
     {
       "uid": "SSD-7",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "periods": [
         {
           "from": null,
@@ -698,22 +698,13 @@
           ]
         }
       ],
-      "closures": [
-        {
-          "from": "2026-08-02T00:00:00+02:00",
-          "to": "2026-08-24T00:00:00+02:00",
-          "reason": "Revision",
-          "scope": "full",
-          "extracted_by": "deterministic",
-          "cited_sentence": "Hallenbad Oerlikon bis 23. August gechlossen"
-        }
-      ],
+      "closures": [],
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/oerlikon.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
@@ -822,14 +813,14 @@
           ]
         }
       ],
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "confidence": "official_structured",
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/allenmoos.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
@@ -938,14 +929,14 @@
           ]
         }
       ],
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "confidence": "official_structured",
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/auhof.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
@@ -1054,14 +1045,14 @@
           ]
         }
       ],
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "confidence": "official_structured",
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/heuried.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
@@ -1170,14 +1161,14 @@
           ]
         }
       ],
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "confidence": "official_structured",
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/letzigraben.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
@@ -1326,14 +1317,14 @@
           ]
         }
       ],
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "confidence": "official_structured",
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/seebach.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
@@ -1442,14 +1433,14 @@
           ]
         }
       ],
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "confidence": "official_structured",
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/zwischen-den-hoelzern.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
@@ -1598,14 +1589,14 @@
           ]
         }
       ],
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "confidence": "official_structured",
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/utoquai.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
@@ -1714,14 +1705,14 @@
           ]
         }
       ],
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "confidence": "official_structured",
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/mythenquai.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
@@ -1830,14 +1821,14 @@
           ]
         }
       ],
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "confidence": "official_structured",
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/tiefenbrunnen.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
@@ -1946,14 +1937,14 @@
           ]
         }
       ],
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "confidence": "official_structured",
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/wollishofen.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
@@ -2062,14 +2053,14 @@
           ]
         }
       ],
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "confidence": "official_structured",
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/oberer-letten.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
@@ -2178,14 +2169,14 @@
           ]
         }
       ],
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "confidence": "official_structured",
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/unterer-letten.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
@@ -2244,14 +2235,14 @@
           ]
         }
       ],
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "confidence": "official_structured",
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/stadthausquai.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
@@ -2360,14 +2351,14 @@
           ]
         }
       ],
-      "scraped_at": "2026-08-20",
+      "scraped_at": "2026-08-24",
       "confidence": "official_structured",
       "holidays_follow": "Sun",
       "last_entry_offset_min": 30,
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/sommerbaeder/unterer-letten.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-20",
+        "scraped_at": "2026-08-24",
         "confidence": "official_structured"
       }
     },
