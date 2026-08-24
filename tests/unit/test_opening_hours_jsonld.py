@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
@@ -242,9 +243,21 @@ class TestOpeningHoursFaqText:
         assert "findest du" in text
 
     def test_active_closure_leads_faq(self):
-        schedules = load_schedules()
+        # Closure is injected: the committed file only carries a Revision while
+        # the city is actually revising a pool.
+        oerlikon = replace(
+            load_schedules()["SSD-7"],
+            closures=(
+                Closure(
+                    start=_when(2026, 8, 2),
+                    end=_when(2026, 8, 24),
+                    reason="Revision",
+                    scope="full",
+                ),
+            ),
+        )
         text = opening_hours_faq_text(
-            schedules["SSD-7"], "Hallenbad Oerlikon", when=_when(2026, 8, 17, 12)
+            oerlikon, "Hallenbad Oerlikon", when=_when(2026, 8, 17, 12)
         )
         assert "derzeit geschlossen" in text
         assert "Revision" in text

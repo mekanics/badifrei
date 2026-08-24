@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from ml.features import load_pool_metadata
 from ml.opening_hours import (
+    Closure,
+    PoolSchedule,
     load_schedules,
     opening_hours_faq_text,
     opening_hours_jsonld,
@@ -23,13 +26,14 @@ _SCRIPT_RE = re.compile(
 _WHEN = datetime(2026, 8, 4, 12, 0, tzinfo=ZoneInfo("Europe/Zurich"))
 
 
-def _render_pool_html(uid: str) -> str:
+def _render_pool_html(uid: str, schedule: PoolSchedule | None = None) -> str:
     from jinja2 import Environment, FileSystemLoader, select_autoescape
 
     from api.templating import _fmt_date_de, _static_ver
 
     pool = load_pool_metadata()[uid]
-    schedule = load_schedules()[uid]
+    if schedule is None:
+        schedule = load_schedules()[uid]
     hours_jsonld = opening_hours_jsonld(schedule)
     hours_faq = opening_hours_faq_text(schedule, pool["name"], when=_WHEN)
 
@@ -92,7 +96,19 @@ class TestPoolStructuredDataJson:
         assert "findest du" in answer
 
     def test_ssd7_scripts_parse_with_closure_spec(self):
-        html = _render_pool_html("SSD-7")
+        # Injected so the assertion survives the end of a Revision season.
+        schedule = replace(
+            load_schedules()["SSD-7"],
+            closures=(
+                Closure(
+                    start=datetime(2026, 8, 2, tzinfo=ZoneInfo("Europe/Zurich")),
+                    end=datetime(2026, 8, 24, tzinfo=ZoneInfo("Europe/Zurich")),
+                    reason="Revision",
+                    scope="full",
+                ),
+            ),
+        )
+        html = _render_pool_html("SSD-7", schedule=schedule)
         blocks = _ld_json_blocks(html)
         sports = next(b for b in blocks if b.get("@type") == "SportsActivityLocation")
         specs = sports["openingHoursSpecification"]
