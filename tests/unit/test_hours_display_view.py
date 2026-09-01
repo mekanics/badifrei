@@ -47,11 +47,19 @@ class TestHoursDisplayViewSsd3:
         assert thu.always == ("12:30–19:00",)
 
     def test_wednesday_merges_abutting_always(self):
-        """Abutting same-condition windows may merge for display only."""
+        """Abutting same-condition windows may merge for display only.
+
+        Kinderspielnachmittag is the only source of the 14:00–16:00 span;
+        dropping labeled Intervals would close Bungertwies on Wednesday
+        afternoons. The envelope stays additive.
+        """
         schedule = load_schedules()["SSD-3"]
         view = hours_display_view(schedule, date(2026, 8, 7))
         wed = view.days[2]
         assert wed.always == ("12:00–19:00",)
+        assert [(s.window, s.label) for s in wed.sessions] == [
+            ("14:00–16:00", "Kinderspielnachmittag"),
+        ]
 
     def test_summary_lists_split_not_minmax(self):
         schedule = load_schedules()["SSD-3"]
@@ -176,6 +184,115 @@ class TestHoursDisplayViewMerge:
         assert view.kind == "weekday_table"
         assert view.days[0].always == ("06:00–22:00",)
 
+    def test_contained_window_merges_into_envelope(self):
+        schedule = PoolSchedule(
+            uid="contained",
+            periods=(
+                Period(
+                    start=None,
+                    end=None,
+                    days=frozenset({2}),
+                    intervals=(
+                        Interval(6 * 60, 22 * 60, "always"),
+                        Interval(
+                            14 * 60,
+                            16 * 60,
+                            "always",
+                            label="Kinderspielnachmittag",
+                        ),
+                    ),
+                ),
+            ),
+        )
+        view = hours_display_view(schedule, date(2026, 9, 2))
+        wed = view.days[2]
+        assert wed.always == ("06:00–22:00",)
+        assert [(s.window, s.label) for s in wed.sessions] == [
+            ("14:00–16:00", "Kinderspielnachmittag"),
+        ]
+
+    def test_mixed_dated_weekend_in_season_uses_weekday_table(self):
+        """Hallenbad month-variants stay a weekday table, not a seasonal view."""
+        schedule = PoolSchedule(
+            uid="mixed-weekend",
+            periods=(
+                Period(
+                    start=None,
+                    end=None,
+                    days=frozenset(range(5)),
+                    intervals=(Interval(9 * 60, 20 * 60, "always"),),
+                ),
+                Period(
+                    start=date(2026, 5, 1),
+                    end=date(2026, 9, 30),
+                    days=frozenset({5, 6}),
+                    intervals=(Interval(9 * 60, 16 * 60, "always"),),
+                ),
+                Period(
+                    start=date(2026, 10, 1),
+                    end=date(2026, 12, 31),
+                    days=frozenset({5, 6}),
+                    intervals=(Interval(9 * 60, 18 * 60, "always"),),
+                ),
+                Period(
+                    start=date(2026, 1, 1),
+                    end=date(2026, 4, 30),
+                    days=frozenset({5, 6}),
+                    intervals=(Interval(9 * 60, 18 * 60, "always"),),
+                ),
+            ),
+        )
+        july = hours_display_view(schedule, date(2026, 7, 4))
+        assert july is not None
+        assert july.kind == "weekday_table"
+        assert july.days[0].always == ("09:00–20:00",)
+        assert july.days[0].season_note is None
+        assert july.days[5].always == ("09:00–16:00",)
+        assert july.days[5].season_note == "Mai–September"
+
+        october = hours_display_view(schedule, date(2026, 10, 3))
+        assert october.days[5].always == ("09:00–18:00",)
+        assert october.days[5].season_note == "Oktober–Dezember"
+
+
+class TestLabeledSessionsFromGenerated:
+    def test_oerlikon_wednesday_envelope_plus_kinderspiel(self):
+        schedule = load_schedules()["SSD-7"]
+        view = hours_display_view(schedule, date(2026, 9, 2))
+        wed = view.days[2]
+        assert wed.always == ("06:00–22:00",)
+        assert "14:00–16:00" not in wed.always
+        assert [(s.window, s.label) for s in wed.sessions] == [
+            ("14:00–16:00", "Kinderspielnachmittag"),
+        ]
+
+    def test_leimbach_saturday_envelope_plus_named_sessions(self):
+        schedule = load_schedules()["SSD-6"]
+        view = hours_display_view(schedule, date(2026, 9, 5))
+        sat = view.days[5]
+        assert sat.always == ("09:00–18:00",)
+        assert [(s.window, s.label) for s in sat.sessions] == [
+            ("09:00–14:00", "Familienschwimmen"),
+            ("14:30–18:00", "Sportschwimmen"),
+        ]
+
+    def test_blaesi_sunday_is_open_with_summer_hours(self):
+        schedule = load_schedules()["SSD-2"]
+        view = hours_display_view(schedule, date(2026, 7, 5))
+        assert view.kind == "weekday_table"
+        sun = view.days[6]
+        assert sun.closed is False
+        assert sun.always == ("09:00–16:00",)
+        assert sun.season_note == "Mai–September"
+
+    def test_kaeferberg_saturday_july_closes_at_16(self):
+        schedule = load_schedules()["SSD-5"]
+        view = hours_display_view(schedule, date(2026, 7, 4))
+        sat = view.days[5]
+        assert sat.always == ("09:00–16:00",)
+        assert sat.season_note == "Mai–September"
+        assert "09:00–18:00" not in sat.always
+
 
 class TestSsd3PoolHtmlUsesSchedule:
     def test_html_shows_split_not_legacy_continuous(self):
@@ -266,3 +383,45 @@ class TestSsd3PoolHtmlUsesSchedule:
         assert "07:30–20:00" in html
         assert "08:00–20:00" in html
         assert "Alle Zeiträume" not in html
+
+    def test_oerlikon_html_shows_kinderspiel_not_split_hours(self):
+        from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+        from api.templating import _fmt_date_de, _static_ver
+        from ml.opening_hours import opening_hours_faq_text
+
+        uid = "SSD-7"
+        pool = load_pool_metadata()[uid]
+        schedule = load_schedules()[uid]
+        hours_view = hours_display_view(schedule, date(2026, 9, 2))
+
+        env = Environment(
+            loader=FileSystemLoader(str(TEMPLATES)),
+            autoescape=select_autoescape(["html", "xml"]),
+        )
+        env.globals["static_ver"] = _static_ver
+        env.globals["umami_script_url"] = ""
+        env.globals["umami_website_id"] = ""
+        env.filters["date_de"] = _fmt_date_de
+
+        html = env.get_template("pool.html").render(
+            pool=pool,
+            schema_description="test",
+            hours_jsonld=opening_hours_jsonld(schedule),
+            hours_faq=opening_hours_faq_text(schedule, pool["name"], when=_WHEN),
+            hours_view=hours_view,
+            quietest_hour=10,
+            related_pools=[],
+            related_pools_heading="",
+            active_closure=None,
+            hours_confidence=schedule.confidence,
+            hours_scraped_at=None,
+            opening_hours_summary=None,
+            weekly_insights=None,
+            today_date="2026-09-02",
+            today_prediction_status="ok",
+            today_predictions_json="[]",
+        )
+        assert "06:00–22:00" in html
+        assert "Kinderspielnachmittag" in html
+        assert "06:00–22:00 · 14:00–16:00" not in html

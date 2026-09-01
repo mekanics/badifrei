@@ -759,13 +759,14 @@ body {
 }
 
 .hours-table td {
-	padding: 3px 14px 3px 0;
+	padding: 0.125rem 0.75rem 0.125rem 0;
 }
 
 .day-label {
 	color: var(--muted);
 	font-weight: 700;
 	min-width: 2.2rem;
+	align-content: start;
 }
 
 .day-hours {
@@ -776,6 +777,28 @@ body {
 .closed-day {
 	color: var(--muted);
 	font-style: italic;
+}
+
+.day-hours .fair-weather {
+	color: var(--muted);
+	font-weight: 500;
+}
+
+.day-sessions {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	column-gap: 0.5rem;
+	row-gap: 0.1rem;
+	margin-top: 0.15rem;
+	color: var(--muted);
+	font-weight: 500;
+}
+
+.day-season-note {
+	margin-top: 0.1rem;
+	color: var(--muted);
+	font-weight: 500;
+	font-size: 0.78rem;
 }
 
 .seasonal-note {

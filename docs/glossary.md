@@ -66,8 +66,10 @@ Zurich midnights (`[D 00:00, D+1 00:00)`), not UTC midnights.
 **Hours display view** — Derived UI projection of a Schedule for the pool detail
 page. Not stored. Two shapes: seasonal periods (date ranges with nested weekday
 time groups) and weekday table (Mo–So cells that may hold multiple Intervals).
-Built only from the Schedule — never from the legacy flat `pool_metadata` map
-when a generated Schedule exists.
+A weekday cell shows the opening envelope, optional Session lines, and a season
+note when that day's hours come from a dated Period. Built only from the
+Schedule — never from the legacy flat `pool_metadata` map when a generated
+Schedule exists.
 
 **Hours JSON-LD** _(seo)_ — The derived list of schema.org
 `OpeningHoursSpecification` objects for one pool, built from Guaranteed hours
@@ -75,7 +77,9 @@ plus full Closures. Not a separate store of truth — always derived from the
 Schedule. See [ADR-001](./adr/ADR-001-guaranteed-hours-in-structured-data.md).
 
 **Interval** — One contiguous open span within a day, classified as either
-Guaranteed hours or Conditional hours.
+Guaranteed hours or Conditional hours. An Interval may carry a Session label;
+the label is display-only and does not change open/closed membership. See
+[ADR-005](./adr/ADR-005-labeled-sessions-are-annotations.md).
 
 ## M — R
 
@@ -96,6 +100,12 @@ close times, reason, and source (observation, closure, or schedule).
 
 **Schedule** — The published claim: which Intervals a pool is open, by Period
 and weekday, plus Closures. Slow-moving; reviewed in git before deploy.
+
+**Session** _(CH)_ — A named sub-window inside (or abutting) public hours
+(Kinderspielnachmittag, Familienschwimmen, audience restriction). Shown as an
+annotation under the day's envelope; never open/closed truth on its own. A
+labeled Interval still contributes to the union of open time. See
+[ADR-005](./adr/ADR-005-labeled-sessions-are-annotations.md).
 
 **Wassertemperatur (water temperature)** _(CH)_ — Per-pool water temperature from
 the Baditicker feed (`pool_status.water_temp_c`). Available for outdoor pools

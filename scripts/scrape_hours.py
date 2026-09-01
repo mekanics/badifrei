@@ -10,6 +10,7 @@ left as a separate, reviewed step (see ``--extract-closures`` stub).
 from __future__ import annotations
 
 import argparse
+import calendar
 import html
 import json
 import re
@@ -56,9 +57,7 @@ MONTHS = {
 
 TABLE_RE = re.compile(r"<stzh-datatable\b(.*?)</stzh-datatable>", re.S | re.I)
 ATTR_RE = re.compile(r'\b(columns|rows)="([^"]*)"', re.S)
-TIME_RE = re.compile(
-    r"(\d{1,2})(?:[.:](\d{2}))?\s*[–\-]\s*(\d{1,2})(?:[.:](\d{2}))?"
-)
+TIME_RE = re.compile(r"(\d{1,2})(?:[.:](\d{2}))?\s*[–\-]\s*(\d{1,2})(?:[.:](\d{2}))?")
 
 
 def _strip(s: str) -> str:
@@ -75,14 +74,75 @@ def _hhmm(h: str, m: str | None) -> str:
     return f"{hour:02d}:{minute:02d}"
 
 
+def _parse_month_range(prose: str, year: int) -> list[tuple[date, date]] | None:
+    """Parse 'Mai–September' / '(Oktober–April)' into inclusive date ranges.
+
+    Year-wrapping ranges (Oktober–April) split into two same-year windows.
+    """
+    prose = prose.strip().lower().replace("–", "-").replace("—", "-")
+    prose = prose.strip("()").strip()
+    match = re.fullmatch(r"([a-zäöü]+)\s*-\s*([a-zäöü]+)", prose)
+    if not match:
+        return None
+    start_month = MONTHS.get(match.group(1))
+    end_month = MONTHS.get(match.group(2))
+    if not start_month or not end_month:
+        return None
+
+    def _month_end(month: int) -> date:
+        return date(year, month, calendar.monthrange(year, month)[1])
+
+    if start_month <= end_month:
+        return [(date(year, start_month, 1), _month_end(end_month))]
+    return [
+        (date(year, start_month, 1), _month_end(12)),
+        (date(year, 1, 1), _month_end(end_month)),
+    ]
+
+
+def _parse_cell_fragments(cell: str, year: int) -> list[dict]:
+    """Split a table cell on ``|`` and classify each time fragment.
+
+    Trailing prose is either a month range (``date_bounds``) or a Session
+    label. Empty fragments (trailing pipes) are dropped.
+    """
+    fragments: list[dict] = []
+    for raw in cell.split("|"):
+        piece = raw.strip()
+        if not piece:
+            continue
+        match = TIME_RE.search(piece)
+        if not match:
+            continue
+        open_s = _hhmm(match.group(1), match.group(2))
+        close_s = _hhmm(match.group(3), match.group(4))
+        if not (open_s < close_s or close_s == "24:00"):
+            continue
+        rest = piece[match.end() :].strip()
+        rest = re.sub(r"^(uhr)\s*", "", rest, flags=re.I).strip()
+        rest = rest.lstrip(":").strip()
+        rest = re.sub(r"\d+$", "", rest).strip()
+        fragment: dict = {"open": open_s, "close": close_s, "condition": "always"}
+        bounds = _parse_month_range(rest, year) if rest else None
+        if bounds:
+            fragment["date_bounds"] = bounds
+        elif rest:
+            fragment["label"] = rest
+        fragments.append(fragment)
+    return fragments
+
+
 def _parse_time_ranges(cell: str) -> list[dict]:
     """Extract open/close pairs from a cell, ignoring prose annotations."""
     ranges = []
-    for match in TIME_RE.finditer(cell):
-        open_s = _hhmm(match.group(1), match.group(2))
-        close_s = _hhmm(match.group(3), match.group(4))
-        if open_s < close_s or close_s == "24:00":
-            ranges.append({"open": open_s, "close": close_s, "condition": "always"})
+    for fragment in _parse_cell_fragments(cell, year=2000):
+        ranges.append(
+            {
+                "open": fragment["open"],
+                "close": fragment["close"],
+                "condition": "always",
+            }
+        )
     return ranges
 
 
@@ -132,20 +192,27 @@ def _days_from_label(label: str) -> list[str]:
         a, b = [p.strip() for p in label.split("-", 1)]
         keys = list(DAY_MAP.keys())
         try:
-            i = next(i for i, k in enumerate(keys) if a.startswith(k[:2]) or a.startswith(k))
-            j = next(i for i, k in enumerate(keys) if b.startswith(k[:2]) or b.startswith(k))
+            i = next(
+                i for i, k in enumerate(keys) if a.startswith(k[:2]) or a.startswith(k)
+            )
+            j = next(
+                i for i, k in enumerate(keys) if b.startswith(k[:2]) or b.startswith(k)
+            )
             return [DAY_MAP[keys[x]] for x in range(i, j + 1)]
         except StopIteration:
             pass
-    for full, short in DAY_MAP.items():
-        if label.startswith(full) or label.startswith(full[:2]):
-            return [short]
-    # "Samstag, Sonntag"
+    # Comma lists ("Samstag, Sonntag") before a startswith early-return,
+    # otherwise "samstag, sonntag" collapses to Saturday only.
     found = []
     for full, short in DAY_MAP.items():
         if full in label or full[:2] + "." in label:
             found.append(short)
-    return found
+    if found:
+        return found
+    for full, short in DAY_MAP.items():
+        if label.startswith(full) or label.startswith(full[:2]):
+            return [short]
+    return []
 
 
 def extract_tables(html_text: str) -> list[dict]:
@@ -180,11 +247,19 @@ def tables_to_periods(tables: list[dict], year: int) -> list[dict]:
         if any("zeitraum" in c for c in cols):
             idx_period = next(i for i, c in enumerate(cols) if "zeitraum" in c)
             idx_always = next(
-                (i for i, c in enumerate(cols) if "jedem wetter" in c or c == "öffnungszeiten"),
+                (
+                    i
+                    for i, c in enumerate(cols)
+                    if "jedem wetter" in c or c == "öffnungszeiten"
+                ),
                 None,
             )
             idx_fair = next(
-                (i for i, c in enumerate(cols) if "schönem wetter" in c or "schoenem" in c),
+                (
+                    i
+                    for i, c in enumerate(cols)
+                    if "schönem wetter" in c or "schoenem" in c
+                ),
                 None,
             )
             for row in table["rows"]:
@@ -228,23 +303,41 @@ def tables_to_periods(tables: list[dict], year: int) -> list[dict]:
                 cell = row[idx_time]
                 if "kein öffentliches" in cell.lower():
                     continue
-                ranges = _parse_time_ranges(cell)
-                if not ranges:
+                fragments = _parse_cell_fragments(cell, year)
+                if not fragments:
                     continue
-                periods.append(
-                    {
-                        "from": None,
-                        "to": None,
-                        "days": days,
-                        "intervals": ranges,
+                grouped: dict[tuple[str | None, str | None], list[dict]] = {}
+                for fragment in fragments:
+                    interval = {
+                        "open": fragment["open"],
+                        "close": fragment["close"],
+                        "condition": fragment.get("condition", "always"),
                     }
-                )
+                    if fragment.get("label"):
+                        interval["label"] = fragment["label"]
+                    bounds = fragment.get("date_bounds")
+                    if bounds:
+                        keys = [
+                            (start.isoformat(), end.isoformat())
+                            for start, end in bounds
+                        ]
+                    else:
+                        keys = [(None, None)]
+                    for key in keys:
+                        grouped.setdefault(key, []).append(dict(interval))
+                for (start, end), intervals in grouped.items():
+                    periods.append(
+                        {
+                            "from": start,
+                            "to": end,
+                            "days": days,
+                            "intervals": intervals,
+                        }
+                    )
     return periods
 
 
-def generated_source_layout(
-    uid: str, generated_path: Path | None = None
-) -> str | None:
+def generated_source_layout(uid: str, generated_path: Path | None = None) -> str | None:
     """Return the committed Schedule source layout for *uid*, if any."""
     path = generated_path or GENERATED
     if not path.exists():
@@ -273,12 +366,17 @@ def fetch(url: str) -> str:
     return response.text
 
 
-def merge_periods(uid: str, periods: list[dict], scraped_at: date, source_url: str) -> None:
+def merge_periods(
+    uid: str, periods: list[dict], scraped_at: date, source_url: str
+) -> None:
     if GENERATED.exists():
         data = json.loads(GENERATED.read_text(encoding="utf-8"))
     else:
         data = {"pools": []}
     by_uid = {p["uid"]: p for p in data.get("pools", [])}
+    existing = by_uid.get(uid, {})
+    if existing.get("periods") == periods:
+        return
     entry = by_uid.setdefault(uid, {"uid": uid, "closures": []})
     entry["periods"] = periods
     entry["scraped_at"] = scraped_at.isoformat()
@@ -295,7 +393,7 @@ def merge_periods(uid: str, periods: list[dict], scraped_at: date, source_url: s
     entry.setdefault("closures", by_uid.get(uid, {}).get("closures", []))
     by_uid[uid] = entry
     data["pools"] = list(by_uid.values())
-    data["scraped_at"] = scraped_at.isoformat()
+    data.setdefault("scraped_at", scraped_at.isoformat())
     GENERATED.parent.mkdir(parents=True, exist_ok=True)
     GENERATED.write_text(
         json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
@@ -306,6 +404,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--year", type=int, default=date.today().year)
     parser.add_argument("--uid", help="Scrape a single pool uid")
+    parser.add_argument(
+        "--from-sources",
+        action="store_true",
+        help="Rebuild from committed ml/data/sources/*.json (no network)",
+    )
     args = parser.parse_args()
 
     pools = json.loads(METADATA.read_text(encoding="utf-8"))
@@ -322,32 +425,54 @@ def main() -> int:
         if generated_source_layout(pool["uid"]) == "operator_prose":
             print(f"[skip] {pool['uid']}: operator_prose schedule")
             continue
-        slug = slug_from_official_url(url)
-        if not slug:
-            print(f"[skip] {pool['uid']}: cannot derive slug from {url}")
-            continue
-        section, name = slug
-        page_url = f"{BASE}/{section}/{name}.html"
-        try:
-            html_text = fetch(page_url)
-        except Exception as exc:  # noqa: BLE001
-            print(f"[error] {pool['uid']}: {exc}")
-            return 1
 
-        fragment = {
-            "uid": pool["uid"],
-            "url": page_url,
-            "scraped_at": scraped_at.isoformat(),
-            "tables": extract_tables(html_text),
-        }
-        (SOURCES / f"{pool['uid']}.json").write_text(
-            json.dumps(fragment, indent=2, ensure_ascii=False) + "\n",
-            encoding="utf-8",
-        )
-        periods = tables_to_periods(fragment["tables"], args.year)
+        if args.from_sources:
+            src_path = SOURCES / f"{pool['uid']}.json"
+            if not src_path.exists():
+                print(f"[skip] {pool['uid']}: no committed source fragment")
+                continue
+            fragment = json.loads(src_path.read_text(encoding="utf-8"))
+            page_url = fragment.get("url") or url
+            tables = fragment.get("tables") or []
+        else:
+            slug = slug_from_official_url(url)
+            if not slug:
+                print(f"[skip] {pool['uid']}: cannot derive slug from {url}")
+                continue
+            section, name = slug
+            page_url = f"{BASE}/{section}/{name}.html"
+            try:
+                html_text = fetch(page_url)
+            except Exception as exc:  # noqa: BLE001
+                print(f"[error] {pool['uid']}: {exc}")
+                return 1
+
+            fragment = {
+                "uid": pool["uid"],
+                "url": page_url,
+                "scraped_at": scraped_at.isoformat(),
+                "tables": extract_tables(html_text),
+            }
+            (SOURCES / f"{pool['uid']}.json").write_text(
+                json.dumps(fragment, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
+            tables = fragment["tables"]
+
+        periods = tables_to_periods(tables, args.year)
         if not periods:
             print(f"[warn] {pool['uid']}: no periods parsed")
             continue
+        if GENERATED.exists():
+            existing = json.loads(GENERATED.read_text(encoding="utf-8"))
+            current = next(
+                (p for p in existing.get("pools", []) if p.get("uid") == pool["uid"]),
+                None,
+            )
+            if current and current.get("periods") == periods:
+                print(f"[ok] {pool['uid']}: unchanged")
+                count += 1
+                continue
         merge_periods(pool["uid"], periods, scraped_at, page_url)
         count += 1
         print(f"[ok] {pool['uid']}: {len(periods)} periods")

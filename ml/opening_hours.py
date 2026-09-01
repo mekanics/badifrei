@@ -92,6 +92,7 @@ class Interval:
     open_min: int
     close_min: int
     condition: Condition = "always"
+    label: str | None = None
 
     def __post_init__(self) -> None:
         if not (0 <= self.open_min < self.close_min <= 1440):
@@ -264,6 +265,7 @@ def _parse_generated_schedule(uid: str, raw: dict) -> PoolSchedule:
                 open_min=_parse_hhmm(i["open"]),
                 close_min=_parse_hhmm(i["close"]),
                 condition=i.get("condition", "always"),
+                label=i.get("label") or None,
             )
             for i in p.get("intervals") or []
         )
@@ -868,12 +870,22 @@ DE_DAY_LABELS = ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
 
 
 @dataclass(frozen=True)
+class DaySession:
+    """Labeled sub-window shown under a day's opening envelope."""
+
+    window: str
+    label: str
+
+
+@dataclass(frozen=True)
 class DayHoursCell:
     day_index: int
     day_label_de: str
     always: tuple[str, ...]
     fair: tuple[str, ...]
     closed: bool
+    sessions: tuple[DaySession, ...] = ()
+    season_note: str | None = None
 
 
 @dataclass(frozen=True)
@@ -883,6 +895,7 @@ class SeasonalDayGroup:
     days_label: str  # "Mo–Fr", "Sa–So", "täglich", …
     always: str
     fair: str | None
+    sessions: tuple[DaySession, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -916,18 +929,25 @@ class HoursDisplayView:
     days: tuple[DayHoursCell, ...] = ()
 
 
-def _merge_display_windows(windows: list[tuple[int, int]]) -> tuple[str, ...]:
-    """Merge abutting same-condition windows for display; never across gaps."""
+def _merge_minute_windows(windows: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """Merge overlapping or abutting windows; never across gaps."""
     if not windows:
-        return ()
+        return []
     ordered = sorted(windows)
     merged: list[list[int]] = [[ordered[0][0], ordered[0][1]]]
     for open_m, close_m in ordered[1:]:
-        if open_m == merged[-1][1]:
-            merged[-1][1] = close_m
+        if open_m <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], close_m)
         else:
             merged.append([open_m, close_m])
-    return tuple(f"{_fmt_clock(o)}–{_fmt_clock(c)}" for o, c in merged)
+    return [(open_m, close_m) for open_m, close_m in merged]
+
+
+def _merge_display_windows(windows: list[tuple[int, int]]) -> tuple[str, ...]:
+    """Merge overlapping or abutting same-condition windows for display."""
+    return tuple(
+        f"{_fmt_clock(o)}–{_fmt_clock(c)}" for o, c in _merge_minute_windows(windows)
+    )
 
 
 def _fmt_days_de(days: frozenset[int]) -> str:
@@ -962,6 +982,42 @@ def _fmt_date_range_de(start: dt.date, end: dt.date) -> str:
     )
 
 
+def _sessions_from_intervals(intervals: tuple[Interval, ...]) -> tuple[DaySession, ...]:
+    return tuple(
+        DaySession(
+            window=f"{_fmt_clock(interval.open_min)}–{_fmt_clock(interval.close_min)}",
+            label=interval.label,
+        )
+        for interval in intervals
+        if interval.label
+    )
+
+
+DE_MONTHS_FULL = (
+    "Januar",
+    "Februar",
+    "März",
+    "April",
+    "Mai",
+    "Juni",
+    "Juli",
+    "August",
+    "September",
+    "Oktober",
+    "November",
+    "Dezember",
+)
+
+
+def _season_note_for_period(period: Period) -> str | None:
+    if period.start is None or period.end is None:
+        return None
+    return (
+        f"{DE_MONTHS_FULL[period.start.month - 1]}–"
+        f"{DE_MONTHS_FULL[period.end.month - 1]}"
+    )
+
+
 def _day_group_from_period(period: Period) -> SeasonalDayGroup:
     always_wins: list[tuple[int, int]] = []
     fair_wins: list[tuple[int, int]] = []
@@ -977,6 +1033,7 @@ def _day_group_from_period(period: Period) -> SeasonalDayGroup:
         days_label=_fmt_days_de(period.days),
         always=", ".join(always) if always else "—",
         fair=", ".join(fair) if fair else None,
+        sessions=_sessions_from_intervals(period.intervals),
     )
 
 
@@ -1019,7 +1076,9 @@ def hours_display_view(
     evergreen = [p for p in schedule.periods if p.start is None and p.end is None]
     covering = [p for p in dated if p.covers(today)]
 
-    if covering or (dated and not evergreen):
+    # Sommerbad-only: a mix of dated weekend variants + evergreen weekdays
+    # (Hallenbad month-conditional cells) stays a weekday table.
+    if dated and not evergreen:
         all_groups = _group_dated_periods(dated)
         if not all_groups:
             return None
@@ -1044,22 +1103,21 @@ def hours_display_view(
             all_periods=all_groups,
         )
 
-    if dated and evergreen:
-        logger.warning(
-            "Schedule %s has dated and evergreen Periods; today=%s not in a "
-            "dated Period — using evergreen weekday_table",
-            schedule.uid,
-            today,
-        )
-
-    # Evergreen / undated Hallenbad shape (also mixed fallback when off-season)
+    # Evergreen Hallenbad shape, including mixed dated+evergreen (covers(today)
+    # selects the currently-valid month variant).
     always_by_day: dict[int, list[tuple[int, int]]] = {i: [] for i in range(7)}
     fair_by_day: dict[int, list[tuple[int, int]]] = {i: [] for i in range(7)}
-    source_periods = evergreen if evergreen else schedule.periods
+    sessions_by_day: dict[int, list[DaySession]] = {i: [] for i in range(7)}
+    season_note_by_day: dict[int, str | None] = {i: None for i in range(7)}
+    source_periods = schedule.periods
     for period in source_periods:
         if not period.covers(today):
             continue
+        note = _season_note_for_period(period)
         for day_idx in period.days:
+            if note:
+                season_note_by_day[day_idx] = note
+            sessions_by_day[day_idx].extend(_sessions_from_intervals(period.intervals))
             for interval in period.intervals:
                 pair = (interval.open_min, interval.close_min)
                 if interval.condition == "fair_weather":
@@ -1084,6 +1142,8 @@ def hours_display_view(
                 always=always,
                 fair=fair,
                 closed=not always and not fair,
+                sessions=tuple(sessions_by_day[day_idx]),
+                season_note=season_note_by_day[day_idx],
             )
         )
     return HoursDisplayView(
@@ -1148,20 +1208,25 @@ def opening_hours_jsonld(schedule: PoolSchedule) -> list[dict]:
     """Build Hours JSON-LD (Guaranteed hours + full Closures only).
 
     See docs/adr/ADR-001-guaranteed-hours-in-structured-data.md. Conditional
-    (fair_weather) intervals are never emitted as opens/closes.
+    (fair_weather) intervals are never emitted as opens/closes. Overlapping or
+    contained always windows in one Period collapse to the envelope so a
+    Session does not appear as a second spec for the same day.
     """
     specs: list[dict] = []
     for period in schedule.periods:
         dated = period.start is not None and period.end is not None
+        always = [
+            (interval.open_min, interval.close_min)
+            for interval in period.intervals
+            if interval.condition == "always"
+        ]
         for day_idx in sorted(period.days):
-            for interval in period.intervals:
-                if interval.condition != "always":
-                    continue
+            for open_m, close_m in _merge_minute_windows(always):
                 spec: dict = {
                     "@type": "OpeningHoursSpecification",
                     "dayOfWeek": SCHEMA_DAY_URL[day_idx],
-                    "opens": _minutes_to_hhmmss(interval.open_min),
-                    "closes": _minutes_to_hhmmss(interval.close_min),
+                    "opens": _minutes_to_hhmmss(open_m),
+                    "closes": _minutes_to_hhmmss(close_m),
                 }
                 if dated:
                     spec["validFrom"] = period.start.isoformat()  # type: ignore[union-attr]

@@ -17,7 +17,7 @@
     {
       "uid": "SSD-2",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-31",
+      "scraped_at": "2026-09-01",
       "periods": [
         {
           "from": null,
@@ -62,7 +62,8 @@
             {
               "open": "14:00",
               "close": "16:30",
-              "condition": "always"
+              "condition": "always",
+              "label": "Kinderspielnachmittag"
             }
           ]
         },
@@ -95,17 +96,43 @@
           ]
         },
         {
-          "from": null,
-          "to": null,
+          "from": "2026-05-01",
+          "to": "2026-09-30",
           "days": [
-            "Sat"
+            "Sat",
+            "Sun"
           ],
           "intervals": [
             {
               "open": "09:00",
               "close": "16:00",
               "condition": "always"
-            },
+            }
+          ]
+        },
+        {
+          "from": "2026-10-01",
+          "to": "2026-12-31",
+          "days": [
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "18:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-01-01",
+          "to": "2026-04-30",
+          "days": [
+            "Sat",
+            "Sun"
+          ],
+          "intervals": [
             {
               "open": "09:00",
               "close": "18:00",
@@ -120,14 +147,14 @@
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/blaesi.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-31",
+        "scraped_at": "2026-09-01",
         "confidence": "official_structured"
       }
     },
     {
       "uid": "SSD-3",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-31",
+      "scraped_at": "2026-09-01",
       "periods": [
         {
           "from": null,
@@ -182,7 +209,8 @@
             {
               "open": "14:00",
               "close": "16:00",
-              "condition": "always"
+              "condition": "always",
+              "label": "Kinderspielnachmittag"
             },
             {
               "open": "16:00",
@@ -226,7 +254,7 @@
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/bungertwies.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-31",
+        "scraped_at": "2026-09-01",
         "confidence": "official_structured"
       }
     },
@@ -269,7 +297,7 @@
     {
       "uid": "SSD-5",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-31",
+      "scraped_at": "2026-09-01",
       "periods": [
         {
           "from": null,
@@ -305,12 +333,14 @@
             {
               "open": "15:00",
               "close": "16:30",
-              "condition": "always"
+              "condition": "always",
+              "label": "Nur für Personen, die schwimmen können"
             },
             {
               "open": "18:00",
               "close": "22:00",
-              "condition": "always"
+              "condition": "always",
+              "label": "Nur für Erwachsene"
             }
           ]
         },
@@ -329,12 +359,14 @@
             {
               "open": "18:00",
               "close": "19:30",
-              "condition": "always"
+              "condition": "always",
+              "label": "Nur für Erwachsene"
             },
             {
               "open": "19:30",
               "close": "22:00",
-              "condition": "always"
+              "condition": "always",
+              "label": "Nur für Erwachsene, die schwimmen können"
             }
           ]
         },
@@ -358,17 +390,20 @@
             {
               "open": "15:00",
               "close": "17:00",
-              "condition": "always"
+              "condition": "always",
+              "label": "Nur für Personen, die schwimmen können"
             },
             {
               "open": "17:00",
               "close": "18:00",
-              "condition": "always"
+              "condition": "always",
+              "label": "Nur für Personen, die schwimmen können"
             },
             {
               "open": "18:00",
               "close": "22:00",
-              "condition": "always"
+              "condition": "always",
+              "label": "Nur für Erwachsene, die schwimmen können"
             }
           ]
         },
@@ -387,7 +422,8 @@
             {
               "open": "08:00",
               "close": "11:00",
-              "condition": "always"
+              "condition": "always",
+              "label": "Nur für Personen, die schwimmen können"
             },
             {
               "open": "11:00",
@@ -397,8 +433,8 @@
           ]
         },
         {
-          "from": null,
-          "to": null,
+          "from": "2026-05-01",
+          "to": "2026-09-30",
           "days": [
             "Sat"
           ],
@@ -407,7 +443,16 @@
               "open": "09:00",
               "close": "16:00",
               "condition": "always"
-            },
+            }
+          ]
+        },
+        {
+          "from": "2026-10-01",
+          "to": "2026-12-31",
+          "days": [
+            "Sat"
+          ],
+          "intervals": [
             {
               "open": "09:00",
               "close": "18:00",
@@ -416,8 +461,22 @@
           ]
         },
         {
-          "from": null,
-          "to": null,
+          "from": "2026-01-01",
+          "to": "2026-04-30",
+          "days": [
+            "Sat"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "18:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-05-01",
+          "to": "2026-09-30",
           "days": [
             "Sun"
           ],
@@ -426,7 +485,30 @@
               "open": "09:00",
               "close": "16:00",
               "condition": "always"
-            },
+            }
+          ]
+        },
+        {
+          "from": "2026-10-01",
+          "to": "2026-12-31",
+          "days": [
+            "Sun"
+          ],
+          "intervals": [
+            {
+              "open": "09:00",
+              "close": "18:00",
+              "condition": "always"
+            }
+          ]
+        },
+        {
+          "from": "2026-01-01",
+          "to": "2026-04-30",
+          "days": [
+            "Sun"
+          ],
+          "intervals": [
             {
               "open": "09:00",
               "close": "18:00",
@@ -441,14 +523,14 @@
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/kaeferberg.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-31",
+        "scraped_at": "2026-09-01",
         "confidence": "official_structured"
       }
     },
     {
       "uid": "SSD-6",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-31",
+      "scraped_at": "2026-09-01",
       "periods": [
         {
           "from": null,
@@ -555,12 +637,14 @@
             {
               "open": "09:00",
               "close": "14:00",
-              "condition": "always"
+              "condition": "always",
+              "label": "Familienschwimmen"
             },
             {
               "open": "14:30",
               "close": "18:00",
-              "condition": "always"
+              "condition": "always",
+              "label": "Sportschwimmen"
             }
           ]
         },
@@ -585,14 +669,14 @@
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/leimbach.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-31",
+        "scraped_at": "2026-09-01",
         "confidence": "official_structured"
       }
     },
     {
       "uid": "SSD-7",
       "confidence": "official_structured",
-      "scraped_at": "2026-08-31",
+      "scraped_at": "2026-09-01",
       "periods": [
         {
           "from": null,
@@ -637,7 +721,8 @@
             {
               "open": "14:00",
               "close": "16:00",
-              "condition": "always"
+              "condition": "always",
+              "label": "Kinderspielnachmittag"
             }
           ]
         },
@@ -704,7 +789,7 @@
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/oerlikon.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-08-31",
+        "scraped_at": "2026-09-01",
         "confidence": "official_structured"
       }
     },
