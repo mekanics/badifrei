@@ -164,3 +164,5 @@ See [docs/adr/](./adr/) for architectural decision records.
 
 - [ADR-001](./adr/ADR-001-guaranteed-hours-in-structured-data.md) — Guaranteed
   hours only in Hours JSON-LD
+- [ADR-005](./adr/ADR-005-labeled-sessions-are-annotations.md) — Labeled
+  Sessions are display annotations; they stay in the open-time union

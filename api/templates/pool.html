@@ -179,6 +179,12 @@ endif %}: Live-Auslastung & aktuelle Besucherzahlen. Schau vor dem Besuch, wie v
               <td class="day-label">{{ g.days_label }}</td>
               <td class="day-hours">
                 {{ g.always }}
+                {% if g.sessions %}
+                <div class="day-sessions">
+                  {% for s in g.sessions %}<span class="session-window">{{ s.window }}</span><span
+                    class="session-label">{{ s.label }}</span>{% endfor %}
+                </div>
+                {% endif %}
                 {% if g.fair %}
                 <div class="fair-weather">Nur bei schönem Wetter: {{ g.fair }}</div>
                 {% endif %}
@@ -210,6 +216,12 @@ endif %}: Live-Auslastung & aktuelle Besucherzahlen. Schau vor dem Besuch, wie v
                 <td class="day-label">{{ g.days_label }}</td>
                 <td class="day-hours">
                   {{ g.always }}
+                  {% if g.sessions %}
+                  <div class="day-sessions">
+                    {% for s in g.sessions %}<span class="session-window">{{ s.window }}</span><span
+                      class="session-label">{{ s.label }}</span>{% endfor %}
+                  </div>
+                  {% endif %}
                   {% if g.fair %}
                   <div class="fair-weather">Nur bei schönem Wetter: {{ g.fair }}</div>
                   {% endif %}
@@ -234,6 +246,15 @@ endif %}: Live-Auslastung & aktuelle Besucherzahlen. Schau vor dem Besuch, wie v
             {% else %}
             <td class="day-hours">
               {{ d.always | join(' · ') }}
+              {% if d.sessions %}
+              <div class="day-sessions">
+                {% for s in d.sessions %}<span class="session-window">{{ s.window }}</span><span
+                  class="session-label">{{ s.label }}</span>{% endfor %}
+              </div>
+              {% endif %}
+              {% if d.season_note %}
+              <div class="day-season-note">{{ d.season_note }}</div>
+              {% endif %}
               {% if d.fair %}
               <div class="fair-weather">Nur bei schönem Wetter: {{ d.fair | join(' · ') }}</div>
               {% endif %}

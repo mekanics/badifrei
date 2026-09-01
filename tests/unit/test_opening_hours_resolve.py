@@ -19,6 +19,7 @@ from ml.opening_hours import (
     WeatherHint,
     _legacy_to_schedule,
     _next_season_open,
+    count_open_hours,
     is_fair_weather,
     load_schedules,
     resolve,
@@ -426,3 +427,34 @@ class TestResolveFrameFairWeather:
             )
             scalar_open = int(resolve(schedule, when, weather=hint).is_open)
             assert frame_open == scalar_open
+
+
+class TestMonthConditionalWeekends:
+    def test_kaeferberg_saturday_july_closes_at_16(self):
+        schedule = load_schedules()["SSD-5"]
+        closed = resolve(schedule, _when(2026, 7, 4, 17))
+        assert closed.is_open is False
+        open_afternoon = resolve(schedule, _when(2026, 7, 4, 15))
+        assert open_afternoon.is_open is True
+        assert open_afternoon.guaranteed_close.hour == 16
+
+    def test_kaeferberg_saturday_october_stays_open_until_18(self):
+        schedule = load_schedules()["SSD-5"]
+        result = resolve(schedule, _when(2026, 10, 3, 17))
+        assert result.is_open is True
+        assert result.guaranteed_close.hour == 18
+
+    def test_blaesi_sunday_july_is_open(self):
+        schedule = load_schedules()["SSD-2"]
+        result = resolve(schedule, _when(2026, 7, 5, 12))
+        assert result.is_open is True
+
+    def test_labeled_interval_still_counts_as_open(self):
+        """SSD-3 Wednesday 15:00 is only covered by the Kinderspiel Interval."""
+        schedule = load_schedules()["SSD-3"]
+        result = resolve(schedule, _when(2026, 8, 5, 15))
+        assert result.is_open is True
+
+    def test_kaeferberg_july_saturday_open_hours_count(self):
+        schedule = load_schedules()["SSD-5"]
+        assert count_open_hours(schedule, date(2026, 7, 4)) == 7

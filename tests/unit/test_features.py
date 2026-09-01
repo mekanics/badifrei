@@ -377,9 +377,9 @@ class TestWeatherFeatures:
         )
         result = build_features(df, weather_df=weather)
         assert not result["temperature_c"].isna().any(), "NaN temperature not filled"
-        assert (
-            not result["precipitation_mm"].isna().any()
-        ), "NaN precipitation not filled"
+        assert not result["precipitation_mm"].isna().any(), (
+            "NaN precipitation not filled"
+        )
         assert (result.loc[result["hour_of_day"] < 12, "temperature_c"] == 15.0).all()
 
     def test_temp_x_outdoor_zero_for_hallenbad(self):
@@ -510,6 +510,16 @@ class TestWeatherFeatures:
         # Wrong-hour rain must not be joined onto Zurich 15:00
         assert float(m15["precipitation_mm"].iloc[0]) == 0.0
         assert int(m15["is_open"].iloc[0]) == 1
+
+
+class TestCountOpenHoursMonthConditional:
+    def test_kaeferberg_july_saturday_is_seven_guaranteed_hours(self):
+        from datetime import date
+
+        from ml.opening_hours import count_open_hours, load_schedules
+
+        schedule = load_schedules()["SSD-5"]
+        assert count_open_hours(schedule, date(2026, 7, 4)) == 7
 
 
 # Mock opening hours metadata for tests

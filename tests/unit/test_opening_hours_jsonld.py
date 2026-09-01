@@ -194,6 +194,61 @@ class TestOpeningHoursJsonld:
         # No fair_weather invention; no duplicate date-only rows
         assert all(s.get("opens") != "00:00:00" for s in open_specs)
 
+    def test_kaeferberg_saturday_variants_are_dated_and_do_not_overlap(self):
+        specs = opening_hours_jsonld(load_schedules()["SSD-5"])
+        saturday = [
+            s
+            for s in specs
+            if s.get("dayOfWeek", "").endswith("Saturday") and "validFrom" in s
+        ]
+        assert saturday
+        by_range = {(s["validFrom"], s["validThrough"]): s for s in saturday}
+        assert by_range[("2026-05-01", "2026-09-30")]["closes"] == "16:00:00"
+        assert by_range[("2026-10-01", "2026-12-31")]["closes"] == "18:00:00"
+        assert by_range[("2026-01-01", "2026-04-30")]["closes"] == "18:00:00"
+        ranges = sorted((s["validFrom"], s["validThrough"]) for s in saturday)
+        for prev, nxt in zip(ranges, ranges[1:], strict=False):
+            assert prev[1] < nxt[0]
+
+    def test_blaesi_sunday_has_dated_hours(self):
+        specs = opening_hours_jsonld(load_schedules()["SSD-2"])
+        sunday = [
+            s
+            for s in specs
+            if s.get("dayOfWeek", "").endswith("Sunday") and "dayOfWeek" in s
+        ]
+        assert sunday
+        assert all("validFrom" in s for s in sunday)
+
+    def test_oerlikon_wednesday_jsonld_is_envelope_not_kinderspiel_split(self):
+        """Contained Session windows must not appear as a second Wednesday spec."""
+        specs = opening_hours_jsonld(load_schedules()["SSD-7"])
+        wednesday = [s for s in specs if s.get("dayOfWeek", "").endswith("Wednesday")]
+        assert len(wednesday) == 1
+        assert wednesday[0]["opens"] == "06:00:00"
+        assert wednesday[0]["closes"] == "22:00:00"
+
+    def test_jsonld_keeps_midday_gap(self):
+        schedule = PoolSchedule(
+            uid="gap",
+            periods=(
+                Period(
+                    start=None,
+                    end=None,
+                    days=frozenset({0}),
+                    intervals=(
+                        Interval(12 * 60, 13 * 60 + 30, "always"),
+                        Interval(16 * 60, 19 * 60, "always"),
+                    ),
+                ),
+            ),
+        )
+        specs = opening_hours_jsonld(schedule)
+        assert {(s["opens"], s["closes"]) for s in specs} == {
+            ("12:00:00", "13:30:00"),
+            ("16:00:00", "19:00:00"),
+        }
+
 
 class TestOpeningHoursFaqText:
     def test_fair_weather_wording(self):
