@@ -9,9 +9,10 @@ Two gates must both pass before a Baditicker water temperature is shown:
 
 Do NOT collapse this to a single short ``source_modified_at`` cutoff: measured
 Baditicker update gaps reach 23.4 h in peak season (avg 6–12 h), so a short
-cutoff false-hides live temperatures. See also ``ml.opening_hours`` which
-deliberately keys observation freshness on ``observed_at``, not
-``source_modified_at``.
+cutoff false-hides live temperatures. Distinct from open/closed Observation
+eligibility in ``ml.opening_hours``: that path still requires fresh
+``observed_at``, but also requires ``source_modified_at`` at or after today's
+first Guaranteed open (same-day cycle), not a 7-day age window.
 """
 
 from __future__ import annotations
