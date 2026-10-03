@@ -414,3 +414,63 @@ def test_section_removed_keeps_non_revision_closures(tmp_path, monkeypatch):
     data = json.loads(generated.read_text(encoding="utf-8"))
     by_uid = {p["uid"]: p for p in data["pools"]}
     assert [c["reason"] for c in by_uid["SSD-7"]["closures"]] == ["Betriebsanlass"]
+
+
+_SCRIPT_A = '<script>window.adobeDataLayer.push({"t":1})</script>\n'
+_SCRIPT_B = '<script>window.adobeDataLayer.push({"t":2})</script>\n'
+
+
+def test_script_only_page_change_keeps_stored_html(tmp_path, monkeypatch):
+    page_a = _SCRIPT_A + ABBREVIATED_START
+    page_b = _SCRIPT_B + ABBREVIATED_START
+    assert _run_main(monkeypatch, tmp_path, page_a, today="2026-08-24") == 0
+    stored = tmp_path / "sources" / "revisionsarbeiten.html"
+    assert stored.read_text(encoding="utf-8") == page_a
+    assert _run_main(monkeypatch, tmp_path, page_b, today="2026-08-25") == 0
+    assert stored.read_text(encoding="utf-8") == page_a
+
+
+def test_visible_text_change_rewrites_stored_html(tmp_path, monkeypatch):
+    assert _run_main(monkeypatch, tmp_path, ABBREVIATED_START, today="2026-08-24") == 0
+    new_page = ABBREVIATED_START.replace("23. August", "30. August")
+    assert _run_main(monkeypatch, tmp_path, new_page, today="2026-08-25") == 0
+    stored = tmp_path / "sources" / "revisionsarbeiten.html"
+    assert stored.read_text(encoding="utf-8") == new_page
+
+
+def test_unchanged_revision_does_not_rewrite_generated(tmp_path, monkeypatch):
+    generated = tmp_path / "opening_hours.generated.json"
+    _seed_generated(
+        generated,
+        [{"uid": "SSD-7", "closures": [_revision()], "scraped_at": "2026-08-01"}],
+    )
+    before = generated.read_bytes()
+    assert _run_main(monkeypatch, tmp_path, ABBREVIATED_START, today="2026-08-24") == 0
+    assert generated.read_bytes() == before
+
+
+def test_changed_revision_bumps_scraped_at(tmp_path, monkeypatch):
+    generated = tmp_path / "opening_hours.generated.json"
+    _seed_generated(
+        generated,
+        [{"uid": "SSD-7", "closures": [_revision()], "scraped_at": "2026-08-01"}],
+    )
+    new_page = ABBREVIATED_START.replace("23. August", "30. August")
+    assert _run_main(monkeypatch, tmp_path, new_page, today="2026-08-24") == 0
+    data = json.loads(generated.read_text(encoding="utf-8"))
+    ssd7 = next(p for p in data["pools"] if p["uid"] == "SSD-7")
+    assert ssd7["scraped_at"] == "2026-08-24"
+    assert data["scraped_at"] == "2026-08-24"
+
+
+def test_removed_revision_bumps_scraped_at(tmp_path, monkeypatch):
+    generated = tmp_path / "opening_hours.generated.json"
+    _seed_generated(
+        generated,
+        [{"uid": "SSD-7", "closures": [_revision()], "scraped_at": "2026-08-01"}],
+    )
+    assert _run_main(monkeypatch, tmp_path, EMPTY_SECTION, today="2026-08-24") == 0
+    data = json.loads(generated.read_text(encoding="utf-8"))
+    ssd7 = next(p for p in data["pools"] if p["uid"] == "SSD-7")
+    assert ssd7["scraped_at"] == "2026-08-24"
+    assert not any(c.get("reason") == "Revision" for c in ssd7.get("closures") or [])

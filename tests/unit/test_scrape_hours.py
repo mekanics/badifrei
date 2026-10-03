@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import html
+import json
 from datetime import date
+from pathlib import Path
 
+from scripts import scrape_hours as sh
 from scripts.scrape_hours import (
     _days_from_label,
     _parse_cell_fragments,
@@ -179,3 +183,105 @@ class TestTablesToPeriodsShapeB:
         assert periods[0]["days"] == ["Wed"]
         assert periods[0]["intervals"][1]["label"] == "Kinderspielnachmittag"
         assert periods[0]["intervals"][0] == _interval("06:00", "22:00")
+
+
+_HOURS_COLUMNS = ["Wochentag", "Zeit"]
+_HOURS_ROWS = [["Montag", "12–19 Uhr"]]
+_HOURS_PAGE_URL = (
+    "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/"
+    "sport-und-badeanlagen/hallenbaeder/blaesi.html"
+)
+
+
+def _datatable_html(columns: list[str], rows: list[list[str]]) -> str:
+    col_json = html.escape(
+        json.dumps([{"text": c} for c in columns], ensure_ascii=False),
+        quote=True,
+    )
+    row_json = html.escape(
+        json.dumps([[{"value": v} for v in row] for row in rows], ensure_ascii=False),
+        quote=True,
+    )
+    return f'<stzh-datatable columns="{col_json}" rows="{row_json}"></stzh-datatable>'
+
+
+_HOURS_HTML = _datatable_html(_HOURS_COLUMNS, _HOURS_ROWS)
+
+
+def _hours_pool() -> dict:
+    return {"uid": "SSD-2", "official_url": _HOURS_PAGE_URL}
+
+
+def _write_fragment(path: Path, tables: list[dict], scraped_at: str) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "uid": "SSD-2",
+                "url": _HOURS_PAGE_URL,
+                "scraped_at": scraped_at,
+                "tables": tables,
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _run_hours(monkeypatch, tmp_path: Path, html_text: str) -> int:
+    generated = tmp_path / "opening_hours.generated.json"
+    sources = tmp_path / "sources"
+    sources.mkdir(parents=True, exist_ok=True)
+    metadata = tmp_path / "pool_metadata.json"
+    metadata.write_text(json.dumps([_hours_pool()]), encoding="utf-8")
+    monkeypatch.setattr(sh, "GENERATED", generated)
+    monkeypatch.setattr(sh, "SOURCES", sources)
+    monkeypatch.setattr(sh, "METADATA", metadata)
+    monkeypatch.setattr(sh, "fetch", lambda url: html_text)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["scrape_hours.py", "--year", "2026", "--uid", "SSD-2"],
+    )
+    return sh.main()
+
+
+class TestHoursMainContentOnlyWrite:
+    def test_unchanged_tables_do_not_rewrite_fragment(self, tmp_path, monkeypatch):
+        sources = tmp_path / "sources"
+        sources.mkdir()
+        fragment = sources / "SSD-2.json"
+        _write_fragment(fragment, sh.extract_tables(_HOURS_HTML), "2000-01-01")
+        before = fragment.read_bytes()
+
+        assert _run_hours(monkeypatch, tmp_path, _HOURS_HTML) == 0
+        assert fragment.read_bytes() == before
+
+    def test_changed_cell_rewrites_fragment_and_bumps_scraped_at(
+        self, tmp_path, monkeypatch
+    ):
+        sources = tmp_path / "sources"
+        sources.mkdir()
+        fragment = sources / "SSD-2.json"
+        _write_fragment(fragment, sh.extract_tables(_HOURS_HTML), "2000-01-01")
+        changed = _datatable_html(_HOURS_COLUMNS, [["Montag", "12–21 Uhr"]])
+
+        assert _run_hours(monkeypatch, tmp_path, changed) == 0
+        data = json.loads(fragment.read_text(encoding="utf-8"))
+        assert data["scraped_at"] == date.today().isoformat()
+        assert data["tables"][0]["rows"][0][1] == "12–21 Uhr"
+
+    def test_footnote_only_change_rewrites_fragment_leaves_generated(
+        self, tmp_path, monkeypatch
+    ):
+        assert _run_hours(monkeypatch, tmp_path, _HOURS_HTML) == 0
+        generated = tmp_path / "opening_hours.generated.json"
+        generated_before = generated.read_bytes()
+        footnoted = _datatable_html(
+            _HOURS_COLUMNS, [["Montag", "12–19 Uhr<sup>1</sup>"]]
+        )
+
+        assert _run_hours(monkeypatch, tmp_path, footnoted) == 0
+        fragment = json.loads((tmp_path / "sources" / "SSD-2.json").read_text())
+        assert "<sup>1</sup>" in json.dumps(fragment["tables"])
+        assert generated.read_bytes() == generated_before

@@ -453,11 +453,29 @@ def main() -> int:
                 "scraped_at": scraped_at.isoformat(),
                 "tables": extract_tables(html_text),
             }
-            (SOURCES / f"{pool['uid']}.json").write_text(
-                json.dumps(fragment, indent=2, ensure_ascii=False) + "\n",
-                encoding="utf-8",
-            )
-            tables = fragment["tables"]
+            src_path = SOURCES / f"{pool['uid']}.json"
+            if src_path.exists():
+                existing = json.loads(src_path.read_text(encoding="utf-8"))
+                existing_content = {
+                    key: value for key, value in existing.items() if key != "scraped_at"
+                }
+                new_content = {
+                    key: value for key, value in fragment.items() if key != "scraped_at"
+                }
+                if existing_content == new_content:
+                    tables = existing.get("tables") or []
+                else:
+                    src_path.write_text(
+                        json.dumps(fragment, indent=2, ensure_ascii=False) + "\n",
+                        encoding="utf-8",
+                    )
+                    tables = fragment["tables"]
+            else:
+                src_path.write_text(
+                    json.dumps(fragment, indent=2, ensure_ascii=False) + "\n",
+                    encoding="utf-8",
+                )
+                tables = fragment["tables"]
 
         periods = tables_to_periods(tables, args.year)
         if not periods:
