@@ -81,6 +81,7 @@ services:
       dockerfile: api/Dockerfile
     environment:
       DATABASE_URL: ${DATABASE_URL}
+      HOURS_SYNC_URL: ${HOURS_SYNC_URL:-https://raw.githubusercontent.com/mekanics/badifrei/main/ml/data/opening_hours.generated.json}
     expose:
       - "8000"
     volumes:

@@ -1,8 +1,8 @@
 # Software Architecture Document
 
 **Project**: badifrei.ch (`badi-predictor`)
-**Last Updated**: 2026-08-09
-**Version**: 1.0
+**Last Updated**: 2026-10-03
+**Version**: 1.1
 
 ## Overview
 
@@ -109,7 +109,8 @@ lifecycle isolation, not independent deployable products.
   `pool_status` — see migrations `001`–`003`.
 - **Data ownership**: System of record for live and historical sensor data.
   Published hours live in git (`pool_metadata.json` / generated Schedule), not
-  in the DB.
+  in the DB. The api reads the generated Schedule from `main` at runtime
+  (Schedule source); data-only merges do not deploy.
 
 ## Data Flow
 
@@ -121,23 +122,29 @@ lifecycle isolation, not independent deployable products.
    pages and `/api/current`.
 3. **Train** — Retrain job loads lookback window, builds features, trains
    XGBoost on clipped `occupancy_pct`, writes artifact + report.
-4. **Serve** — API merges latest occupancy, Schedule Resolution (observation /
+4. **Hours** — `hours-sync.yml` scrapes Stadt Zürich pages into git-reviewed
+   `ml/data/opening_hours.generated.json`. The api Schedule source re-reads
+   that file from `main` about every 15 minutes and hot-swaps the in-memory
+   snapshot; Coolify Watch Paths skip `ml/data/**` so a data-only merge does
+   not recreate containers.
+5. **Serve** — API merges latest occupancy, Schedule Resolution (observation /
    closure / schedule), gated Baditicker water temp, city weather temps, and
    predictions for HTML and JSON. Markdown and `llms.txt` surfaces summarize
    the same catalog for agents.
 
-Domain terms (Schedule, Guaranteed hours, Resolution, Observation,
-Wassertemperatur, water-temp freshness gates) are defined in
+Domain terms (Schedule, Schedule source, Guaranteed hours, Resolution,
+Observation, Wassertemperatur, water-temp freshness gates) are defined in
 [glossary.md](./glossary.md).
 
 ## External Integrations
 
-| Service      | Purpose                               | Authentication       |
-| ------------ | ------------------------------------- | -------------------- |
-| CrowdMonitor | Live occupancy WebSocket              | Public WS            |
-| Baditicker   | Stadt Zürich open/closed XML          | Public HTTP          |
-| Open-Meteo   | Hourly weather features + UI air temp | None (no API key)    |
-| Umami        | Optional privacy-friendly analytics   | Script URL + site ID |
+| Service      | Purpose                                           | Authentication       |
+| ------------ | ------------------------------------------------- | -------------------- |
+| CrowdMonitor | Live occupancy WebSocket                          | Public WS            |
+| Baditicker   | Stadt Zürich open/closed XML                      | Public HTTP          |
+| Open-Meteo   | Hourly weather features + UI air temp             | None (no API key)    |
+| GitHub raw   | Runtime fetch of the generated Schedule on `main` | None (public repo)   |
+| Umami        | Optional privacy-friendly analytics               | Script URL + site ID |
 
 ## Security Model
 

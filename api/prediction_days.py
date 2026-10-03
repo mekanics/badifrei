@@ -8,15 +8,10 @@ def date_parser(date_str: str):
 
 
 def _schedules():
-    """Lazy-load PoolSchedule map (module-level cache)."""
-    from ml.opening_hours import load_schedules
+    """Process Schedule snapshot (baked file, then remote when enabled)."""
+    from ml.schedule_source import current_schedules
 
-    if not hasattr(_schedules, "_cache") or _schedules._cache is None:
-        _schedules._cache = load_schedules()
-    return _schedules._cache
-
-
-_schedules._cache = None  # type: ignore[attr-defined]
+    return current_schedules()
 
 
 def _schedule_for_pool(pool: dict):
