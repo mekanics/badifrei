@@ -16,6 +16,7 @@ from api.predictor import predictor
 from api.routers import json_api, markdown, meta, pages
 from api.templating import STATIC_PATH, configure_templates
 from api.weekly_insights import refresh_weekly_insights
+from ml.schedule_source import MIN_INTERVAL_S, default_source, run_refresh_loop
 
 logger = logging.getLogger(__name__)
 
@@ -56,8 +57,18 @@ async def lifespan(app: FastAPI):
             )
         logger.info("Weekly insights pre-warm scheduled for %d pools", len(get_pools()))
 
+    hours_task = None
+    if settings.hours_sync_url:
+        interval = max(settings.hours_sync_interval_seconds, MIN_INTERVAL_S)
+        hours_task = asyncio.create_task(
+            run_refresh_loop(default_source(), settings.hours_sync_url, interval)
+        )
+        logger.info("Hours refresh loop started (%ss)", interval)
+
     yield
 
+    if hours_task is not None:
+        hours_task.cancel()
     if app.state.db_pool is not None:
         await app.state.db_pool.close()
 

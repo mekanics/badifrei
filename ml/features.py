@@ -512,7 +512,8 @@ def add_opening_hours_features(
     from that dict's legacy ``opening_hours`` shapes instead of the on-disk
     generated file.
     """
-    from ml.opening_hours import _legacy_to_schedule, load_schedules, resolve_frame
+    from ml.opening_hours import _legacy_to_schedule, resolve_frame
+    from ml.schedule_source import current_schedules
 
     if df.empty:
         out = df.copy()
@@ -543,5 +544,5 @@ def add_opening_hours_features(
             else:
                 schedules[uid] = _legacy_to_schedule(uid, oh)
     else:
-        schedules = load_schedules()
+        schedules = current_schedules()
     return resolve_frame(df, schedules)

@@ -99,7 +99,12 @@ close times, reason, and source (observation, closure, or schedule).
 ## S — Z
 
 **Schedule** — The published claim: which Intervals a pool is open, by Period
-and weekday, plus Closures. Slow-moving; reviewed in git before deploy.
+and weekday, plus Closures. Slow-moving; reviewed in git; live within ~20 min
+of merge via the **Schedule source**, no deploy.
+
+**Schedule source** — Per-process loader in the api that serves the Schedule
+from `main`, falling back to the last good copy, then the image's baked file.
+See [ADR-006](./adr/ADR-006-schedule-live-from-git-at-runtime.md).
 
 **Session** _(CH)_ — A named sub-window inside (or abutting) public hours
 (Kinderspielnachmittag, Familienschwimmen, audience restriction). Shown as an

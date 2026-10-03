@@ -29,3 +29,18 @@ def _block_real_open_meteo_http(monkeypatch):
         return original_get(self, url, *args, **kwargs)
 
     monkeypatch.setattr(aiohttp.ClientSession, "get", guarded_get)
+
+
+@pytest.fixture(autouse=True)
+def _isolate_hours_sync(monkeypatch):
+    """Keep unit tests off the network and on a fresh Schedule source."""
+    monkeypatch.setenv("HOURS_SYNC_URL", "")
+    from api.config import get_settings
+
+    get_settings.cache_clear()
+    import ml.schedule_source as schedule_source
+
+    schedule_source._default = None
+    yield
+    schedule_source._default = None
+    get_settings.cache_clear()

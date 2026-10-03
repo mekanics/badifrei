@@ -324,31 +324,27 @@ def _parse_generated_schedule(uid: str, raw: dict) -> PoolSchedule:
     )
 
 
-def load_schedules(
+def schedules_from_document(
+    generated: dict | list | None,
     metadata_path: Path | None = None,
-    generated_path: Path | None = None,
 ) -> dict[str, PoolSchedule]:
-    """Load schedules for every pool, preferring the generated file when present."""
+    """Build PoolSchedule map from an already-loaded generated document."""
     meta_path = metadata_path or METADATA_PATH
-    gen_path = generated_path or GENERATED_PATH
-
     pools = json.loads(meta_path.read_text(encoding="utf-8"))
-    generated: dict[str, dict] = {}
-    if gen_path.exists():
-        raw = json.loads(gen_path.read_text(encoding="utf-8"))
-        if isinstance(raw, dict) and "pools" in raw:
-            generated = {p["uid"]: p for p in raw["pools"]}
-        elif isinstance(raw, list):
-            generated = {p["uid"]: p for p in raw}
-        elif isinstance(raw, dict):
-            generated = raw
+    generated_by_uid: dict[str, dict] = {}
+    if isinstance(generated, dict) and "pools" in generated:
+        generated_by_uid = {p["uid"]: p for p in generated["pools"]}
+    elif isinstance(generated, list):
+        generated_by_uid = {p["uid"]: p for p in generated}
+    elif isinstance(generated, dict):
+        generated_by_uid = generated
 
     result: dict[str, PoolSchedule] = {}
     for pool in pools:
         uid = pool["uid"]
-        if uid in generated and generated[uid].get("periods") is not None:
+        if uid in generated_by_uid and generated_by_uid[uid].get("periods") is not None:
             try:
-                schedule = _parse_generated_schedule(uid, generated[uid])
+                schedule = _parse_generated_schedule(uid, generated_by_uid[uid])
             except Exception as exc:  # noqa: BLE001
                 logger.error(
                     "Bad generated schedule for %s: %s; falling back", uid, exc
@@ -358,9 +354,9 @@ def load_schedules(
         elif pool.get("opening_hours"):
             schedule = _legacy_to_schedule(uid, pool["opening_hours"])
             # Merge closures from generated file even when periods are absent
-            if uid in generated and generated[uid].get("closures"):
+            if uid in generated_by_uid and generated_by_uid[uid].get("closures"):
                 try:
-                    gen = _parse_generated_schedule(uid, generated[uid])
+                    gen = _parse_generated_schedule(uid, generated_by_uid[uid])
                     schedule = PoolSchedule(
                         uid=schedule.uid,
                         periods=schedule.periods,
@@ -391,6 +387,18 @@ def load_schedules(
             )
         result[uid] = schedule
     return result
+
+
+def load_schedules(
+    metadata_path: Path | None = None,
+    generated_path: Path | None = None,
+) -> dict[str, PoolSchedule]:
+    """Load schedules for every pool, preferring the generated file when present."""
+    gen_path = generated_path or GENERATED_PATH
+    raw: dict | list | None = None
+    if gen_path.exists():
+        raw = json.loads(gen_path.read_text(encoding="utf-8"))
+    return schedules_from_document(raw, metadata_path)
 
 
 def _effective_weekday(schedule: PoolSchedule, day: dt.date) -> int:

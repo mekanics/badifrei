@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     umami_script_url: str = ""
     umami_website_id: str = ""
     weekly_insights_cache_ttl_seconds: int = 3600
+    hours_sync_url: str = ""
+    hours_sync_interval_seconds: int = 900
 
     @property
     def cors_origins(self) -> list[str]:
