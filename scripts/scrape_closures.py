@@ -140,6 +140,13 @@ def revision_section(html: str) -> str | None:
     return m.group(1) if m else None
 
 
+def _visible_text(html: str) -> str:
+    """Compare page content without volatile script/style payloads."""
+    stripped = re.sub(r"<script\b[^>]*>.*?</script>", "", html, flags=re.S | re.I)
+    stripped = re.sub(r"<style\b[^>]*>.*?</style>", "", stripped, flags=re.S | re.I)
+    return re.sub(r"\s+", " ", _plain_text(stripped)).strip()
+
+
 def _plain_text(html: str) -> str:
     text = re.sub(r"<br\s*/?>", "\n", html)
     text = re.sub(r"<[^>]+>", "\n", text)
@@ -240,19 +247,29 @@ def merge_into_generated(closures: list[dict], scraped_at: date) -> dict:
 
     by_uid = {p["uid"]: p for p in data.get("pools", [])}
     incoming = {c["uid"]: c for c in closures}
+    changed = False
 
     for uid, entry in by_uid.items():
         previous = list(entry.get("closures") or [])
         had_revision = any(item.get("reason") == "Revision" for item in previous)
         kept = [item for item in previous if item.get("reason") != "Revision"]
         if uid in incoming:
-            kept.append(_revision_record(incoming[uid], previous, scraped_at))
+            record = _revision_record(incoming[uid], previous, scraped_at)
+            existing = next(
+                (item for item in previous if item.get("reason") == "Revision"),
+                None,
+            )
+            if existing == record:
+                continue
+            kept.append(record)
             entry["closures"] = kept
             entry["scraped_at"] = scraped_at.isoformat()
             entry["confidence"] = "official_structured"
+            changed = True
         elif had_revision:
             entry["closures"] = kept
             entry["scraped_at"] = scraped_at.isoformat()
+            changed = True
 
     for uid, closure in incoming.items():
         if uid in by_uid:
@@ -264,15 +281,17 @@ def merge_into_generated(closures: list[dict], scraped_at: date) -> dict:
             "periods": None,
             "closures": [_revision_record(closure, [], scraped_at)],
         }
+        changed = True
 
     data["pools"] = list(by_uid.values())
-    data["scraped_at"] = scraped_at.isoformat()
-    data["source"] = {
-        "url": DEFAULT_URL,
-        "layout": "revisionsarbeiten",
-        "confidence": "official_structured",
-        "scraped_at": scraped_at.isoformat(),
-    }
+    if changed:
+        data["scraped_at"] = scraped_at.isoformat()
+        data["source"] = {
+            "url": DEFAULT_URL,
+            "layout": "revisionsarbeiten",
+            "confidence": "official_structured",
+            "scraped_at": scraped_at.isoformat(),
+        }
     return data
 
 
@@ -376,9 +395,6 @@ def main() -> int:
         response.raise_for_status()
         html = response.text
 
-    SOURCES.mkdir(parents=True, exist_ok=True)
-    (SOURCES / "revisionsarbeiten.html").write_text(html, encoding="utf-8")
-
     closures = parse_revision_lines(html, year=args.year)
     scraped_at = args.today or date.today()
     error = classify_parse(html, closures) or classify_clear(html, closures, scraped_at)
@@ -386,11 +402,18 @@ def main() -> int:
         print(error, flush=True)
         return 1
 
+    SOURCES.mkdir(parents=True, exist_ok=True)
+    html_path = SOURCES / "revisionsarbeiten.html"
+    if not html_path.exists() or _visible_text(
+        html_path.read_text(encoding="utf-8")
+    ) != _visible_text(html):
+        html_path.write_text(html, encoding="utf-8")
+
     data = merge_into_generated(closures, scraped_at)
     GENERATED.parent.mkdir(parents=True, exist_ok=True)
-    GENERATED.write_text(
-        json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
+    serialized = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+    if not GENERATED.exists() or GENERATED.read_text(encoding="utf-8") != serialized:
+        GENERATED.write_text(serialized, encoding="utf-8")
     print(f"Wrote {len(closures)} revision closures to {GENERATED}")
     return 0
 
