@@ -3,10 +3,11 @@
 Supports both the legacy flat ``schedule`` shape in pool_metadata.json and the
 generated periods/intervals/closures shape. Precedence inside ``resolve``:
 
-    full closure → fresh observation → schedule interval → season window
+    full closure → fresh observed closed → season window → schedule interval
 
 Full Closure outranks Observation so a lagging Baditicker ``offen`` cannot
-reopen a pool during Revision.
+reopen a pool during Revision. A fresh ``offen`` only confirms a published
+Interval (including fair-weather ones); it never opens a pool outside them.
 """
 
 from __future__ import annotations
@@ -553,19 +554,12 @@ def resolve(
             confidence=confidence,
         )
 
-    # 2. Fresh observation wins for is_open only (weather closes, etc.)
-    if _observation_is_fresh(observation, when, observation_max_age):
-        assert observation is not None and observation.is_open is not None
-        if observation.is_open:
-            g_close, c_close = _close_times_for_day(_periods_for_day(schedule, day))
-            return Resolution(
-                state=OpenState.OBSERVED_OPEN,
-                is_open=True,
-                guaranteed_close=g_close,
-                conditional_close=c_close,
-                source="observed",
-                confidence=confidence,
-            )
+    # 2. Fresh "geschlossen" wins (weather closes, etc.). Fresh "offen" only
+    #    confirms a published Interval in step 4: indoor pools carry a flag the
+    #    city rarely resets, so it cannot open a pool outside its hours.
+    fresh = _observation_is_fresh(observation, when, observation_max_age)
+    observed_open = fresh and observation is not None and observation.is_open is True
+    if fresh and not observed_open:
         return Resolution(
             state=OpenState.OBSERVED_CLOSED,
             is_open=False,
@@ -606,12 +600,26 @@ def resolve(
     matching: list[Interval] = []
     for period in periods_today:
         for interval in period.intervals:
-            if interval.condition == "fair_weather" and fair is not True:
+            if (
+                interval.condition == "fair_weather"
+                and fair is not True
+                and not observed_open
+            ):
                 continue
             if interval.open_min <= current_min < interval.close_min:
                 matching.append(interval)
 
     g_close, c_close = _close_times_for_day(periods_today)
+
+    if matching and observed_open:
+        return Resolution(
+            state=OpenState.OBSERVED_OPEN,
+            is_open=True,
+            guaranteed_close=g_close,
+            conditional_close=c_close,
+            source="observed",
+            confidence=confidence,
+        )
 
     if matching:
         state = (

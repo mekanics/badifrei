@@ -86,7 +86,10 @@ the label is display-only and does not change open/closed membership. See
 **Observation** — What the Baditicker feed reported at a timestamp. Asserts
 nothing about the future; used only when fresh to override schedule-based
 Resolution. A full Closure still outranks Observation (Revision cannot be
-reopened by a lagging Baditicker `offen`).
+reopened by a lagging Baditicker `offen`). Asymmetric: `geschlossen` closes a
+pool at any time, but `offen` only confirms a published Interval (including
+Conditional hours). It never opens a pool outside them: indoor pools carry
+an `offen` flag the city rarely resets after closing time.
 
 **Period** — A weekday set holding Intervals, optionally bounded by a date range.
 Dated Periods model Sommerbad season sections; an evergreen Period (`start` and

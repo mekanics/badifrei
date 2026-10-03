@@ -223,6 +223,99 @@ class TestObservations:
         assert result.is_open is True
         assert result.source == "schedule"
 
+    def test_observed_open_within_hours_is_observed(self):
+        schedule = _simple_schedule("09:00", "18:00")
+        obs = Observation(
+            observed_at=_when(2026, 8, 4, 12),
+            source_modified_at=_when(2026, 2, 8, 10, 42),
+            is_open=True,
+        )
+        result = resolve(schedule, _when(2026, 8, 4, 12), observation=obs)
+        assert result.is_open is True
+        assert result.state == OpenState.OBSERVED_OPEN
+        assert result.source == "observed"
+
+    def test_observed_open_cannot_open_after_scheduled_close(self):
+        """Indoor Baditicker 'offen' is a flag the city never resets.
+
+        Käferberg read 'offen' (dateModified 2026-02-08) at 18:40 on a Saturday
+        that closes at 18:00; the published hours must win.
+        """
+        schedule = _simple_schedule("09:00", "18:00")
+        obs = Observation(
+            observed_at=_when(2026, 10, 3, 18, 40),
+            source_modified_at=_when(2026, 2, 8, 10, 42),
+            is_open=True,
+        )
+        result = resolve(schedule, _when(2026, 10, 3, 18, 40), observation=obs)
+        assert result.is_open is False
+        assert result.state == OpenState.CLOSED_BETWEEN
+        assert result.next_open == "09:00"
+        assert result.source == "schedule"
+
+    def test_observed_open_cannot_open_off_season(self):
+        schedule = _simple_schedule(
+            seasonal_open="2026-05-01", seasonal_close="2026-09-30"
+        )
+        obs = Observation(
+            observed_at=_when(2026, 10, 3, 14),
+            source_modified_at=_when(2026, 9, 1, 9),
+            is_open=True,
+        )
+        result = resolve(schedule, _when(2026, 10, 3, 14), observation=obs)
+        assert result.is_open is False
+        assert result.state == OpenState.OFF_SEASON
+
+    def test_observed_open_cannot_open_on_a_closed_weekday(self):
+        schedule = PoolSchedule(
+            uid="weekdays-only",
+            periods=(
+                Period(
+                    start=None,
+                    end=None,
+                    days=frozenset(range(5)),
+                    intervals=(Interval(9 * 60, 18 * 60),),
+                ),
+            ),
+            confidence="official_structured",
+            scraped_at=date(2026, 9, 1),
+        )
+        obs = Observation(
+            observed_at=_when(2026, 10, 3, 12),
+            source_modified_at=_when(2026, 2, 8, 10, 42),
+            is_open=True,
+        )
+        # 2026-10-03 is a Saturday
+        result = resolve(schedule, _when(2026, 10, 3, 12), observation=obs)
+        assert result.is_open is False
+        assert result.state == OpenState.CLOSED_TODAY
+
+    def test_observed_open_confirms_fair_weather_interval_despite_rain(self):
+        """'offen' is the city's call on Conditional hours; weather is a guess."""
+        schedule = _fair_weather_schedule()
+        rainy = WeatherHint(temperature_c=20, precipitation_mm=2.0, weathercode=61)
+        obs = Observation(
+            observed_at=_when(2026, 8, 4, 15),
+            source_modified_at=_when(2026, 8, 4, 9),
+            is_open=True,
+        )
+        result = resolve(
+            schedule, _when(2026, 8, 4, 15), weather=rainy, observation=obs
+        )
+        assert result.is_open is True
+        assert result.state == OpenState.OBSERVED_OPEN
+
+    def test_observed_closed_still_overrides_scheduled_hours(self):
+        schedule = _simple_schedule("09:00", "18:00")
+        obs = Observation(
+            observed_at=_when(2026, 8, 4, 15),
+            source_modified_at=_when(2026, 8, 4, 14),
+            is_open=False,
+        )
+        result = resolve(schedule, _when(2026, 8, 4, 15), observation=obs)
+        assert result.is_open is False
+        assert result.state == OpenState.OBSERVED_CLOSED
+
 
 class TestSplitIntervals:
     def test_gap_is_closed(self):
