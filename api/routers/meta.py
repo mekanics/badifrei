@@ -17,7 +17,9 @@ router = APIRouter()
 
 @router.get("/health", tags=["meta"])
 async def health():
-    return {"status": "ok", "version": "0.1.0"}
+    from ml.schedule_source import default_source
+
+    return {"status": "ok", "version": "0.1.0", "hours": default_source().status()}
 
 
 @router.get("/llms.txt", include_in_schema=False)

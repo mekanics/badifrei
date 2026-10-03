@@ -314,6 +314,18 @@ Add a guard: also check for an `APP_ENV=test` variable, or rename to `_TEST_WEAT
 
 ---
 
+### F-15 — INFO | Runtime hours fetch from raw.githubusercontent.com
+
+**File:** `ml/schedule_source.py`, `docker-compose.coolify.yml` (`HOURS_SYNC_URL`)
+
+**Description:**  
+The api process GETs `ml/data/opening_hours.generated.json` from a fixed environment URL (default: public `raw.githubusercontent.com` on `main`) every ~15 minutes. Content is the same git-reviewed file that used to be baked into the image. Guards: 10 s timeout, follow redirects, 1 MB cap (Content-Length short-circuit, then stream abort), JSON object with a non-empty `pools` list, last-good then baked fallback. Empty `HOURS_SYNC_URL` disables the loop (local / tests). `/health` stays 200 on fetch failure.
+
+**Recommendation:**  
+Keep the URL env-configured and host-fixed. Do not interpolate user input into the fetch URL. If the repo is made private, the fetch will fail closed to the baked file; `/health.hours.last_result` will show `fetch_failed`. Note: in `docker-compose.coolify.yml` the `:-` default means a blank Coolify value still enables the fetch; rollback is a revert.
+
+---
+
 ## Positive Findings
 
 These things are done correctly and should be preserved:
