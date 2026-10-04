@@ -100,5 +100,11 @@ each detail page. #}
 </div>
 {% endfor %}
 
+<div class="filter-empty" id="filter-empty" role="status" aria-live="polite" hidden>
+  <p id="filter-empty-text"></p>
+  <button type="button" class="filter-reset" id="filter-empty-reset" data-umami-event="filter-reset">Filter
+    zurücksetzen</button>
+</div>
+
 <script src="/static/index.js?v={{ static_ver('index.js') }}"></script>
 {% endblock %}

@@ -12,6 +12,11 @@ function track(name, data) {
 /* ── Filter state ─────────────────────────────────────────────── */
 const filters = { open: false, types: new Set(), city: '' }
 
+const FILTERS_KEY = 'badi_filters'
+const FILTERS_VERSION = 1
+const FILTER_OPEN_KEY = 'badi_filter_open'
+const RETURN_CARD_KEY = 'badi_return_card'
+
 const TYPE_LABELS = {
 	freibad: 'Freibad',
 	hallenbad: 'Hallenbad',
@@ -19,6 +24,138 @@ const TYPE_LABELS = {
 	seebad: 'Seebad',
 	flussbad: 'Flussbad',
 	kombibad: 'Kombibad',
+}
+
+let occupancySettled = false
+let returnCardTarget = null
+
+function storageGet(area, key) {
+	try {
+		return window[area].getItem(key)
+	} catch {
+		return null
+	}
+}
+
+function storageSet(area, key, value) {
+	try {
+		window[area].setItem(key, value)
+	} catch {
+		// QuotaExceededError / SecurityError — session-only filters still work
+	}
+}
+
+function storageRemove(area, key) {
+	try {
+		window[area].removeItem(key)
+	} catch {
+		// blocked storage
+	}
+}
+
+function allowedFilterValues() {
+	const types = new Set()
+	document.querySelectorAll('.filter-btn-type[data-value]').forEach(btn => {
+		if (btn.dataset.value) types.add(btn.dataset.value)
+	})
+	const cities = new Set()
+	const sel = document.getElementById('city-select')
+	if (sel) {
+		;[...sel.options].forEach(o => {
+			if (o.value) cities.add(o.value)
+		})
+	}
+	return { types, cities }
+}
+
+function normalizeFilters(raw, allowed) {
+	const src = raw && typeof raw === 'object' ? raw : {}
+	const types = Array.isArray(src.types) ? src.types : []
+	return {
+		open: src.open === '1',
+		types: new Set(types.filter(t => typeof t === 'string' && allowed.types.has(t))),
+		city: typeof src.city === 'string' && allowed.cities.has(src.city) ? src.city : '',
+	}
+}
+
+function hasAnyFilter(f) {
+	return f.open || f.types.size > 0 || f.city !== ''
+}
+
+function parseUrlFilters(search) {
+	const params = new URLSearchParams(search)
+	const typeParam = params.get('type')
+	return {
+		open: params.get('open'),
+		types: typeParam ? typeParam.split(',').filter(Boolean) : [],
+		city: params.get('city'),
+	}
+}
+
+function readStoredFilters() {
+	const raw = { open: storageGet('sessionStorage', FILTER_OPEN_KEY) }
+	const text = storageGet('localStorage', FILTERS_KEY)
+	if (!text) return raw
+	try {
+		const parsed = JSON.parse(text)
+		if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || parsed.v !== FILTERS_VERSION) {
+			return raw
+		}
+		raw.types = parsed.types
+		raw.city = parsed.city
+		return raw
+	} catch {
+		return raw
+	}
+}
+
+function setFilters(next) {
+	filters.open = !!next.open
+	filters.types = new Set(next.types)
+	filters.city = next.city || ''
+	const btnOpen = document.getElementById('btn-open')
+	if (btnOpen) btnOpen.setAttribute('aria-pressed', filters.open ? 'true' : 'false')
+	document.querySelectorAll('.filter-btn-type').forEach(btn => {
+		btn.setAttribute('aria-pressed', filters.types.has(btn.dataset.value) ? 'true' : 'false')
+	})
+	const sel = document.getElementById('city-select')
+	if (sel) sel.value = filters.city
+}
+
+function restoreFilters() {
+	const allowed = allowedFilterValues()
+	const fromUrl = normalizeFilters(parseUrlFilters(location.search), allowed)
+	if (hasAnyFilter(fromUrl)) {
+		setFilters(fromUrl)
+		return 'url'
+	}
+	const fromStorage = normalizeFilters(readStoredFilters(), allowed)
+	if (hasAnyFilter(fromStorage)) {
+		setFilters(fromStorage)
+		return 'storage'
+	}
+	return null
+}
+
+function persistFilters() {
+	if (filters.types.size || filters.city) {
+		storageSet(
+			'localStorage',
+			FILTERS_KEY,
+			JSON.stringify({
+				v: FILTERS_VERSION,
+				types: [...filters.types].sort(),
+				city: filters.city,
+			}),
+		)
+	} else {
+		storageRemove('localStorage', FILTERS_KEY)
+	}
+	if (filters.open) {
+		storageSet('sessionStorage', FILTER_OPEN_KEY, '1')
+	} else {
+		storageRemove('sessionStorage', FILTER_OPEN_KEY)
+	}
 }
 
 function buildFilterBar() {
@@ -80,6 +217,24 @@ function buildFilterBar() {
 	})
 }
 
+function updateEmptyState(shown) {
+	const el = document.getElementById('filter-empty')
+	const textEl = document.getElementById('filter-empty-text')
+	if (!el || !textEl) return
+	const active = hasAnyFilter(filters)
+	if (!active || shown > 0 || (filters.open && !occupancySettled)) {
+		el.hidden = true
+		return
+	}
+	if (filters.open && occupancySettled && !document.querySelector('.pool-card[data-open]')) {
+		textEl.textContent =
+			'Live-Status nicht verfügbar – der Filter „Offen“ kann gerade nicht angewendet werden.'
+	} else {
+		textEl.textContent = 'Keine Bäder für diese Filter.'
+	}
+	el.hidden = false
+}
+
 function applyFilters() {
 	let shown = 0,
 		total = 0
@@ -113,71 +268,102 @@ function applyFilters() {
 		favSection.style.display = anyFavVisible ? '' : 'none'
 	}
 
-	const hasFilters = filters.open || filters.types.size > 0 || filters.city !== ''
+	const hasFilters = hasAnyFilter(filters)
 	const countEl = document.getElementById('filter-count')
 	if (countEl) countEl.textContent = hasFilters ? `${shown} von ${total}` : ''
 	const resetBtn = document.getElementById('filter-reset')
 	if (resetBtn) resetBtn.style.display = hasFilters ? '' : 'none'
 
+	updateEmptyState(shown)
 	syncToUrl()
+	persistFilters()
 }
 
 function syncToUrl() {
-	const params = new URLSearchParams()
-	if (filters.open) params.set('open', '1')
-	if (filters.types.size > 0) params.set('type', [...filters.types].sort().join(','))
-	if (filters.city) params.set('city', filters.city)
-	const qs = params.toString()
-	history.replaceState(null, '', qs ? `?${qs}` : location.pathname)
-}
-
-function readFromUrl() {
 	const params = new URLSearchParams(location.search)
-
-	// open: only accept literal '1'
-	if (params.get('open') === '1') {
-		filters.open = true
-		document.getElementById('btn-open').setAttribute('aria-pressed', 'true')
-	}
-
-	// type: only accept values that have a matching button on the page
-	const typeParam = params.get('type')
-	if (typeParam) {
-		typeParam
-			.split(',')
-			.filter(Boolean)
-			.forEach(t => {
-				const btn = document.querySelector(`.filter-btn-type[data-value="${CSS.escape(t)}"]`)
-				if (btn) {
-					filters.types.add(t)
-					btn.setAttribute('aria-pressed', 'true')
-				}
-			})
-	}
-
-	// city: only accept values that exist as an <option> in the select
-	const cityParam = params.get('city')
-	if (cityParam) {
-		const sel = document.getElementById('city-select')
-		const valid = sel && [...sel.options].some(o => o.value === cityParam)
-		if (valid) {
-			filters.city = cityParam
-			sel.value = cityParam
-		}
-	}
+	if (filters.open) params.set('open', '1')
+	else params.delete('open')
+	if (filters.types.size > 0) params.set('type', [...filters.types].sort().join(','))
+	else params.delete('type')
+	if (filters.city) params.set('city', filters.city)
+	else params.delete('city')
+	const qs = params.toString()
+	const next = (qs ? `?${qs}` : location.pathname) + location.hash
+	history.replaceState(null, '', next)
 }
 
 function resetFilters() {
-	filters.open = false
-	filters.types.clear()
-	filters.city = ''
-	document.getElementById('btn-open').setAttribute('aria-pressed', 'false')
-	document
-		.querySelectorAll('.filter-btn-type[aria-pressed="true"]')
-		.forEach(b => b.setAttribute('aria-pressed', 'false'))
-	const sel = document.getElementById('city-select')
-	if (sel) sel.value = ''
+	setFilters({ open: false, types: new Set(), city: '' })
 	applyFilters()
+}
+
+function rememberReturnCard(card) {
+	const uid = card.dataset.uid
+	if (!uid) return
+	const fav = !!card.closest('#favorites-section')
+	storageSet('sessionStorage', RETURN_CARD_KEY, JSON.stringify({ uid, fav }))
+}
+
+function consumeReturnCard() {
+	const text = storageGet('sessionStorage', RETURN_CARD_KEY)
+	storageRemove('sessionStorage', RETURN_CARD_KEY)
+	if (!text) return null
+	let parsed
+	try {
+		parsed = JSON.parse(text)
+	} catch {
+		return null
+	}
+	if (!parsed || typeof parsed !== 'object' || typeof parsed.uid !== 'string') return null
+
+	let navType = 'navigate'
+	try {
+		const nav = performance.getEntriesByType('navigation')[0]
+		if (nav && nav.type) navType = nav.type
+	} catch {
+		// treat as navigate
+	}
+	if (navType !== 'navigate') return null
+
+	const ref = document.referrer
+	if (!ref) return null
+	try {
+		const url = new URL(ref)
+		if (url.origin !== location.origin) return null
+		if (!url.pathname.startsWith('/bad/')) return null
+	} catch {
+		return null
+	}
+	return { uid: parsed.uid, fav: !!parsed.fav }
+}
+
+function isCardVisible(card) {
+	return card.style.display !== 'none' && card.offsetParent !== null
+}
+
+function scrollToReturnCard(target) {
+	if (!target) return
+	const cards = [...document.querySelectorAll('.pool-card')].filter(c => c.dataset.uid === target.uid)
+	const inFav = card => !!card.closest('#favorites-section')
+	const preferred = cards.find(c => inFav(c) === target.fav && isCardVisible(c))
+	const fallback = cards.find(c => isCardVisible(c))
+	const card = preferred || fallback
+	if (!card) return
+	card.scrollIntoView({ block: 'center' })
+	card.focus({ preventScroll: true })
+	card.classList.add('pool-card-return')
+	const clearReturn = () => {
+		card.classList.remove('pool-card-return')
+		card.removeEventListener('blur', clearReturn)
+	}
+	card.addEventListener('blur', clearReturn)
+}
+
+function markOccupancySettled() {
+	const first = !occupancySettled
+	occupancySettled = true
+	applyFilters()
+	if (first) scrollToReturnCard(returnCardTarget)
 }
 
 document.getElementById('btn-open').addEventListener('click', () => {
@@ -187,6 +373,8 @@ document.getElementById('btn-open').addEventListener('click', () => {
 	applyFilters()
 })
 document.getElementById('filter-reset').addEventListener('click', resetFilters)
+const emptyReset = document.getElementById('filter-empty-reset')
+if (emptyReset) emptyReset.addEventListener('click', resetFilters)
 
 /* ── Favorites ─────────────────────────────────────────────────── */
 const FAVORITES_KEY = 'badi_favorites'
@@ -212,6 +400,7 @@ function toggleFavorite(uid) {
 	setFavorites(favs)
 	track('favorite-toggle', { pool_uid: uid, action: adding ? 'add' : 'remove', total_favorites: favs.length })
 	renderSections()
+	applyFilters()
 }
 
 function applyStarState() {
@@ -259,10 +448,12 @@ document.querySelectorAll('.pool-card .star-btn').forEach(btn => {
 	})
 })
 
-document.querySelectorAll('.pool-card').forEach(card => {
-	card.addEventListener('click', () => {
-		track('pool-card-click', { pool_uid: card.dataset.uid, pool_type: card.dataset.type, city: card.dataset.city })
-	})
+document.addEventListener('click', e => {
+	if (e.target.closest('.star-btn')) return
+	const card = e.target.closest('.pool-card')
+	if (!card) return
+	rememberReturnCard(card)
+	track('pool-card-click', { pool_uid: card.dataset.uid, pool_type: card.dataset.type, city: card.dataset.city })
 })
 
 renderSections()
@@ -270,7 +461,10 @@ renderSections()
 async function fetchOccupancy() {
 	try {
 		const res = await fetch('/api/current')
-		if (!res.ok) return
+		if (!res.ok) {
+			markOccupancySettled()
+			return
+		}
 		const data = await res.json()
 		const map = {}
 		for (const item of data) map[item.pool_uid] = item
@@ -323,8 +517,7 @@ async function fetchOccupancy() {
 			if (item) card.dataset.open = item.is_open ? 'true' : 'false'
 		})
 
-		// Re-apply filters after open status is known
-		applyFilters()
+		markOccupancySettled()
 	} catch (e) {
 		console.warn('Auslastung konnte nicht geladen werden', e)
 		document.querySelectorAll('.pool-card .status-badge').forEach(badge => {
@@ -332,6 +525,7 @@ async function fetchOccupancy() {
 				'<span class="status-dot closed"></span>' +
 				'<span class="status-text">Live-Daten nicht verfügbar</span>'
 		})
+		markOccupancySettled()
 	}
 }
 
@@ -376,7 +570,22 @@ function renderStatusBadge(item) {
 fetchOccupancy()
 setInterval(fetchOccupancy, 60000)
 
-// Build filter bar, then restore state from URL
+// Build filter bar, then restore from URL or storage
 buildFilterBar()
-readFromUrl()
+const restoreSource = restoreFilters()
 applyFilters()
+returnCardTarget = consumeReturnCard()
+if (restoreSource === 'storage') {
+	const fireRestored = () =>
+		track('filter-restored', {
+			source: 'storage',
+			open: filters.open,
+			types: [...filters.types].sort().join(','),
+			city: filters.city,
+		})
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', fireRestored)
+	} else {
+		fireRestored()
+	}
+}
