@@ -101,6 +101,11 @@ close times, reason, and source (observation, closure, or schedule).
 
 ## S — Z
 
+**Saved filter** — The type and city filter remembered per browser in
+`localStorage` (`badi_filters`), restored on a plain visit to `/`. A URL
+with valid filter values replaces it. "Offen" lasts only for the browser
+session (`sessionStorage`).
+
 **Schedule** — The published claim: which Intervals a pool is open, by Period
 and weekday, plus Closures. Slow-moving; reviewed in git; live within ~20 min
 of merge via the **Schedule source**, no deploy.

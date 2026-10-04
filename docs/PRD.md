@@ -71,6 +71,7 @@ a better time.
 ### Personalization (client-only)
 
 - Favorites stored in browser `localStorage`
+- Filter type and city remembered in `localStorage`; Offen for the browser session only
 
 ## Success Metrics
 
