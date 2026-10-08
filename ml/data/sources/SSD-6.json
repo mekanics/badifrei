@@ -1,7 +1,7 @@
 {
   "uid": "SSD-6",
   "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/leimbach.html",
-  "scraped_at": "2026-10-03",
+  "scraped_at": "2026-10-08",
   "tables": [
     {
       "columns": [
@@ -27,11 +27,11 @@
         ],
         [
           "Freitag",
-          "6–8 Uhr | 12–21 Uhr"
+          "6–8 Uhr1 | 12–21 Uhr"
         ],
         [
           "Samstag",
-          "9–18 Uhr1 | 9–14 Uhr Familienschwimmen | 14.30–18 Uhr Sportschwimmen"
+          "9–18 Uhr | 9–14 Uhr Familienschwimmen | 14.30–18 Uhr Sportschwimmen"
         ],
         [
           "Sonntag (und Feiertage)",
@@ -76,7 +76,7 @@
             "value": "Freitag"
           },
           {
-            "value": "6–8 Uhr<br>12–21 Uhr"
+            "value": "6–8 Uhr<sup>1</sup><br>12–21 Uhr"
           }
         ],
         [
@@ -84,7 +84,7 @@
             "value": "Samstag"
           },
           {
-            "value": "9–18 Uhr<sup>1</sup><br>9–14 Uhr Familienschwimmen<br>14.30–18 Uhr Sportschwimmen"
+            "value": "9–18 Uhr<br>9–14 Uhr Familienschwimmen<br>14.30–18 Uhr Sportschwimmen"
           }
         ],
         [
