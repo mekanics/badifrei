@@ -8,10 +8,10 @@
 <link rel="alternate" type="text/markdown" href="/index.md">
 {% endblock %}
 {% block structured_data %}
-{# One ItemList per city, mirroring the visual <h2>Schwimmbäder {city}</h2>
-sections below. Helps Google map the site's pool inventory and reinforces
-the topical clustering already signaled by the related-pools blocks on
-each detail page. #}
+{# One ItemList per city, mirroring the visible list under each
+<h2>Schwimmbäder {city}</h2>. Helps Google map the site's pool inventory
+and reinforces the topical clustering already signaled by the related-pools
+blocks on each detail page. #}
 {% for city in cities %}{% if city.pools %}
 <script type="application/ld+json">
 {
@@ -65,22 +65,21 @@ each detail page. #}
 </div>
 
 <!-- Favoriten (nur sichtbar wenn vorhanden) -->
-<div class="section-block" id="favorites-section" style="display:none">
+<section class="section-block" id="favorites-section" style="display:none">
   <h2 class="section-title">⭐ Favoriten</h2>
-  <div class="pool-grid" id="favorites-grid"></div>
-</div>
+  <ul class="pool-grid" id="favorites-grid"></ul>
+</section>
 
 <!-- Städte-Sektionen -->
 {% for city in cities %}
-<div class="section-block">
+<section class="section-block">
   <h2 class="section-title">Schwimmbäder {{ city.label }}</h2>
-  <div class="pool-grid" id="pool-grid-{{ city.key }}">
+  <ul class="pool-grid" id="pool-grid-{{ city.key }}">
     {% for pool in city.pools %}
-    <a href="/bad/{{ pool.uid }}" class="pool-card" data-uid="{{ pool.uid }}" data-type="{{ pool.type }}"
+    <li class="pool-card" data-uid="{{ pool.uid }}" data-type="{{ pool.type }}"
       data-city="{{ pool.city | default('zurich') }}">
-      <button class="star-btn" data-uid="{{ pool.uid }}" aria-label="Zu Favoriten hinzufügen">⭐</button>
       <div class="pool-header">
-        <span class="pool-name">{{ pool.name }}</span>
+        <a href="/bad/{{ pool.uid }}" class="pool-link" tabindex="0"><span class="pool-name">{{ pool.name }}</span></a>
         <span class="badge badge-{{ pool.type }}">{{ pool.type }}</span>
       </div>
       <div class="pool-body">
@@ -93,11 +92,11 @@ each detail page. #}
         </div>
         <div class="guest-count"></div>
       </div>
-
-    </a>
+      <button class="star-btn" data-uid="{{ pool.uid }}" aria-label="Zu Favoriten hinzufügen">⭐</button>
+    </li>
     {% endfor %}
-  </div>
-</div>
+  </ul>
+</section>
 {% endfor %}
 
 <div class="filter-empty" id="filter-empty" role="status" aria-live="polite" hidden>
