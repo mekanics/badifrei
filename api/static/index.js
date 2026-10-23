@@ -349,14 +349,16 @@ function scrollToReturnCard(target) {
 	const fallback = cards.find(c => isCardVisible(c))
 	const card = preferred || fallback
 	if (!card) return
+	const link = card.querySelector('.pool-link')
 	card.scrollIntoView({ block: 'center' })
-	card.focus({ preventScroll: true })
+	if (link) link.focus({ preventScroll: true })
 	card.classList.add('pool-card-return')
+	if (!link) return
 	const clearReturn = () => {
 		card.classList.remove('pool-card-return')
-		card.removeEventListener('blur', clearReturn)
+		link.removeEventListener('blur', clearReturn)
 	}
-	card.addEventListener('blur', clearReturn)
+	link.addEventListener('blur', clearReturn)
 }
 
 function markOccupancySettled() {
@@ -449,8 +451,9 @@ document.querySelectorAll('.pool-card .star-btn').forEach(btn => {
 })
 
 document.addEventListener('click', e => {
-	if (e.target.closest('.star-btn')) return
-	const card = e.target.closest('.pool-card')
+	const link = e.target.closest('.pool-link')
+	if (!link) return
+	const card = link.closest('.pool-card')
 	if (!card) return
 	rememberReturnCard(card)
 	track('pool-card-click', { pool_uid: card.dataset.uid, pool_type: card.dataset.type, city: card.dataset.city })

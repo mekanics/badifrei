@@ -123,6 +123,7 @@ body {
 	display: grid;
 	grid-template-columns: 1fr;
 	gap: 1rem;
+	list-style: none;
 }
 
 @media (min-width: 40rem) {
@@ -149,16 +150,35 @@ body {
 }
 
 .pool-card:hover,
-.pool-card:focus,
+.pool-card:has(.pool-link:focus),
 .pool-card-return {
 	box-shadow: var(--shadow-hover);
 	transform: translate(-2px, -2px);
 }
 
-.pool-card:focus,
+.pool-card:has(.pool-link:focus),
 .pool-card-return {
 	outline: 2px solid var(--accent);
 	outline-offset: 2px;
+}
+
+.pool-link {
+	color: inherit;
+	text-decoration: none;
+}
+
+.pool-link::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	z-index: 1;
+}
+
+@supports selector(:has(*)) {
+	.pool-link:focus {
+		outline: none;
+	}
 }
 
 .pool-header {
