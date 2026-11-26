@@ -297,7 +297,7 @@
     {
       "uid": "SSD-5",
       "confidence": "official_structured",
-      "scraped_at": "2026-09-01",
+      "scraped_at": "2026-11-26",
       "periods": [
         {
           "from": null,
@@ -397,7 +397,7 @@
               "open": "17:00",
               "close": "18:00",
               "condition": "always",
-              "label": "Nur für Personen, die schwimmen können"
+              "label": "Nur für Erwachsene, die schwimmen können"
             },
             {
               "open": "18:00",
@@ -523,7 +523,7 @@
       "source": {
         "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/kaeferberg.html",
         "layout": "stzh_datatable",
-        "scraped_at": "2026-09-01",
+        "scraped_at": "2026-11-26",
         "confidence": "official_structured"
       }
     },
