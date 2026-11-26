@@ -1,7 +1,7 @@
 {
   "uid": "SSD-5",
   "url": "https://www.stadt-zuerich.ch/de/stadtleben/sport-und-erholung/sport-und-badeanlagen/hallenbaeder/kaeferberg.html",
-  "scraped_at": "2026-09-28",
+  "scraped_at": "2026-11-26",
   "tables": [
     {
       "columns": [
@@ -23,7 +23,7 @@
         ],
         [
           "Donnerstag",
-          "6.30–8 Uhr | 11–15 Uhr | 15–17 Uhr: Nur für Personen, die schwimmen können1 | 17–18 Uhr: Nur für Personen, die schwimmen können2 | 18–22 Uhr: Nur für Erwachsene, die schwimmen können3"
+          "6.30–8 Uhr | 11–15 Uhr | 15–17 Uhr: Nur für Personen, die schwimmen können1 | 17–18 Uhr: Nur für Erwachsene, die schwimmen können2 | 18–22 Uhr: Nur für Erwachsene, die schwimmen können3"
         ],
         [
           "Freitag",
@@ -72,7 +72,7 @@
             "value": "Donnerstag"
           },
           {
-            "value": "6.30–8 Uhr<br>11–15 Uhr<br>15–17 Uhr: Nur für Personen, die schwimmen können<sup>1</sup><br>17–18 Uhr: Nur für Personen, die schwimmen können<sup>2<br></sup>18–22 Uhr: Nur für Erwachsene, die schwimmen können<sup>3</sup>"
+            "value": "6.30–8 Uhr<br>11–15 Uhr<br>15–17 Uhr: Nur für Personen, die schwimmen können<sup>1</sup><br>17–18 Uhr: Nur für Erwachsene, die schwimmen können<sup>2<br></sup>18–22 Uhr: Nur für Erwachsene, die schwimmen können<sup>3</sup>"
           }
         ],
         [
